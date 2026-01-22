@@ -118,3 +118,9 @@ src/
 "h-screen overflow-auto"            // Full height scrolling
 "space-y-4"                         // Vertical spacing
 ```
+
+### Common Gotchas
+
+- **Package management**: Use `npm install <pkg>` not manual `package.json` edits
+- **shadcn components**: Use `npx shadcn@latest add <component> -y`
+- **React Router imports**: Use `react-router` NOT `react-router-dom`
