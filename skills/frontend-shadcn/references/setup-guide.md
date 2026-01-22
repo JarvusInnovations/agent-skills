@@ -446,6 +446,60 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 
 ---
 
+## VSCode Debugging
+
+Configure VSCode to debug the Vite dev server and React application.
+
+### Launch Configuration
+
+**Create `.vscode/launch.json`:**
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Dev Server",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite"],
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Debug in Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/src",
+      "sourceMaps": true
+    }
+  ]
+}
+```
+
+**Key patterns:**
+
+- "Debug Dev Server" runs Vite with Node.js debugging for server-side breakpoints
+- "Debug in Chrome" launches Chrome with DevTools protocol for client-side React debugging
+- `webRoot` maps to `src/` for accurate source map resolution
+- Default Vite port is `5173`
+
+### Using the Debugger
+
+**For client-side React debugging:**
+
+1. Start the dev server: `npm run dev`
+2. Select "Debug in Chrome" and press `F5`
+3. Set breakpoints in React components (`.tsx` files)
+4. Breakpoints pause execution in Chrome with VSCode controls
+
+**Commit:** `config: add VSCode debugging configuration`
+
+---
+
 ## Commit Message Format
 
 ```

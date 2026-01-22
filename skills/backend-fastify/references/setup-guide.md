@@ -447,6 +447,54 @@ npm run type-check
 
 ---
 
+## VSCode Debugging
+
+Configure VSCode to debug the backend with breakpoints, variable inspection, and step-through execution.
+
+### Launch Configuration
+
+**Create `.vscode/launch.json`:**
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Backend",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/src/index.ts",
+      "cwd": "${workspaceFolder}/backend",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["tsx"],
+      "envFile": "${workspaceFolder}/backend/.env",
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    }
+  ]
+}
+```
+
+**Key patterns:**
+
+- `runtimeExecutable: "npx"` with `runtimeArgs: ["tsx"]` runs TypeScript directly without pre-compilation
+- `envFile` loads environment variables from `.env` file
+- `sourceMaps: true` enables breakpoints in TypeScript source files
+- `skipFiles` excludes Node internals and dependencies from step-through
+- `console: "integratedTerminal"` shows pino-pretty formatted logs
+
+### Using the Debugger
+
+1. **Set breakpoints** - Click the gutter next to line numbers in any `.ts` file
+2. **Start debugging** - Press `F5` or select "Debug Backend" from the Run and Debug panel
+3. **Debug controls** - Use Continue (F5), Step Over (F10), Step Into (F11), Step Out (Shift+F11)
+4. **Inspect variables** - Hover over variables or use the Variables panel
+
+**Commit:** `config(backend): add VSCode debugging configuration`
+
+---
+
 ## Vite Proxy Configuration (Frontend Integration)
 
 To proxy frontend API requests to the backend during development:
