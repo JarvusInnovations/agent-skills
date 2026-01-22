@@ -2,7 +2,7 @@
 
 Two MCP servers enhance frontend development workflows: **shadcn** for UI components and **context7** for library documentation.
 
-> **Note:** These MCP servers are bundled with this plugin via `.mcp.json`. They will be automatically available when using Claude Code with this plugin installed.
+> **Note:** These MCP servers are bundled with this plugin via `.claude-plugin/marketplace.json`. They will be automatically available when using Claude Code with this plugin installed.
 
 ## Research Workflow
 
