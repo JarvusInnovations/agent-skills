@@ -1,0 +1,30 @@
+{
+  "name": "jarvus-agent-skills",
+  "owner": {
+    "name": "Jarvus Innovations",
+    "email": "contact@jarv.us"
+  },
+  "metadata": {
+    "description": "Jarvus agent skills for development workflows"
+  },
+  "plugins": [
+    {
+      "name": "jarvus-skills",
+      "description": "Development workflow skills from Jarvus",
+      "source": "./",
+      "skills": [
+        "./skills/frontend-shadcn"
+      ],
+      "mcpServers": {
+        "context7": {
+          "command": "npx",
+          "args": ["-y", "@upstash/context7-mcp@latest"]
+        },
+        "shadcn": {
+          "command": "npx",
+          "args": ["-y", "shadcn@latest", "mcp"]
+        }
+      }
+    }
+  ]
+}
