@@ -37,6 +37,7 @@ This creates a `.tool-versions` file in the project root that ensures consistent
 | [patterns.md](references/patterns.md) | Implementing routes, services, schema validation |
 | [authentication.md](references/authentication.md) | Adding JWT auth, authorization, protected routes |
 | [api-design.md](references/api-design.md) | Swagger/OpenAPI integration, response format, errors |
+| [mcp-integration.md](references/mcp-integration.md) | Integrating MCP server for AI agent access |
 | [gotchas.md](references/gotchas.md) | Debugging issues, common mistakes and fixes |
 
 ## Quick Reference
