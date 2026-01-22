@@ -376,6 +376,8 @@ class ServiceB {
 class ServiceA {
   private serviceB: ServiceB | null = null
 
+  constructor(private fastify: FastifyInstance) {}
+
   setServiceB(serviceB: ServiceB) {
     this.serviceB = serviceB
   }

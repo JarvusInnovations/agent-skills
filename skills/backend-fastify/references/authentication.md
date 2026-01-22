@@ -191,6 +191,7 @@ export function requireGroups(requiredGroups: string[]) {
         required: requiredGroups,
         actual: request.user!.groups
       })
+      return
     }
   }
 }
@@ -285,6 +286,7 @@ Service for creating tokens:
 ```typescript
 // src/services/auth-service.ts
 import jwt from 'jsonwebtoken'
+import bcrypt from 'bcrypt'
 import { FastifyInstance } from 'fastify'
 import { JWTPayload } from '../middleware/auth'
 
@@ -319,8 +321,6 @@ export class AuthService {
   }
 
   private async comparePassword(plain: string, hash: string): Promise<boolean> {
-    // Use bcrypt or similar
-    const bcrypt = await import('bcrypt')
     return bcrypt.compare(plain, hash)
   }
 }
