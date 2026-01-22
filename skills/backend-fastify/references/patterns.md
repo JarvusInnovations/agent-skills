@@ -403,3 +403,28 @@ await fastify.register(userRoutes, { prefix: '/api/users' })
 await fastify.register(orderRoutes, { prefix: '/api/orders' })
 await fastify.register(healthRoutes, { prefix: '/api/health' })
 ```
+
+## Package Management
+
+Always use npm commands to manage dependencies:
+
+- Always use `npm install <package-name>` to add dependencies
+- Never manually edit `package.json` to add packages
+- This ensures the latest compatible versions are installed and `package-lock.json` stays in sync
+
+### Adding Dependencies
+
+```bash
+# Runtime dependencies
+npm install fastify-plugin @fastify/cors pino
+
+# Development dependencies
+npm install -D @types/node typescript
+```
+
+### Why This Matters
+
+- `npm install` automatically resolves to the latest compatible version
+- Manual edits can introduce version mismatches
+- `package-lock.json` won't be properly updated with manual edits
+- Dependency tree conflicts are harder to debug after manual edits

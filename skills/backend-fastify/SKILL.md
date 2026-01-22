@@ -168,3 +168,4 @@ backend/
 - **Config access**: Use `fastify.config.VAR` not `process.env.VAR`
 - **Server ready**: Call `await server.ready()` before accessing config in index.ts
 - **Path normalization**: Centralize path utilities, handle root '/' as special case
+- **Package management**: Use `npm install <pkg>` not manual `package.json` edits
