@@ -2,6 +2,8 @@
 
 Two MCP servers enhance frontend development workflows: **shadcn** for UI components and **context7** for library documentation.
 
+> **Note:** These MCP servers are bundled with this plugin via `.mcp.json`. They will be automatically available when using Claude Code with this plugin installed.
+
 ## Research Workflow
 
 Before implementing new features or installing unfamiliar libraries:
@@ -18,7 +20,7 @@ Use for discovering, understanding, and installing shadcn/ui components.
 ### Search for Components
 
 ```
-search_items_in_registries(registries: ["@shadcn"], query: "sidebar")
+mcp__shadcn__search_items_in_registries(registries: ["@shadcn"], query: "sidebar")
 ```
 
 Common searches: `sidebar`, `card`, `dialog`, `dropdown`, `table`, `form`, `button`
@@ -26,7 +28,7 @@ Common searches: `sidebar`, `card`, `dialog`, `dropdown`, `table`, `form`, `butt
 ### Get Component Examples
 
 ```
-get_item_examples_from_registries(query: "button-demo")
+mcp__shadcn__get_item_examples_from_registries(registries: ["@shadcn"], query: "button-demo")
 ```
 
 Pattern: Use `{component}-demo` to find usage examples.
@@ -34,7 +36,7 @@ Pattern: Use `{component}-demo` to find usage examples.
 ### Get Install Command
 
 ```
-get_add_command_for_items(items: ["@shadcn/sidebar"])
+mcp__shadcn__get_add_command_for_items(items: ["@shadcn/sidebar"])
 ```
 
 Returns the exact `npx shadcn@latest add ...` command.
@@ -42,15 +44,15 @@ Returns the exact `npx shadcn@latest add ...` command.
 ### Workflow Example
 
 ```
-1. search_items_in_registries(registries: ["@shadcn"], query: "data table")
-2. get_item_examples_from_registries(query: "data-table-demo")
-3. get_add_command_for_items(items: ["@shadcn/table"])
+1. mcp__shadcn__search_items_in_registries(registries: ["@shadcn"], query: "data table")
+2. mcp__shadcn__get_item_examples_from_registries(registries: ["@shadcn"], query: "data-table-demo")
+3. mcp__shadcn__get_add_command_for_items(items: ["@shadcn/table"])
 4. Run: npx shadcn@latest add table -y
 ```
 
 ### After Adding Components
 
-Use `get_audit_checklist` to verify the component was added correctly and understand any additional setup needed.
+Use `mcp__shadcn__get_audit_checklist` to verify the component was added correctly and understand any additional setup needed.
 
 ## context7 MCP Server
 
@@ -61,26 +63,21 @@ Use for accessing up-to-date documentation for React, TypeScript, and other libr
 First, get the context7 library ID:
 
 ```
-resolve-library-id(libraryName: "react-router")
+mcp__context7__resolve-library-id(libraryName: "react-router", query: "routing")
 ```
 
 Returns: `/remix-run/react-router`
 
-### Get Library Docs
+### Query Library Docs
 
 Then fetch specific documentation:
 
 ```
-get-library-docs(
-  context7CompatibleLibraryID: "/remix-run/react-router",
-  topic: "useSearchParams"
+mcp__context7__query-docs(
+  libraryId: "/remix-run/react-router",
+  query: "useSearchParams hook usage"
 )
 ```
-
-### Mode Options
-
-- `mode: "code"` - API references and code examples (default)
-- `mode: "info"` - Conceptual guides and architectural docs
 
 ### Common Libraries
 
@@ -94,12 +91,12 @@ get-library-docs(
 ### Workflow Example
 
 ```
-1. resolve-library-id(libraryName: "react-router")
+1. mcp__context7__resolve-library-id(libraryName: "react-router", query: "routing")
    → Returns: /remix-run/react-router
 
-2. get-library-docs(
-     context7CompatibleLibraryID: "/remix-run/react-router",
-     topic: "nested routes"
+2. mcp__context7__query-docs(
+     libraryId: "/remix-run/react-router",
+     query: "nested routes configuration"
    )
    → Returns: Documentation on nested routing patterns
 ```

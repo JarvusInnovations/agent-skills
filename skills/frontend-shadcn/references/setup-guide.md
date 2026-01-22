@@ -4,8 +4,22 @@ This guide documents the complete process for bootstrapping a modern React appli
 
 ## Prerequisites
 
-- Node.js 22.x (see `.tool-versions`)
+- Node.js 22.x
 - npm
+
+### Node.js Version Management with asdf
+
+Use [asdf](https://asdf-vm.com/) to manage Node.js versions consistently across the team:
+
+```bash
+# Install Node.js plugin (one-time setup)
+asdf plugin add nodejs
+
+# Set project Node.js version (creates .tool-versions file)
+asdf set nodejs latest:22
+```
+
+The `.tool-versions` file created by `asdf set` ensures all team members use the same Node.js version.
 
 ## Step-by-Step Setup
 
@@ -501,6 +515,4 @@ Common components to add:
 npx shadcn@latest add button card sidebar collapsible dropdown-menu avatar separator sheet tooltip input skeleton badge tabs dialog alert
 ```
 
-Search for components: Use the MCP tool `mcp__shadcn__search_items_in_registries` with query.
-
-Get examples: Use `mcp__shadcn__get_item_examples_from_registries` with patterns like `{component}-demo`.
+Search for components and get examples using the bundled MCP tools. See [mcp-tools.md](mcp-tools.md) for usage details.

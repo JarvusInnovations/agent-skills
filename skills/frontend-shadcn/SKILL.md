@@ -7,12 +7,26 @@ description: Frontend development using Vite + React + shadcn/ui + Tailwind CSS 
 
 Modern React frontend stack:
 
-- **Vite 7** - Build tooling
+- **Vite** - Build tooling
 - **React 19** - UI framework
 - **TypeScript** - Type safety
 - **Tailwind CSS v4** - Utility-first styling (`@tailwindcss/vite` plugin)
 - **shadcn/ui** - Component library (New York style)
 - **React Router v7** - Client-side routing
+
+## Environment Setup
+
+Use [asdf](https://asdf-vm.com/) to manage Node.js versions:
+
+```bash
+# Install Node.js plugin (one-time)
+asdf plugin add nodejs
+
+# Set project Node.js version
+asdf set nodejs latest:22
+```
+
+This creates a `.tool-versions` file in the project root that ensures consistent Node.js versions across the team.
 
 ## Reference Files
 
@@ -20,6 +34,7 @@ Modern React frontend stack:
 |------|-------------|
 | [setup-guide.md](references/setup-guide.md) | Starting a new project from scratch |
 | [patterns.md](references/patterns.md) | Implementing features, understanding architecture |
+| [maplibre.md](references/maplibre.md) | Working with MapLibre GL JS maps |
 | [mcp-tools.md](references/mcp-tools.md) | Looking up docs, adding components via MCP |
 
 ## Quick Reference
