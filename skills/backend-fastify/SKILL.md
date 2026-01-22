@@ -34,6 +34,10 @@ This creates a `.tool-versions` file in the project root that ensures consistent
 | File | When to Use |
 |------|-------------|
 | [setup-guide.md](references/setup-guide.md) | Starting a new backend project from scratch |
+| [patterns.md](references/patterns.md) | Implementing routes, services, schema validation |
+| [authentication.md](references/authentication.md) | Adding JWT auth, authorization, protected routes |
+| [api-design.md](references/api-design.md) | Swagger/OpenAPI integration, response format, errors |
+| [gotchas.md](references/gotchas.md) | Debugging issues, common mistakes and fixes |
 
 ## Quick Reference
 
@@ -65,6 +69,31 @@ import fastifyEnv from '@fastify/env'
 import cors from '@fastify/cors'
 ```
 
+### Configuration Access
+
+Always access configuration through `fastify.config`, never `process.env` directly:
+
+```typescript
+// CORRECT - type-safe, validated at startup
+const port = fastify.config.PORT
+const apiKey = fastify.config.API_KEY
+
+// WRONG - no validation, no type safety
+const port = process.env.PORT  // Don't do this
+```
+
+### Response Format
+
+```typescript
+// Standard response structure
+{
+  success: boolean
+  data?: T
+  error?: string
+  metadata?: { timestamp: Date }
+}
+```
+
 ### Plugin Pattern
 
 ```typescript
@@ -83,7 +112,7 @@ import { FastifyPluginAsync } from 'fastify'
 
 const routes: FastifyPluginAsync = async (fastify, opts) => {
   fastify.get('/', async (request, reply) => {
-    return { data: 'example' }
+    return { success: true, data: 'example' }
   })
 }
 
@@ -96,7 +125,12 @@ export default routes
 // 1. Create service class
 export class MyService {
   constructor(private fastify: FastifyInstance) {}
-  async doWork() { /* ... */ }
+
+  async doWork() {
+    // Access config through fastify instance
+    const apiKey = this.fastify.config.API_KEY
+    this.fastify.log.info('Service method called')
+  }
 }
 
 // 2. Declare module augmentation
@@ -118,6 +152,7 @@ backend/
 │   ├── plugins/          # Fastify plugins (env, auth, etc.)
 │   ├── routes/           # HTTP route handlers
 │   ├── services/         # Business logic classes
+│   ├── utils/            # Shared utilities
 │   ├── app.ts            # Plugin registration & setup
 │   └── index.ts          # Server entry point
 ├── package.json
@@ -125,3 +160,10 @@ backend/
 ├── .env.example
 └── .gitignore
 ```
+
+### Common Gotchas
+
+- **Plugin order matters**: Register env plugin first, then services, then routes
+- **Config access**: Use `fastify.config.VAR` not `process.env.VAR`
+- **Server ready**: Call `await server.ready()` before accessing config in index.ts
+- **Path normalization**: Centralize path utilities, handle root '/' as special case

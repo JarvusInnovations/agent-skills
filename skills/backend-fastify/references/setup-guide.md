@@ -588,4 +588,3 @@ backend/
 - [Fastify Documentation](https://fastify.dev/)
 - [Pino Logger](https://getpino.io/)
 - [JSON Schema](https://json-schema.org/)
-- [Loop project](http://github.com/JarvusInnovations/loop)
