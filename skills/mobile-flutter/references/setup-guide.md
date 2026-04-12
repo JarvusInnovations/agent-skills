@@ -207,3 +207,26 @@ For network requests and keychain access, update both `macos/Runner/DebugProfile
 ```
 
 Then set the development team in Xcode: Runner target → Signing & Capabilities → Team → select for "All" configurations.
+
+### 11. Install Flutter agent skills (optional)
+
+The [flutter/skills](https://github.com/flutter/skills) repo provides official Flutter skills for AI agents. Install selectively:
+
+```bash
+npx skills add flutter/skills
+```
+
+Select these from the interactive picker:
+
+- `flutter-building-forms`
+- `flutter-building-layouts`
+- `flutter-theming-apps`
+- `flutter-implementing-navigation-and-routing`
+- `flutter-handling-http-and-json`
+- `flutter-working-with-databases`
+- `flutter-caching-data`
+- `flutter-testing-apps`
+- `flutter-setting-up-on-macos`
+- `flutter-improving-accessibility`
+
+**Do NOT install** `flutter-managing-state` or `flutter-architecting-apps` — they prescribe Provider/ChangeNotifier which conflicts with our Riverpod architecture.
