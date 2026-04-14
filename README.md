@@ -14,3 +14,5 @@ npx skills add JarvusInnovations/agent-skills
 
 - `frontend-shadcn`: Frontend development using Vite+React+ShadCN+Tailwind
 - `backend-fastify`: Backend development using Node.js+Fastify
+- `mobile-flutter`: Mobile app development using Flutter+Riverpod+go_router
+- `specops`: Spec-driven development workflow where specs are the source of truth
