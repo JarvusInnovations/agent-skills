@@ -4,14 +4,10 @@ A collection of agent skills used within Jarvus.
 
 ## Installation
 
-Install via Claude Code marketplace:
+Install via [skills](https://skills.sh/) globally (recommended) or to a specific project:
 
 ```bash
-# Add the Jarvus marketplace
-/plugin marketplace add JarvusInnovations/agent-skills
-
-# Install the skills plugin
-/plugin install jarvus-skills@jarvus-agent-skills
+npx skills add JarvusInnovations/agent-skills
 ```
 
 ## Skills
