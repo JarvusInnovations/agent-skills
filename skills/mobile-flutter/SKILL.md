@@ -47,6 +47,7 @@ This creates a `.tool-versions` file in the project root. Never use the official
 | [offline-first.md](references/offline-first.md) | Adding drift for local SQLite, offline download/collect/sync |
 | [storybook.md](references/storybook.md) | Setting up storybook, adding stories, mock data |
 | [gotchas.md](references/gotchas.md) | Common mistakes and platform-specific issues |
+| [mcp-driving-and-screenshots.md](references/mcp-driving-and-screenshots.md) | Launching, driving (tap/type), debugging, and screenshotting a running app via the Dart MCP — and delivering screenshots to the user |
 
 ## Quick Reference
 
