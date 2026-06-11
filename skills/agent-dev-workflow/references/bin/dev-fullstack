@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# FULLSTACK variant: start backend + frontend together, kill both on exit.
+# Save as `bin/dev` in a repo where one command should run the whole stack
+# (e.g. Fastify + Vite). Picks a free port for each so concurrent worktrees
+# don't collide. Requires app_pick_vite_port() in _common.sh (see below).
+#
+# Env overrides: DATABASE_URL, PORT, VITE_PORT, HOST, APP_DATABASE, APP_PG_PORT.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
+
+root="$(app_root)"
+
+if [ -z "${DATABASE_URL:-}" ]; then
+  ensure_postgres
+  DATABASE_URL="$(app_database_url)"
+fi
+
+PORT="$(app_pick_port)"
+VITE_PORT="$(app_pick_vite_port)"   # add this picker to _common.sh (range e.g. 4100-4199)
+
+echo "Frontend: http://localhost:${VITE_PORT}" >&2
+echo "Backend:  http://localhost:${PORT}" >&2
+
+# PID file so bin/cleanup can stop this session's whole process group.
+pidfile="$root/.dev.pid"
+echo $$ > "$pidfile"
+
+# kill 0 signals the whole process group → both children die when this script exits.
+trap 'rm -f "$pidfile"; kill 0' EXIT
+
+# Backend
+env DATABASE_URL="$DATABASE_URL" PORT="$PORT" HOST="${HOST:-0.0.0.0}" \
+  bash -c 'cd "$0"/<server-subdir> && bun run dev' "$root" &
+
+# Frontend — proxy to the actual backend port (important for non-default worktree ports).
+(cd "$root/<web-subdir>" && API_TARGET="http://localhost:${PORT}" VITE_PORT="$VITE_PORT" bun run dev) &
+
+wait
