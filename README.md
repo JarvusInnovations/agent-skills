@@ -16,5 +16,6 @@ npx skills add JarvusInnovations/agent-skills
 - `backend-fastify`: Backend development using Node.js+Fastify
 - `mobile-flutter`: Mobile app development using Flutter+Riverpod+go_router
 - `agent-dev-workflow`: Agent-friendly local dev — `bin/` task-runner, worktree-isolated Postgres databases + ports, dedicated test DB
+- `release-flow`: Cut releases via the develop→main Release-PR automation (infra-components `release-prepare`/`validate`/`publish`) — draft notes from the bot changelog, pick the version bump, merge to publish
 
 `specops` (spec-driven development) now lives in its own repo: [JarvusInnovations/specops](https://github.com/JarvusInnovations/specops) — install with `npx skills add JarvusInnovations/specops`.
