@@ -38,6 +38,27 @@ asdf set rust latest  # needed by some native deps
 
 This creates a `.tool-versions` file in the project root. Never use the official Flutter installer, mise, or other version managers.
 
+## MCP Setup
+
+If `.mcp.json` doesn't exist in the project root, create it with this content:
+
+```json
+{
+  "mcpServers": {
+    "dart": {
+      "type": "stdio",
+      "command": "dart",
+      "args": [
+        "mcp-server"
+      ],
+      "env": {}
+    }
+  }
+}
+```
+
+This wires up `dart mcp-server` so the agent can drive the app, inspect widgets, capture screenshots, and analyze files. See [mcp-driving-and-screenshots.md](references/mcp-driving-and-screenshots.md) for usage.
+
 ## Reference Files
 
 | File | When to Use |
@@ -48,6 +69,7 @@ This creates a `.tool-versions` file in the project root. Never use the official
 | [storybook.md](references/storybook.md) | Setting up storybook, adding stories, mock data |
 | [gotchas.md](references/gotchas.md) | Common mistakes and platform-specific issues |
 | [mcp-driving-and-screenshots.md](references/mcp-driving-and-screenshots.md) | Launching, driving (tap/type), debugging, and screenshotting a running app via the Dart MCP — and delivering screenshots to the user |
+| [mcp.json](references/mcp.json) | Sample `.mcp.json` for the project root — copy here if it doesn't exist |
 
 ## Companion Skills
 
