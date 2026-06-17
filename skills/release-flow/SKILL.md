@@ -1,6 +1,16 @@
 ---
 name: release-flow
-description: Cut a release in a repo that uses the Jarvus develop→main Release-PR automation (the JarvusInnovations/infra-components release-prepare/validate/publish GitHub Actions). Use this whenever you're shipping merged work to production, drafting or editing a "Release: vX.Y.Z" PR, deciding a version bump, writing release notes/changelog, or the user says "ship it", "cut a release", "publish", "do the release", "merge the release PR", or "release notes". Also use it the moment you notice a repo has `.github/workflows/release-prepare.yml` (or release-publish/release-validate) or an open PR titled "Release: v*" — that's the signal this workflow is in effect. Covers: pushing develop to open the Release PR, pulling the bot-generated changelog, sorting commits into Improvements vs Technical, recommending semver bump, and merging to publish.
+description: >-
+  Cut a release in a repo that uses the Jarvus develop→main Release-PR automation
+  (the JarvusInnovations/infra-components release-prepare/validate/publish GitHub Actions).
+  Use this whenever you're shipping merged work to production, drafting or editing a
+  "Release: vX.Y.Z" PR, deciding a version bump, writing release notes/changelog, or the
+  user says "ship it", "cut a release", "publish", "do the release", "merge the release PR",
+  or "release notes". Also use it the moment you notice a repo has
+  `.github/workflows/release-prepare.yml` (or release-publish/release-validate) or an open
+  PR titled "Release: v*" — that's the signal this workflow is in effect. Covers: pushing
+  develop to open the Release PR, pulling the bot-generated changelog, sorting commits into
+  Improvements vs Technical, recommending semver bump, and merging to publish.
 ---
 
 # Release flow (develop → main, automated Release PR)
