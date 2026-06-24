@@ -4,19 +4,48 @@ A collection of agent skills used within Jarvus.
 
 ## Installation
 
-Install via [skills](https://skills.sh/) globally (recommended) or to a specific project:
+Install with the [`skills`](https://skills.sh/) CLI. Grab everything at once, or install individual
+skills at the scope that fits — see [Skills](#skills) below for each skill's recommended scope and a
+link to its own README.
 
 ```bash
+# everything (project-level)
 npx skills add JarvusInnovations/agent-skills
+
+# a single skill, project-level
+npx skills add JarvusInnovations/agent-skills --skill <name>
+
+# a single skill, available in every project
+npx skills add --global JarvusInnovations/agent-skills --skill <name>
 ```
+
+**Project vs global.** Install a skill **per-project** when it encodes the stack *that* project uses
+— the guidance then lives with the code, is version-controlled, and updates as the project does, so
+every developer's agent stays in sync. Install it **globally** when you use the skill to *bootstrap*
+new projects, or when its value is *ambient* across many repos that won't all have it installed.
 
 ## Skills
 
-- `frontend-shadcn`: Frontend development using Vite+React+ShadCN+Tailwind
-- `backend-fastify`: Backend development using Node.js+Fastify
-- `mobile-flutter`: Mobile app development using Flutter+Riverpod+go_router
-- `agent-dev-workflow`: Agent-friendly local dev — `bin/` task-runner, worktree-isolated Postgres databases + ports, dedicated test DB
-- `release-flow`: Cut releases via the develop→main Release-PR automation (infra-components `release-prepare`/`validate`/`publish`) — draft notes from the bot changelog, pick the version bump, merge to publish
-- `axi-skills`: Bake an AXI CLI (`axi-sdk-js`) into a skill — esbuild → committed `.mjs` bundle, bash shim, SessionStart hooks (project & global scope), SKILL.md generation, CI drift gate, home vs dashboard split. The packaging companion to the upstream `axi` skill
+### Per-project — install in the repo so every contributor's agent shares the same stack guidance
+
+```bash
+npx skills add JarvusInnovations/agent-skills --skill <name>
+```
+
+- [`frontend-shadcn`](skills/frontend-shadcn/README.md) — Frontend development using Vite + React 19 + shadcn/ui + Tailwind CSS v4 + React Router v7
+- [`backend-fastify`](skills/backend-fastify/README.md) — Backend development using Fastify 5 + TypeScript
+- [`mobile-flutter`](skills/mobile-flutter/README.md) — Mobile app development using Flutter + Riverpod + go_router
+
+### Global — install once for all projects
+
+```bash
+npx skills add --global JarvusInnovations/agent-skills --skill <name>
+```
+
+- [`agent-dev-workflow`](skills/agent-dev-workflow/README.md) — Agent-friendly local dev: a `bin/` task-runner, worktree-isolated Postgres databases + ports, and a dedicated test DB. You reach for it to *bootstrap* a project's dev workflow.
+- [`release-flow`](skills/release-flow/README.md) — Cut releases via the develop→main Release-PR automation (infra-components `release-prepare`/`validate`/`publish`). *Ambient* across the many repos Jarvus ships, most of which won't have it installed locally.
+- [`axi-skills`](skills/axi-skills/README.md) — Bake an AXI CLI (`axi-sdk-js`) into a skill — committed `.mjs` bundle, shim, SessionStart hooks, SKILL.md generation, CI drift gate. The packaging companion to the upstream `axi` skill; used while *building* tooling.
+
+---
 
 `specops` (spec-driven development) now lives in its own repo: [JarvusInnovations/specops](https://github.com/JarvusInnovations/specops) — install with `npx skills add JarvusInnovations/specops`.
