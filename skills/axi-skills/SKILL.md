@@ -34,22 +34,27 @@ the tool gets *built and installed*, you're in the right place.
 
 ## When this pattern is worth it
 
-The question is whether the CLI earns a build pipeline — not whether it's the *centerpiece* of the
-skill. It's worth it when (building on [agent-skills#7](https://github.com/JarvusInnovations/agent-skills/issues/7)):
+The deciding question is **does the tool make sense as a standalone install?** A general-purpose
+tool an agent would reach for in any repo *does* — publish it to npm and let agents run it via
+`npx -y mytool` (the [lavish-axi](https://github.com/kunchenguid/lavish-axi) model). The
+AXI-in-skill pattern is for tools that **don't** stand alone. Three cases (building on
+[agent-skills#7](https://github.com/JarvusInnovations/agent-skills/issues/7)):
 
-- The CLI **earns its keep** — agents invoke it many times per session (TOON token savings
-  compound), its structured output beats plain text, and/or a session-start banner of live state
-  is genuinely useful context.
+1. **The tool only makes sense alongside a skill.** It's significantly more usable as part of a
+   skill that supplies the broader functionality or usage protocols the tool assumes. The canonical
+   example, specops: the CLI is a thin determinism layer (readiness, ordering, the DAG) over a
+   files-first *methodology* — it's near-meaningless without the spec/plan protocol the skill
+   teaches. Shipping the protocol (prose) and the tool together is the whole point.
+2. **A skill needs helper scripts, and those scripts benefit from AXI principles.** When a skill
+   would ship helper scripts anyway, building them as an AXI gets TOON output, structured errors,
+   content-first home views, and a session hook "for free" — worth it once the scripts do enough
+   that output quality matters.
+3. **You want private distribution.** For a tool you don't want on a public registry,
+   `npx skills add <owner>/<private-repo>` is a better distribution channel than publishing to npm
+   — the committed bundle means a clone just runs, no registry, no install.
 
-That holds whether the CLI is the skill's **primary deliverable** *or* a **first-class helper**
-inside a larger skill. The canonical example, specops, is the latter: the skill is principally a
-spec-driven *methodology* (hand-authored prose), and the CLI is a thin determinism layer over a
-files-first workflow — it computes readiness, ordering, the DAG, and powers the session hook.
-A helper CLI is a first-class use of this pattern, not a lesser one.
-
-Skip it (a couple of plain zero-dep scripts beat a build pipeline) when the tools are simple,
-rarely called, and you value "clone and it just runs" over ergonomics — the bundle only pays off
-once the CLI is doing enough work that its output quality and zero-install delivery matter.
+If none of these hold — the tool is genuinely standalone and public — prefer npm. And if the
+scripts are trivial and rarely called, a couple of plain zero-dep scripts beat any build pipeline.
 
 ## The core idea: a committed, self-contained bundle
 
