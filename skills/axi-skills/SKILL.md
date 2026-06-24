@@ -34,14 +34,22 @@ the tool gets *built and installed*, you're in the right place.
 
 ## When this pattern is worth it
 
-The committed-bundle pattern shines when (per [agent-skills#7](https://github.com/JarvusInnovations/agent-skills/issues/7)):
+The question is whether the CLI earns a build pipeline — not whether it's the *centerpiece* of the
+skill. It's worth it when (building on [agent-skills#7](https://github.com/JarvusInnovations/agent-skills/issues/7)):
 
-- The CLI is the skill's **primary deliverable**, not an optional helper.
-- Agents invoke it **many times per session** — TOON token savings compound.
-- A **session-start banner** of live state is genuinely useful context.
+- The CLI **earns its keep** — agents invoke it many times per session (TOON token savings
+  compound), its structured output beats plain text, and/or a session-start banner of live state
+  is genuinely useful context.
+
+That holds whether the CLI is the skill's **primary deliverable** *or* a **first-class helper**
+inside a larger skill. The canonical example, specops, is the latter: the skill is principally a
+spec-driven *methodology* (hand-authored prose), and the CLI is a thin determinism layer over a
+files-first workflow — it computes readiness, ordering, the DAG, and powers the session hook.
+A helper CLI is a first-class use of this pattern, not a lesser one.
 
 Skip it (a couple of plain zero-dep scripts beat a build pipeline) when the tools are simple,
-rarely called, and you value "clone and it just runs" over ergonomics.
+rarely called, and you value "clone and it just runs" over ergonomics — the bundle only pays off
+once the CLI is doing enough work that its output quality and zero-install delivery matter.
 
 ## The core idea: a committed, self-contained bundle
 
