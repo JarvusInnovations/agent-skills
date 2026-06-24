@@ -53,7 +53,10 @@ no `npm install`, no `node_modules`, no npm publish. **The repo *is* the skill.*
 Two alternatives were tried and rejected for this use case:
 
 - **Publish to npm, call via `npx -y mytool`** — splits the code across repos and adds a release
-  pipeline. Fine for a standalone tool; overkill when the CLI lives with the skill.
+  pipeline, and the tool is fetched from the registry on demand (needs network; no good for
+  private/offline/reproducible cases). Fine for a standalone public tool — the
+  [lavish-axi](https://github.com/kunchenguid/lavish-axi) skill is the public example of this
+  model — but overkill when the CLI lives with the skill and must run offline.
 - **A bootstrap wrapper that `npm install`s on first call** — adds per-machine first-run
   friction. [agent-skills#7](https://github.com/JarvusInnovations/agent-skills/issues/7) concluded:
   *the committed-bundle route works; drop the bootstrap wrapper.*

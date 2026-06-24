@@ -145,6 +145,11 @@ See `references/templates/invocation.ts` for the full implementation. Note: insi
 itself, examples are hardcoded to the relative `scripts/mytool` form, because the skill's working
 context is the skill directory — `cliInvocation()` is for runtime-emitted output.
 
+**Add a prose backstop too.** `cliInvocation()` fixes the paths *you* emit, but an agent may still
+copy a bare tool name it sees elsewhere. A one-liner in SKILL.md closes that gap cheaply (lavish-axi
+does this): *"If output shows a follow-up command starting with `mytool`, run it as `scripts/mytool …`
+— the CLI is not on PATH."* (An npm-distributed tool says `npx -y mytool …` instead.)
+
 ## 6. `.gitattributes`
 
 The bundle is large (hundreds of KB, thousands of lines). Mark it generated so GitHub collapses it
