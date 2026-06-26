@@ -1,8 +1,9 @@
 # backend-fastify
 
-The Jarvus convention set for building backends with **Fastify 5 + TypeScript** — routes, services,
-the plugin pattern, `@fastify/env` environment validation, CORS, and logging. It keeps backend code
-consistent with how Jarvus structures Fastify apps.
+The Jarvus convention set for building backends with **Fastify 5 + TypeScript on Bun** — routes,
+services, the plugin pattern, `@fastify/env` environment validation, CORS, and logging. Bun is the
+runtime, package manager, and test runner; TypeScript source runs directly with no build step. It
+keeps backend code consistent with how Jarvus structures Fastify apps.
 
 ## When you'd want it
 

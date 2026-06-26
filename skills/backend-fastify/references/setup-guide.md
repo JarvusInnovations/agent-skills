@@ -1,31 +1,34 @@
-# Fastify Backend Setup Guide
+# Fastify Backend Setup Guide (Bun)
 
-This guide documents the complete process for bootstrapping a Fastify backend following the loop project patterns.
+This guide documents the complete process for bootstrapping a Fastify backend on **Bun**.
+Bun is the runtime, package manager, test runner, and watch-mode dev server — there is no
+Node.js, npm, or tsx, and no compile step in the dev loop or in production.
 
 ## Prerequisites
 
-- Node.js 22.x
-- npm
+- Bun (latest)
 
-### Node.js Version Management with asdf
+### Bun Version Management with asdf
 
-Use [asdf](https://asdf-vm.com/) to manage Node.js versions consistently across the team:
+Use [asdf](https://asdf-vm.com/) to manage Bun consistently across the team:
 
 ```bash
-# Install Node.js plugin (one-time setup)
-asdf plugin add nodejs
+# Install Bun plugin (one-time setup)
+asdf plugin add bun
 
-# Set project Node.js version (creates .tool-versions file)
-asdf set nodejs latest:22
+# Pin Bun for the project (creates .tool-versions)
+asdf set bun latest
+asdf install
 ```
 
-The `.tool-versions` file created by `asdf set` ensures all team members use the same Node.js version.
+The `.tool-versions` file created by `asdf set` ensures all team members use the same Bun
+version. Add `nodejs` only if the repo also ships an npm-distributed CLI.
 
 ## Stack Overview
 
+- **Bun** - Runtime, package manager, test runner, watch-mode dev server
 - **Fastify 5.x** - High-performance web framework
-- **TypeScript** - Type safety
-- **tsx** - Development with watch mode
+- **TypeScript** - Type safety, executed directly by Bun
 - **pino-pretty** - Pretty logging for development
 - **@fastify/env** - Environment variable validation with JSON Schema
 - **@fastify/cors** - CORS support
@@ -37,22 +40,23 @@ The `.tool-versions` file created by `asdf set` ensures all team members use the
 
 ```bash
 mkdir -p backend && cd backend
-npm init -y
+bun init -y
 ```
 
-Update `package.json` scripts:
+Update `package.json` scripts. Bun runs the source directly, so there is no `build`/`start`
+compile dance — `start` just runs the entry point:
 
 ```json
 {
   "name": "backend",
   "version": "1.0.0",
   "description": "Backend API server",
-  "main": "dist/index.js",
+  "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "type-check": "tsc --noEmit"
+    "dev": "bun --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "check": "tsc --noEmit",
+    "test": "bun test"
   }
 }
 ```
@@ -64,8 +68,8 @@ Update `package.json` scripts:
 ### 2. Install Dependencies
 
 ```bash
-npm install fastify fastify-plugin @fastify/env @fastify/cors pino-pretty
-npm install -D typescript tsx @types/node
+bun add fastify fastify-plugin @fastify/env @fastify/cors pino-pretty
+bun add -d typescript @types/bun
 ```
 
 **Commit:** `build(backend): install Fastify and dependencies`
@@ -74,27 +78,28 @@ npm install -D typescript tsx @types/node
 
 ### 3. Create TypeScript Configuration
 
+Bun executes the source directly, so `tsconfig.json` is for **type checking only**
+(`"noEmit": true`) — never a build tool.
+
 **Create `tsconfig.json`:**
 
 ```json
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "commonjs",
-    "lib": ["ES2022"],
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "target": "ESNext",
+    "module": "Preserve",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "types": ["@types/bun"],
+    "lib": ["ESNext"],
     "strict": true,
-    "esModuleInterop": true,
+    "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "noEmit": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"]
 }
 ```
 
@@ -102,7 +107,6 @@ npm install -D typescript tsx @types/node
 
 ```
 node_modules/
-dist/
 .env
 *.log
 .DS_Store
@@ -433,23 +437,23 @@ start()
 
 ```bash
 # Development with watch mode
-npm run dev
+bun run dev
 
-# Build for production
-npm run build
-
-# Run production build
-npm start
+# Run the server (no build step — Bun executes the source)
+bun run start
 
 # Type check only
-npm run type-check
+bun run check
+
+# Tests
+bun test
 ```
 
 ---
 
 ## VSCode Debugging
 
-Configure VSCode to debug the backend with breakpoints, variable inspection, and step-through execution.
+Configure VSCode to debug the backend with breakpoints, variable inspection, and step-through execution. Bun ships a VSCode debug adapter — install the **Bun for Visual Studio Code** extension (`oven.bun-vscode`).
 
 ### Launch Configuration
 
@@ -461,16 +465,13 @@ Configure VSCode to debug the backend with breakpoints, variable inspection, and
   "configurations": [
     {
       "name": "Debug Backend",
-      "type": "node",
+      "type": "bun",
       "request": "launch",
       "program": "${workspaceFolder}/backend/src/index.ts",
       "cwd": "${workspaceFolder}/backend",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["tsx"],
+      "watchMode": true,
       "envFile": "${workspaceFolder}/backend/.env",
-      "console": "integratedTerminal",
-      "sourceMaps": true,
-      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+      "internalConsoleOptions": "neverOpen"
     }
   ]
 }
@@ -478,11 +479,10 @@ Configure VSCode to debug the backend with breakpoints, variable inspection, and
 
 **Key patterns:**
 
-- `runtimeExecutable: "npx"` with `runtimeArgs: ["tsx"]` runs TypeScript directly without pre-compilation
+- `type: "bun"` uses Bun's debug adapter to run TypeScript source directly — no pre-compilation, no source maps to wire up
+- `watchMode: true` reloads on change while debugging
 - `envFile` loads environment variables from `.env` file
-- `sourceMaps: true` enables breakpoints in TypeScript source files
-- `skipFiles` excludes Node internals and dependencies from step-through
-- `console: "integratedTerminal"` shows pino-pretty formatted logs
+- pino-pretty formatted logs appear in the integrated terminal
 
 ### Using the Debugger
 
@@ -620,9 +620,9 @@ backend/
 │   │   └── example-service.ts  # Business logic
 │   ├── app.ts               # Plugin registration & setup
 │   └── index.ts             # Server entry point
-├── dist/                    # Compiled output (gitignored)
 ├── node_modules/            # Dependencies (gitignored)
 ├── package.json
+├── bun.lock                 # Lockfile (committed)
 ├── tsconfig.json
 ├── .env                     # Environment variables (gitignored)
 ├── .env.example             # Template for .env

@@ -5,8 +5,8 @@ Patterns for implementing JWT authentication and authorization in Fastify backen
 ## Dependencies
 
 ```bash
-npm install jsonwebtoken
-npm install -D @types/jsonwebtoken
+bun add jsonwebtoken
+bun add -d @types/jsonwebtoken
 ```
 
 ## Environment Configuration

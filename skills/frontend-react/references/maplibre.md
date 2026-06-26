@@ -5,7 +5,7 @@ Patterns for building interactive maps with MapLibre GL JS in React applications
 ## Setup
 
 ```bash
-npm install maplibre-gl
+bun add maplibre-gl
 ```
 
 ```typescript

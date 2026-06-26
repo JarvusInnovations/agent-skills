@@ -1,8 +1,11 @@
 # MCP Tools for Frontend Development
 
-Two MCP servers enhance frontend development workflows: **shadcn** for UI components and **context7** for library documentation.
+Two MCP servers enhance frontend development workflows: **shadcn** for UI components (only
+relevant if you've adopted the optional shadcn layer — see [shadcn.md](shadcn.md)) and
+**context7** for library documentation.
 
-> **Note:** These MCP servers are bundled with this plugin via `.claude-plugin/marketplace.json`. They will be automatically available when using Claude Code with this plugin installed.
+> **Note:** If these MCP servers are configured in your Claude Code setup, they'll be
+> available automatically. The shadcn tools below apply only when the project uses shadcn/ui.
 
 ## Research Workflow
 
@@ -10,7 +13,7 @@ Before implementing new features or installing unfamiliar libraries:
 
 1. **Research** with context7 MCP - Get up-to-date documentation
 2. **Understand** with shadcn MCP - Find component examples
-3. **Install** with npm/npx - Add the dependency
+3. **Install** with `bun add` / `bunx` - Add the dependency
 4. **Implement** - Build the feature
 
 ## shadcn MCP Server
@@ -39,7 +42,7 @@ Pattern: Use `{component}-demo` to find usage examples.
 mcp__shadcn__get_add_command_for_items(items: ["@shadcn/sidebar"])
 ```
 
-Returns the exact `npx shadcn@latest add ...` command.
+Returns the exact shadcn add command (run it with `bunx --bun shadcn@latest add ...`).
 
 ### Workflow Example
 
@@ -47,7 +50,7 @@ Returns the exact `npx shadcn@latest add ...` command.
 1. mcp__shadcn__search_items_in_registries(registries: ["@shadcn"], query: "data table")
 2. mcp__shadcn__get_item_examples_from_registries(registries: ["@shadcn"], query: "data-table-demo")
 3. mcp__shadcn__get_add_command_for_items(items: ["@shadcn/table"])
-4. Run: npx shadcn@latest add table -y
+4. Run: bunx --bun shadcn@latest add table -y
 ```
 
 ### After Adding Components

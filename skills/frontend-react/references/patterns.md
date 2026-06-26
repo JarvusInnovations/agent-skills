@@ -1,13 +1,17 @@
 # Development Patterns
 
-Patterns for building features in Vite + React + shadcn/ui + Tailwind + React Router v7 projects.
+Patterns for building features in Bun + Vite + React + Tailwind + React Router v7 projects.
+The routing, state, and layout patterns here are stack-agnostic. Examples that import from
+`@/components/ui/*` assume the **optional** shadcn/ui layer (see [shadcn.md](shadcn.md)); the
+base-stack equivalents (hand-built with Tailwind + `cn()`) are in
+[setup-guide.md](setup-guide.md).
 
 ## Project Structure
 
 ```
 src/
 ├── components/
-│   ├── ui/              # shadcn/ui components (auto-generated)
+│   ├── ui/              # shadcn/ui components — only if you adopted shadcn (see shadcn.md)
 │   ├── AppShell.tsx     # Main layout with header and outlet
 │   └── AppSidebar.tsx   # Navigation sidebar
 ├── pages/               # Route page components (organized by feature)
@@ -18,15 +22,16 @@ src/
 │   └── utils.ts         # cn() helper and shared utilities
 ├── App.tsx              # Route definitions
 ├── main.tsx             # Entry point with BrowserRouter
-└── index.css            # Tailwind + shadcn theme variables
+└── index.css            # Tailwind import (+ theme variables)
 ```
 
 **Conventions:**
 
 - Use `pages/` directory for page components organized by feature area
-- Use shadcn/ui components from `components/ui/` for consistent styling
 - Utility functions go in `lib/` directory
 - Path alias `@/*` maps to `./src/*`
+- Build components by hand with Tailwind + `cn()`; reach for shadcn/ui (`components/ui/`)
+  only when the project has opted into it
 
 ## Routing Architecture
 
@@ -139,6 +144,10 @@ function createNavLink(path: string, searchParams: URLSearchParams) {
 ## Component Patterns
 
 ### Layout System
+
+> The `AppSidebar` example below imports shadcn/ui's `sidebar` component — it assumes the
+> optional shadcn layer ([shadcn.md](shadcn.md)). For a base-stack layout without shadcn,
+> see the hand-built `AppShell` in [setup-guide.md](setup-guide.md).
 
 **AppShell** - Main content wrapper with header:
 
@@ -298,9 +307,9 @@ lsof -i :5173
 
 ### Package Management
 
-- Always use `npm install <package-name>` to add dependencies
+- Always use `bun add <package-name>` to add dependencies
 - Never manually edit `package.json` to add packages
-- Use `npx shadcn@latest add <component> -y` for shadcn components
+- If using shadcn/ui, add components with `bunx --bun shadcn@latest add <component> -y`
 
 ### Theming Considerations
 
