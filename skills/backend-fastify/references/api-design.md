@@ -139,7 +139,7 @@ fastify.post('/users', async (request, reply) => {
 ### Installation
 
 ```bash
-npm install @fastify/swagger @fastify/swagger-ui
+bun add @fastify/swagger @fastify/swagger-ui
 ```
 
 ### Configuration in app.ts

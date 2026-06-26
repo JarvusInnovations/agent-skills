@@ -1,33 +1,40 @@
 ---
 name: backend-fastify
-description: Backend development using Fastify + TypeScript. Use when creating new backend APIs, adding routes, implementing services, working with plugins, or configuring environment variables.
+description: Backend development using Fastify + TypeScript on Bun. Use when creating new backend APIs, adding routes, implementing services, working with plugins, or configuring environment variables.
 ---
 
-# Backend Fastify Stack
+# Backend Fastify Stack (Bun)
 
-High-performance Node.js backend stack:
+High-performance backend stack, run on **Bun**:
 
+- **Bun** - Runtime, package manager, test runner, and watch-mode dev server (no Node.js, npm, or tsx)
 - **Fastify 5.x** - Web framework
-- **TypeScript** - Type safety
-- **tsx** - Development with watch mode
+- **TypeScript** - Type safety, executed directly by Bun (no build step for services)
 - **pino-pretty** - Pretty logging for development
 - **@fastify/env** - Environment variable validation with JSON Schema
 - **@fastify/cors** - CORS support
 - **fastify-plugin** - Plugin system
 
+Bun runs TypeScript source directly, so there is **no compile step** in the dev loop and
+none in production for a service — you ship and run the source. `tsc` is kept only as a
+type checker (`tsc --noEmit`), never as a build tool.
+
 ## Environment Setup
 
-Use [asdf](https://asdf-vm.com/) to manage Node.js versions:
+Use [asdf](https://asdf-vm.com/) to manage Bun:
 
 ```bash
-# Install Node.js plugin (one-time)
-asdf plugin add nodejs
+# Install the Bun plugin (one-time)
+asdf plugin add bun
 
-# Set project Node.js version
-asdf set nodejs latest:22
+# Pin Bun for the project (writes .tool-versions)
+asdf set bun latest
+asdf install
 ```
 
-This creates a `.tool-versions` file in the project root that ensures consistent Node.js versions across the team.
+This writes a `.tool-versions` file pinning Bun so the whole team runs the same version.
+A born-on-Bun service needs **only** `bun` in `.tool-versions` — add `nodejs` only if the
+repo also ships an npm-distributed CLI that needs the Node toolchain.
 
 ## Reference Files
 
@@ -45,18 +52,31 @@ This creates a `.tool-versions` file in the project root that ensures consistent
 ### Commands
 
 ```bash
-# Dev server with watch mode
-npm run dev
+# Dev server with watch mode (Bun reloads on change)
+bun run dev          # → bun --watch src/index.ts
 
-# Build for production
-npm run build
+# Type check (no emit — Bun runs the source, tsc only checks types)
+bun run check        # → tsc --noEmit
 
-# Run production build
-npm start
+# Run the server (no build needed — Bun executes the source)
+bun run start        # → bun run src/index.ts
 
-# Type check
-npm run type-check
+# Tests (Bun's built-in runner)
+bun test
 ```
+
+### Package Management
+
+Use **Bun** for all dependency management — never edit `package.json` by hand:
+
+```bash
+bun add fastify-plugin @fastify/cors        # runtime deps
+bun add -d @types/bun pino-pretty           # dev deps
+bun remove <pkg>                            # remove
+```
+
+`bun add` resolves the latest compatible version and keeps `bun.lock` in sync. Commit
+`bun.lock`.
 
 ### Key Imports
 
@@ -145,6 +165,32 @@ declare module 'fastify' {
 fastify.decorate('myService', new MyService(fastify))
 ```
 
+### TypeScript Config
+
+Bun runs the source directly, so `tsconfig.json` is for **type checking only**
+(`"noEmit": true`). The Bun-native config:
+
+```jsonc
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "Preserve",          // let Bun own module resolution
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "types": ["@types/bun"],        // Bun globals (Bun.file, Bun.serve, etc.)
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  }
+}
+```
+
+In a **Bun-workspaces monorepo**, the package tsconfigs use TypeScript project references
+(`"composite": true`, per-package `references`) and the root runs `tsc -b`; the runtime
+story is unchanged — Bun still executes the source.
+
 ### Project Structure
 
 ```
@@ -153,7 +199,7 @@ backend/
 │   ├── plugins/          # Fastify plugins (env, auth, etc.)
 │   ├── routes/           # HTTP route handlers
 │   ├── services/         # Business logic classes
-│   ├── utils/            # Shared utilities
+│   ├── lib/              # Shared utilities / clients
 │   ├── app.ts            # Plugin registration & setup
 │   └── index.ts          # Server entry point
 ├── package.json
@@ -167,5 +213,6 @@ backend/
 - **Plugin order matters**: Register env plugin first, then services, then routes
 - **Config access**: Use `fastify.config.VAR` not `process.env.VAR`
 - **Server ready**: Call `await server.ready()` before accessing config in index.ts
+- **No build step**: Bun runs the source; `tsc` is `--noEmit` for type checking only
 - **Path normalization**: Centralize path utilities, handle root '/' as special case
-- **Package management**: Use `npm install <pkg>` not manual `package.json` edits
+- **Package management**: Use `bun add <pkg>` not manual `package.json` edits
