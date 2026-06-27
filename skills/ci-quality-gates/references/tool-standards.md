@@ -121,22 +121,38 @@ repo; it's friction without payoff there.
 
 ## Adopting on an existing repo: the one-time migration
 
-Turning a gate on for the first time will surface findings. Land them *before*
-the commit that adds the workflow, so the gate goes green on its first run.
-**Order matters, and keep behavior-changing fixes out of the formatting commit:**
+Turning a gate on for the first time surfaces a lot of churn. Land it *before*
+the workflow commit so the gate is green on its first run — and **keep the
+formatting churn in its own commit so the logic delta stays reviewable.** The
+single most common mistake is letting whole-file reformatting bleed into the fix
+commit, turning a 30-line logic change into a 2,000-line diff nobody can review.
+**Format first** so the fix commit lands on an already-formatted tree:
 
-1. **`bun run lint --fix` first** (or `ruff check --fix`). Heads up: some oxlint
-   autofixes are **not** purely cosmetic — e.g. `[...a].sort()` → `.toSorted()`,
-   `.includes()` → `Set.has()`, spread-clone → `structuredClone()`. They're
-   usually behavior-preserving, but *review them* and commit as `refactor:` /
-   `fix:` (or `build:`), **not** `style:` — a reviewer scanning a `style:` commit
-   shouldn't have to spot logic changes hiding in it.
-2. **`bun run format` to convergence**, then commit the pure-formatting churn as
-   `style:`. oxfmt isn't always idempotent right after `lint --fix` (a single
-   pass can leave a file that still fails `format:check`) — re-run `format` until
-   `format:check` is clean before committing.
-3. **Hand-fix** whatever `--fix` couldn't — commit as `fix:`.
+1. **`bun run format` the whole (scoped) tree first** (or `ruff format`) — commit
+   as `style:`. Pure mechanical churn: big, but trivial to review because it's
+   *only* formatting.
+2. **`bun run lint --fix` + hand-fix** the rest — commit as `fix:` / `refactor:`.
+   Because the tree is already formatted, this commit is *only* the logic delta —
+   small and reviewable. Some autofixes aren't cosmetic (`[...a].sort()` →
+   `.toSorted()`, `.includes()` → `Set.has()`, spread-clone → `structuredClone()`):
+   review them, but they belong here, **never** in `style:`.
+3. **`bun run format` once more** — `lint --fix` can reintroduce formatting, and
+   oxfmt isn't always idempotent right after it; re-run until `format:check` is
+   clean, folding any churn into the `style:` commit (or a tiny `style:` follow-up).
 4. **Add the config files + scripts + workflow** — commit as `ci:`.
 
-Don't batch any of this with feature work; reviewers can't see the real change
-underneath thousands of reformatted lines.
+Don't batch any of this with feature work. And the smell test: **if a `fix:`
+commit's diff is mostly formatting, you sequenced it wrong** — reformat first,
+then redo the fix on top so the logic stands alone.
+
+### Repos with a committed generated artifact (drift gates)
+
+Some repos commit a build output guarded by a drift gate — an `axi-skills` CLI
+bundle (`scripts/*.mjs` + a generated `SKILL.md`) checked by a `check:*` script,
+or similar codegen. Reformatting or lint-fixing the *source* of that artifact
+staled the committed copy, so its drift gate goes **red in CI even though
+lint/format/typecheck pass** (the bundle no longer matches the reformatted
+source). When adopting a gate on such a repo, **rebuild and commit the artifact**
+after the format/fix commits (e.g. `bun run build:<tool>`) — or scope
+oxlint/oxfmt to exclude the generated source so the bundle never moves. The
+committed `.mjs` is `linguist-generated`, so the rebuild collapses in review.
