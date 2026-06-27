@@ -13,9 +13,9 @@ just calls `bun run <name>`:
 ```jsonc
 {
   "scripts": {
-    "lint":         "oxlint <paths>",          // e.g. "oxlint ." or "oxlint index.ts src"
-    "format":       "oxfmt <paths>",           // writes
-    "format:check": "oxfmt --check <paths>",   // CI uses this
+    "lint":         "oxlint <src dirs>",       // e.g. "oxlint src bin test" — scope, don't use "."
+    "format":       "oxfmt <src dirs>",        // writes
+    "format:check": "oxfmt --check <src dirs>",// CI uses this
     "typecheck":    "tsc --noEmit"             // or "tsc -b" for project-references
   }
 }
@@ -34,6 +34,14 @@ bun add -d oxlint oxfmt
 
 ## TypeScript: oxlint + oxfmt + tsc
 
+- **Scope to your source dirs, not `.`.** Pass the actual TypeScript directories
+  (`oxlint src bin test`), not a bare `.`. Two traps a bare `.` walks into: it
+  lints **vendored content you don't own** — committed skill bundles under
+  `.agents/`/`.claude/`, generated `dist/` — surfacing errors from other people's
+  code; and **oxfmt formats Markdown by default**, so `oxfmt .` will reformat your
+  `specs/**` and `*.md` docs. A bare `.` is only safe in a clean, isolated package
+  whose root holds nothing but its own source (e.g. a `ui/` subpackage). When in
+  doubt, list the dirs.
 - **oxlint** — fast Rust linter. Config is `.oxlintrc.json`.
   - **Single-package repo:** use `templates/oxlintrc.base.json` directly as the
     package's `.oxlintrc.json`.
