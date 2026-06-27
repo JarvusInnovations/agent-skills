@@ -1,0 +1,37 @@
+name: UI Checks
+
+# Single-package frontend (e.g. a Vite + React app under app/ or ui/). Use this
+# instead of the ts-lint matrix when the front end is one package you want gated
+# on its own path. Lint + format + type-check in one job.
+on:
+  pull_request:
+    paths:
+      - 'ui/**'              # ADAPT: frontend package dir
+      - '.github/workflows/ui-checks.yml'
+  push:
+    branches: [develop]
+    paths:
+      - 'ui/**'
+      - '.github/workflows/ui-checks.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, format, type-check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui          # ADAPT
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-asdf
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Lint
+        run: bun run lint
+      - name: Check formatting
+        run: bun run format:check
+      - name: Type check
+        run: bun run typecheck
