@@ -42,6 +42,7 @@ npx skills add JarvusInnovations/agent-skills --skill <name>
 npx skills add --global JarvusInnovations/agent-skills --skill <name>
 ```
 
+- [`ci-quality-gates`](skills/ci-quality-gates/README.md) — Stand up the pre-merge CI quality gates: asdf provisioning + caching, the `lint`/`format:check`/`typecheck`/`test` script contract, and the house linters (oxlint + oxfmt, ruff, tofu fmt/validate). You reach for it to *bootstrap* a repo's CI before code lands on develop.
 - [`agent-dev-workflow`](skills/agent-dev-workflow/README.md) — Agent-friendly local dev: a `bin/` task-runner, worktree-isolated Postgres databases + ports, and a dedicated test DB. You reach for it to *bootstrap* a project's dev workflow.
 - [`release-flow`](skills/release-flow/README.md) — Cut releases via the develop→main Release-PR automation (infra-components `release-prepare`/`validate`/`publish`). *Ambient* across the many repos Jarvus ships, most of which won't have it installed locally.
 - [`axi-skills`](skills/axi-skills/README.md) — Bake an AXI CLI (`axi-sdk-js`) into a skill — committed `.mjs` bundle, shim, SessionStart hooks, SKILL.md generation, CI drift gate. The packaging companion to the upstream `axi` skill; used while *building* tooling.

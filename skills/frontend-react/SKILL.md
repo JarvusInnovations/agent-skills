@@ -138,3 +138,43 @@ src/
 - **shadcn is optional**: Only reach for `components/ui/` + `bunx shadcn@latest` when the
   project has opted into shadcn/ui (see [shadcn.md](references/shadcn.md)); otherwise build
   components by hand with Tailwind + `cn()`
+
+## CI & Code Quality
+
+Lint, format, and type-check are part of the stack, not an afterthought — wire them into
+CI from the start. The cross-cutting setup (asdf provisioning + caching, path-filtered
+workflows, lockfile-frozen installs, the GitHub Actions templates) lives in the
+**`ci-quality-gates`** skill; this section is just the React-stack specifics that plug into it.
+
+**Linter + formatter: oxc, not eslint/prettier.** A fresh Vite scaffold ships an eslint
+config — **remove it** and adopt **oxlint + oxfmt** (the Jarvus standard). Don't run both.
+
+```bash
+bun add -d oxlint oxfmt
+```
+
+**The script contract.** Expose the same four scripts every Jarvus TS package does, so CI
+just calls `bun run <name>`:
+
+```jsonc
+{
+  "scripts": {
+    "dev":          "vite",
+    "build":        "tsc -b && vite build",
+    "typecheck":    "tsc -b",            // note: this stack's older docs called this `check`
+    "lint":         "oxlint .",
+    "format":       "oxfmt .",
+    "format:check": "oxfmt --check ."
+  }
+}
+```
+
+A React app's `.oxlintrc.json` uses the **stricter React config** (suspicious + perf
+categories, react-hooks, react-compiler) — copy `references/templates/oxlintrc.react.json`
+from `ci-quality-gates`. Commit `.vscode/extensions.json` recommending `oxc.oxc-vscode` so
+format-on-save matches CI.
+
+**CI workflow.** Use the single-package `ui-checks.yml` template from `ci-quality-gates` —
+one job running `bun run lint`, `format:check`, and `typecheck`, provisioned by the shared
+`setup-asdf` composite. See that skill for the full build order and the one-time migration
+when turning the gate on for an existing app.
