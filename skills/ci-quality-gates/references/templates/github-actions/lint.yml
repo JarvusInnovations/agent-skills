@@ -38,6 +38,12 @@ jobs:
   # --- TypeScript (oxc + tsc). Delete this job if the repo has no TS. --------
   # Single-package repo: drop the matrix, set working-directory to the package,
   # and inline the three steps. The matrix is for monorepos with several packages.
+  #
+  # PROJECT-REFERENCES MONOREPO? If packages reference each other (root tsconfig
+  # with `references`), do NOT type-check per package here — a per-package
+  # `tsc --noEmit` doesn't BUILD referenced deps, so it fails in a clean checkout
+  # when a dep's declarations don't exist yet. Drop the per-package Type check
+  # step below and add the separate root `typecheck` job at the bottom instead.
   ts-lint:
     name: oxc (${{ matrix.package }})
     runs-on: ubuntu-latest
@@ -64,3 +70,18 @@ jobs:
       - name: Type check
         if: ${{ matrix.typecheck }}
         run: bun run typecheck
+
+  # --- Root type-check (PROJECT-REFERENCES MONOREPO ONLY) -------------------
+  # Use this INSTEAD of the per-package Type check step above when packages
+  # reference each other. `tsc -b` (build mode) builds referenced projects in
+  # dependency order, so cross-package types resolve in a clean checkout. The
+  # root `typecheck` script should be `tsc -b`. Delete this job if not a
+  # project-references monorepo.
+  # typecheck:
+  #   name: Type check (tsc -b)
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - uses: ./.github/actions/setup-asdf   # or oven-sh/setup-bun@v2
+  #     - run: bun install --frozen-lockfile
+  #     - run: bun run typecheck                # root script = tsc -b
