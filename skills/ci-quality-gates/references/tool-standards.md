@@ -21,13 +21,10 @@ just calls `bun run <name>`:
 }
 ```
 
-> **Naming note / known divergence.** The `backend-fastify` and `frontend-react`
-> stack skills currently document the type-check script as **`check`**
-> (`bun run check` → `tsc --noEmit`). The CI contract here standardizes on
-> **`typecheck`** (matching the continuous-gtfs flagship). When wiring CI, either
-> rename `check` → `typecheck` in the package (recommended, for cross-repo
-> uniformity) or change the workflow's type-check step to `bun run check`. Pick
-> one per repo and be consistent.
+> **Naming note.** The type-check script is **`typecheck`** across the Jarvus
+> stack skills and the continuous-gtfs flagship. Some older scaffolds named it
+> `check` — if you meet one, rename it to `typecheck` so the contract is uniform
+> (the workflow templates here call `bun run typecheck`).
 
 Add the tools as dev deps (don't hand-edit `package.json`):
 

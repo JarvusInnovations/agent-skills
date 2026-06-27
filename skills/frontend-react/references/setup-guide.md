@@ -306,13 +306,13 @@ styling.)
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "check": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview"
   }
 }
 ```
 
-Run them with Bun: `bun run dev`, `bun run build`, `bun run check`.
+Run them with Bun: `bun run dev`, `bun run build`, `bun run typecheck`.
 
 ---
 

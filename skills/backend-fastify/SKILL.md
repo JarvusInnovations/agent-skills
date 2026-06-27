@@ -56,7 +56,7 @@ repo also ships an npm-distributed CLI that needs the Node toolchain.
 bun run dev          # → bun --watch src/index.ts
 
 # Type check (no emit — Bun runs the source, tsc only checks types)
-bun run check        # → tsc --noEmit
+bun run typecheck    # → tsc --noEmit
 
 # Run the server (no build needed — Bun executes the source)
 bun run start        # → bun run src/index.ts
@@ -238,7 +238,7 @@ just calls `bun run <name>`:
   "scripts": {
     "dev":          "bun --watch src/index.ts",
     "start":        "bun run src/index.ts",
-    "typecheck":    "tsc --noEmit",      // note: this stack's older docs called this `check`
+    "typecheck":    "tsc --noEmit",
     "lint":         "oxlint index.ts src",
     "format":       "oxfmt index.ts src",
     "format:check": "oxfmt --check index.ts src",
