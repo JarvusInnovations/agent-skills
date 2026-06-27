@@ -55,7 +55,7 @@ bun run dev          # → vite
 bun run build        # → tsc -b && vite build
 
 # Type check
-bun run check        # → tsc --noEmit
+bun run typecheck    # → tsc --noEmit
 ```
 
 ### Package Management
@@ -161,7 +161,7 @@ just calls `bun run <name>`:
   "scripts": {
     "dev":          "vite",
     "build":        "tsc -b && vite build",
-    "typecheck":    "tsc -b",            // note: this stack's older docs called this `check`
+    "typecheck":    "tsc --noEmit",
     "lint":         "oxlint .",
     "format":       "oxfmt .",
     "format:check": "oxfmt --check ."

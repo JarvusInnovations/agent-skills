@@ -33,7 +33,7 @@ or a release tag are involved, it's a different skill.
 | File | Read when |
 |---|---|
 | [provisioning.md](references/provisioning.md) | the CI harness — asdf + cache composite, lockfile-frozen installs, path filters, credential-free principle, private-dep git rewrite |
-| [tool-standards.md](references/tool-standards.md) | the linters/formatters — the TS script contract, oxc + ruff configs, the `check`→`typecheck` naming note, pre-commit's optional role, the one-time adoption migration |
+| [tool-standards.md](references/tool-standards.md) | the linters/formatters — the TS script contract, oxc + ruff configs, the `typecheck` naming convention, pre-commit's optional role, the one-time adoption migration |
 
 ## The gate set
 
@@ -92,7 +92,7 @@ Plus three rules that make CI reproducible and cheap (full rationale in
 
 1. **Read [provisioning.md](references/provisioning.md) and
    [tool-standards.md](references/tool-standards.md) first.** They carry the
-   rationale and the gotchas (reshim-after-cache, the script-name divergence).
+   rationale and the gotchas (reshim-after-cache, the `typecheck` naming convention).
 2. **Confirm `.tool-versions` exists** and pins everything CI needs (bun, uv,
    python, opentofu — whatever applies). If not, set it via `asdf set …` first.
 3. **Drop the composite action** at `.github/actions/setup-asdf/action.yml`.

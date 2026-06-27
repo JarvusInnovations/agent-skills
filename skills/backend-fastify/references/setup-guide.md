@@ -55,7 +55,7 @@ compile dance — `start` just runs the entry point:
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "start": "bun run src/index.ts",
-    "check": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "bun test"
   }
 }
@@ -443,7 +443,7 @@ bun run dev
 bun run start
 
 # Type check only
-bun run check
+bun run typecheck
 
 # Tests
 bun test
