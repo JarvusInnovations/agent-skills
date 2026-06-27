@@ -5,6 +5,12 @@ opt-in** and only makes sense once there's a production database to snapshot. A
 greenfield project (no prod yet) should skip all of this — adding it early is
 dead weight.
 
+When a project *does* have real prod data, this is usually its **seeding
+strategy**: `bin/load-snapshot` (default → latest) replaces hand-written fixtures
+entirely (the "snapshot-as-seed" posture in **`migrations-and-seeds.md`**). One
+caveat for clean restores: pin the **same Postgres major as production** locally, so
+a `strip_cloudsql`'d dump doesn't hit version-mismatch surprises.
+
 Two scripts, both built on helpers already in `_common.sh`.
 
 ## bin/snapshot — export prod → object storage

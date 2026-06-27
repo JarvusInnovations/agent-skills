@@ -49,6 +49,14 @@ All four TS gates are invoked through a fixed **script contract** —
 across packages and only calls `bun run <name>`. Details + the naming caveat in
 [tool-standards.md](references/tool-standards.md).
 
+**DB-backed tests stay in this gate — they just need a database.** A `bun test` /
+`pytest` suite that hits Postgres is still fork-safe (no secrets), so it belongs
+here: give CI an **ephemeral service-container Postgres** and an explicit
+`DATABASE_URL`. Locally, that same `test` script gets an isolated DB from
+**`agent-dev-workflow`**'s `bin/test` + test preload, whose `??=` defers to CI's
+`DATABASE_URL`. (Integration tests that need *secrets* are the separate later gate
+in the scope table above.)
+
 ## The universal harness (don't reinvent it)
 
 Every job, every language, shares the same provisioning. Consolidate it into one
