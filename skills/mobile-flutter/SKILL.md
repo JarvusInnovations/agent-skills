@@ -216,3 +216,29 @@ context.go('/login');               // replace stack
 - **macOS entitlements**: Network requests need `com.apple.security.network.client`, keychain needs `keychain-access-groups` — both in `macos/Runner/DebugProfile.entitlements` and `Release.entitlements`
 - **macOS signing**: Set development team in Xcode (Runner target → Signing & Capabilities → Team → All configurations)
 - **Commit generated code separately**: After any command that generates/changes code, commit those changes with the exact command in the message BEFORE making manual edits
+
+## CI & Code Quality
+
+Wire analyze, format, and tests into CI from the start. The cross-cutting CI harness — asdf
+provisioning + caching, path-filtered workflows, the `setup-asdf` composite — lives in the
+**`ci-quality-gates`** skill; reuse it here. The *tools* differ from the TS/Python stacks:
+Dart ships its own analyzer and formatter, so there's no oxc/ruff here.
+
+**The gate (Dart-native):**
+
+| Gate | Command |
+|---|---|
+| Lint / analyze | `flutter analyze lib/ test/` |
+| Format check | `dart format --output=none --set-exit-if-changed lib/ test/` |
+| Test | `flutter test` |
+
+`flutter analyze` reads `analysis_options.yaml` — start from `package:flutter_lints` (and add
+`riverpod_lint` only if it doesn't clash with `drift_dev`'s analyzer version; see
+[gotchas.md](references/gotchas.md)). The companion `dart-run-static-analysis` skill (see
+**Companion Skills** above) drives `dart analyze` + `dart fix --apply` locally — the same gate,
+just in the dev loop.
+
+**Provisioning.** Flutter is pinned in `.tool-versions` (plus ruby/cocoapods for iOS), so the
+`setup-asdf` composite from `ci-quality-gates` provisions CI exactly as for the other stacks.
+Commit `pubspec.lock` and use `flutter pub get` (it respects the lock). The credential-free,
+path-filtered, IDE-over-pre-commit principles all carry over — only the tool commands change.

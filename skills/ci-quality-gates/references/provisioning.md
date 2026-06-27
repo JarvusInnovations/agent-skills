@@ -1,0 +1,93 @@
+# Provisioning, caching, and the CI harness
+
+The part of the gate that's identical across every Jarvus repo regardless of
+language. Get this right once and lint/test/type-check all ride on it.
+
+## asdf is the single source of tool versions
+
+Every repo already pins its toolchain in `.tool-versions` for local dev (Bun,
+uv, Python, OpenTofu, …). CI reads the **same file** — there is no second place
+where versions live, so local and CI can't drift.
+
+```
+# .tool-versions  (example)
+bun 1.3.11
+uv 0.10.12
+python 3.12.13
+opentofu 1.11.5
+```
+
+## The composite action (use this, don't copy-paste the block)
+
+The provisioning steps repeat in every job. continuous-gtfs currently inlines
+them ~6 times across `lint.yml` / `test.yml` / `ui-checks.yml`; that's the proven
+behavior but it rots. Consolidate into one local composite action and call it:
+
+```yaml
+steps:
+  - uses: actions/checkout@v6
+  - uses: ./.github/actions/setup-asdf   # the whole provisioning block
+```
+
+Drop `templates/github-actions/setup-asdf/action.yml` at
+`.github/actions/setup-asdf/action.yml`. It does four things:
+
+1. **`asdf-vm/actions/setup@v4`** — installs asdf itself.
+2. **`actions/cache@v5`** keyed on `hashFiles('.tool-versions')` — restores the
+   installed tools. The `restore-keys: asdf-tools-` prefix lets a changed
+   `.tool-versions` warm-start from the previous cache instead of a cold install.
+3. **`asdf-vm/actions/install@v4`** *only on cache miss* — the slow path,
+   skipped on the ~1-minute-saving cache hit.
+4. **`asdf reshim`** — regenerates shims so the cached tools are resolvable in
+   later steps. Skipping this is the classic "command not found" after a cache
+   hit.
+
+`checkout` must come first so the local `./.github/actions/setup-asdf` path
+exists before it's referenced.
+
+## Reproducibility: lockfiles + frozen installs
+
+Commit `bun.lock` and `uv.lock`. CI installs from the lockfile and **fails if it
+would change**, so a PR can never pass against dependency versions that aren't
+recorded:
+
+- TS: `bun install --frozen-lockfile`
+- Python: `uv run --frozen <cmd>` (e.g. `uv run --frozen ruff check`)
+
+## Path-filtered triggers
+
+Each workflow fires only when its domain changes — and always includes its own
+file so edits to the workflow re-run it:
+
+```yaml
+on:
+  pull_request:
+    paths: ['pkg/**', '.github/workflows/lint.yml']
+  push:
+    branches: [develop]
+    paths: ['pkg/**', '.github/workflows/lint.yml']
+```
+
+In a monorepo, give each package its own paths (or a per-package matrix) so a
+front-end change doesn't run the Python gate and vice-versa.
+
+## Credential-free by design
+
+Lint, format-check, type-check, `tofu fmt`/`validate -backend=false`, and
+hermetic unit tests need **no secrets**. Keep them that way: they then run on
+fork PRs, start instantly (no WIF/cloud auth), and can't leak. Anything needing
+credentials (`tofu plan`, integration tests against real services, deploys) is a
+*different*, later gate — out of scope here (see SKILL.md boundary).
+
+The one exception: pulling a **private git dependency/module**. That needs a
+repo-scoped token, not cloud credentials — a `git config --global url.…insteadOf`
+rewrite (commented in `test.yml` / `tf-validate.yml`). It stays cheap and
+fork-safe-ish; just be aware forks won't have the secret.
+
+## What this deliberately is NOT
+
+- **No pre-commit framework as the gate.** CI is the gate; the IDE is the fast
+  local feedback loop (see `tool-standards.md`). Pre-commit is an optional extra
+  tier, not the source of truth — the flagship and newest repos skip it.
+- **No build/publish/deploy here.** Those belong to per-stack build docs and the
+  deploy/sysadmin skills. Release PR automation belongs to `release-flow`.

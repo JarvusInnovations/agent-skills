@@ -1,0 +1,66 @@
+name: Lint
+
+# Pre-merge lint + format + type-check gate. Fast and credential-free: it never
+# needs cloud secrets, so it runs on every PR (including forks). Path filters keep
+# it from firing on unrelated changes; ADAPT the paths to your repo's layout.
+on:
+  pull_request:
+    paths:
+      - 'pkg/**'              # ADAPT: Python package dir(s)
+      - 'services/**'         # ADAPT: TS service/package dir(s)
+      - '.github/workflows/lint.yml'
+  push:
+    branches: [develop]
+    paths:
+      - 'pkg/**'
+      - 'services/**'
+      - '.github/workflows/lint.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  # --- Python (ruff). Delete this job if the repo has no Python. -------------
+  python-lint:
+    name: Ruff (pkg)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pkg        # ADAPT: dir containing pyproject.toml
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-asdf
+      - name: Ruff lint
+        run: uv run --frozen ruff check
+      - name: Ruff format check
+        run: uv run --frozen ruff format --check
+
+  # --- TypeScript (oxc + tsc). Delete this job if the repo has no TS. --------
+  # Single-package repo: drop the matrix, set working-directory to the package,
+  # and inline the three steps. The matrix is for monorepos with several packages.
+  ts-lint:
+    name: oxc (${{ matrix.package }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: services/api          # ADAPT
+            typecheck: true
+          - package: services/worker        # ADAPT
+            typecheck: true
+    defaults:
+      run:
+        working-directory: ${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-asdf
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Lint
+        run: bun run lint
+      - name: Check formatting
+        run: bun run format:check
+      - name: Type check
+        if: ${{ matrix.typecheck }}
+        run: bun run typecheck
