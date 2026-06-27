@@ -51,10 +51,17 @@ bun add -d oxlint oxfmt
 
     ```json
     {
-      "$schema": "./node_modules/oxlint/configuration_schema.json",
+      "$schema": "../../node_modules/oxlint/configuration_schema.json",
       "extends": ["../../.oxlintrc.base.json"]
     }
     ```
+
+    **Mind the `$schema` path in a monorepo.** It's relative to the *package*, so
+    it points up to where oxlint is hoisted at the workspace root
+    (`../../node_modules/...` for a `apps/web`-depth package), **not** the bare
+    `./node_modules/...` that the single-package templates ship with. The same
+    adjustment applies to the React config below when it lives in a subpackage —
+    fix its `$schema` to match the package's depth.
 
     A server package that contains a UI subfolder ignores it so the UI is linted
     by its own stricter config: add `"ignorePatterns": ["ui"]`.
@@ -114,14 +121,22 @@ repo; it's friction without payoff there.
 
 ## Adopting on an existing repo: the one-time migration
 
-Turning a gate on for the first time will surface findings. Land them as a
-**single mechanical commit** *before* the commit that adds the workflow, so the
-gate goes green on its first run and the diff stays legible:
+Turning a gate on for the first time will surface findings. Land them *before*
+the commit that adds the workflow, so the gate goes green on its first run.
+**Order matters, and keep behavior-changing fixes out of the formatting commit:**
 
-1. `bun run format && bun run lint --fix` (or `uv run ruff format && ruff check
-   --fix`) — commit as `style:` / `build:`.
-2. Hand-fix whatever `--fix` couldn't.
-3. Add the config files + scripts + workflow — commit as `ci:`.
+1. **`bun run lint --fix` first** (or `ruff check --fix`). Heads up: some oxlint
+   autofixes are **not** purely cosmetic — e.g. `[...a].sort()` → `.toSorted()`,
+   `.includes()` → `Set.has()`, spread-clone → `structuredClone()`. They're
+   usually behavior-preserving, but *review them* and commit as `refactor:` /
+   `fix:` (or `build:`), **not** `style:` — a reviewer scanning a `style:` commit
+   shouldn't have to spot logic changes hiding in it.
+2. **`bun run format` to convergence**, then commit the pure-formatting churn as
+   `style:`. oxfmt isn't always idempotent right after `lint --fix` (a single
+   pass can leave a file that still fails `format:check`) — re-run `format` until
+   `format:check` is clean before committing.
+3. **Hand-fix** whatever `--fix` couldn't — commit as `fix:`.
+4. **Add the config files + scripts + workflow** — commit as `ci:`.
 
-Don't batch the auto-format with feature work; reviewers can't see the real
-change underneath thousands of reformatted lines.
+Don't batch any of this with feature work; reviewers can't see the real change
+underneath thousands of reformatted lines.
