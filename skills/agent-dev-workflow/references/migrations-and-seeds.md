@@ -40,16 +40,30 @@ folder; they're two callers of one migration set, not two migration systems.
 Non-bun stacks: `alembic upgrade head` (Python), `rails db:migrate`,
 `migrate -path … up` (golang-migrate), etc. — same idea, swap the command.
 
-## Seeds (optional)
+## Seeds (optional) — three postures
 
-Some projects seed reference/demo data on a fresh DB; many don't. If yours does,
-uncomment the seed lines in `setup`/`reset-db` and make seeds **idempotent**
-(`INSERT … ON CONFLICT DO NOTHING`) so re-running is safe. Crucially, **don't seed
-when loading a snapshot** (the snapshot already has data) and **don't seed the
-test DB** (suites set up their own fixtures). A common shape is one or more
-`seed*.sql` files run on a fresh non-snapshot DB, plus an optional local
-`.scratch/extra-seed.sql` for personal data; other projects keep seeding out of
-`bin/` entirely (a one-off script run on demand). Pick whichever fits.
+How you populate a fresh dev DB is a project choice. Three postures seen across real
+repos:
+
+1. **Synthetic seeds** — hand-authored idempotent `seed*.sql`
+   (`INSERT … ON CONFLICT DO NOTHING`) run on a fresh non-snapshot DB, plus an
+   optional local `.scratch/extra-seed.sql` for personal data. Right when the curated
+   dataset *is* the product (e.g. a demo app).
+2. **Snapshot-as-seed** — no hand-written fixtures at all; `bin/load-snapshot`
+   (default → latest prod) *is* the seed. Right when real prod data exists; often the
+   only synthetic thing left is a dev auth token/secret applied at runtime, not at
+   setup. See **`references/snapshots.md`**. This is the guardrail's ideal — nothing
+   to maintain.
+3. **Empty + per-suite fixtures** — `setup` leaves the DB empty (just migrated) and
+   tests build their own fixtures per suite. Right when there's no meaningful shared
+   dev dataset (and prod data is PII you wouldn't pull to a laptop).
+
+Decision rule: **do you have meaningful prod data to pull?** Yes → snapshot-as-seed.
+No, but the dataset is the deliverable → synthetic. Neither → empty + fixtures.
+
+Whichever you pick: keep seeds **idempotent**, **don't seed when loading a snapshot**
+(it already has data), and **don't seed the test DB** (suites own their fixtures). To
+wire posture 1, uncomment the seed lines in `setup`/`reset-db`.
 
 ## A note on what NOT to put here
 

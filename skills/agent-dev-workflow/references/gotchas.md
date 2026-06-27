@@ -30,6 +30,36 @@ If a worktree starts scanning at 4001, it skips a free 4000. Reuse the canonical
 port whenever it's actually free; let real listen-state — not worktree identity —
 decide collisions.
 
+## Two collision axes: worktrees *and* other projects
+
+The port logic above solves **intra-project** collisions — two worktrees of the
+*same* repo never grab the same port. It does nothing about **inter-project**
+collisions: run several Jarvus repos at once and they'd fight over ports if they
+shared a base. In practice they don't, because each repo claims a distinct **base
+port band** — e.g. one project in `25xx`, another in `35xx`, another's Postgres at
+`5532`. That base is a per-project constant *you* choose; the worktree logic only
+ranges within it.
+
+Two ways to choose it:
+
+- **Hand-pick** a distinct, uncommon high band per repo and keep PG + backend +
+  frontend coherent within it (e.g. PG `N530`, backend `N531–N599`, frontend
+  `N600–N699`). The traps: forgetting which bands are already taken, and splitting a
+  repo across unrelated bands (one real repo runs Postgres on `5532` but its server
+  on `4001–4099` — avoid that incoherence).
+- **Derive it from a hash of the repo name** — collision-resistant with no registry
+  to remember, the same trick the DB names use for worktree *paths*, applied at repo
+  granularity:
+
+  ```bash
+  # deterministic base in a high block (20000–59990), distinct per repo name
+  app_base_port() {
+    local n; n=$(basename "$(app_root)" | cksum | cut -d' ' -f1)
+    echo $(( 20000 + (n % 4000) * 10 ))
+  }
+  # then PG = base, backend range = base+1..base+49, frontend = base+50..base+99
+  ```
+
 ## postgres:18 changed the data directory layout
 
 On `postgres:18` the volume must mount at `/var/lib/postgresql`, **not**
@@ -37,6 +67,11 @@ On `postgres:18` the volume must mount at `/var/lib/postgresql`, **not**
 container's healthcheck never goes ready and `wait_for_postgres` times out after
 30s. If you pin `postgres:17-alpine` (the template default) use `…/data`; only
 change the mount if you deliberately move to 18.
+
+**Pin the same major production runs.** Whatever major your prod DB is (Cloud SQL,
+RDS, …), pin that in `_common.sh` so `strip_cloudsql`'d snapshots restore without
+version-mismatch surprises. Across Jarvus repos this currently drifts (16 / 17 / 18
+all in use) — match *your* prod, and mind the data-dir caveat above when it's 18.
 
 ## docker-compose can't do per-context isolation — remove it
 
