@@ -100,7 +100,7 @@ know which parts you copy verbatim and which you adapt.
 | File | Read when |
 |---|---|
 | `references/bin/` | always — the script templates you copy + adapt |
-| `references/test-isolation.md` | wiring tests to `app_test` (the preload) — almost always |
+| `references/test-isolation.md` | wiring tests to `app_test` (the preload), **and** authoring suites against it (in-process `inject`, scoped truncate, fixtures) — almost always |
 | `references/migrations-and-seeds.md` | setting `app_migrate`; deciding on seeds |
 | `references/gotchas.md` | **before writing port logic or picking a PG image** — the silent-failure bugs |
 | `references/orchestrator-integration.md` | wiring Conductor/orchestrator setup/run/cleanup; the stdout/stderr contract |

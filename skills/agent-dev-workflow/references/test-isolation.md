@@ -6,6 +6,10 @@ data you're demoing against.** `bin/test` handles this, but the robust fix is a
 **test-runner preload** so that even a bare `bun test` (someone forgetting `bin/`,
 or an IDE test button) is safe too.
 
+This reference has two halves: the **plumbing** — a dedicated, auto-migrated test DB
+(immediately below) — and, once that's in place, **how to author suites against it**
+("Authoring tests against the isolated DB", further down).
+
 ## The preload (bun example)
 
 `bunfig.toml`:
@@ -89,3 +93,113 @@ bin/db "SELECT count(*) FROM <some_table> WHERE ... LIKE 'SENTINEL%'"  # → sti
 
 Other runners: pytest → a `conftest.py` fixture; vitest → `globalSetup`. Same
 three responsibilities (default env, ensure DB, migrate).
+
+# Authoring tests against the isolated DB
+
+The preload gives every run a clean, migrated `app_test`. This is the pattern for
+writing suites against it.
+
+> **This half is a single-project pattern** — generalized from the one adopter with
+> a real suite so far, so it's n=1. The plumbing above is solid; the conventions
+> below are a starting point to **refine after the next project applies them** (see
+> the closing note).
+
+## The canonical suite shape
+
+Import the **real app** and drive it **in-process** — no network listener:
+
+```ts
+import { afterAll, beforeAll, beforeEach, expect, test } from 'bun:test'
+import Fastify, { type FastifyInstance } from 'fastify'
+
+// DATABASE_URL / JWT_SECRET / … come from the preload (bunfig.toml).
+const { app } = await import('../src/app.ts')
+
+let server: FastifyInstance
+
+beforeAll(async () => {
+  server = Fastify({ logger: false })
+  await server.register(app)
+  await server.ready()
+})
+afterAll(async () => {
+  await server.close()
+})
+beforeEach(async () => {
+  // wipe only the tables THIS suite touches
+  await server.sql`truncate profile, friendship cascade`
+})
+
+test('accepting a request connects both ways', async () => {
+  const res = await server.inject({ method: 'GET', url: '/v1/friends', headers: alice.auth })
+  expect(res.statusCode).toBe(200)
+})
+```
+
+Four decisions in there are what make isolation actually hold:
+
+### 1. In-process via `inject` — never bind a port
+
+`server.inject(...)` runs the request through the app in memory; the suite never
+calls `listen()`. This is the quiet linchpin: a whole directory of suites can run
+without fighting over a port — the runner only has to serialize the *database*, not
+a socket. It also removes teardown races on a port.
+
+### 2. Reset with a scoped `truncate`, not a global wipe
+
+Each suite truncates **only the tables it touches**, in `beforeEach`, through the
+app's own DB handle (`server.sql`, decorated by the app). `… cascade` handles FK
+order. Truncate-between-tests is the simplest hermetic reset; a
+transaction-per-test rollback is the main alternative (faster, but fights code that
+opens its own transactions — start with truncate).
+
+### 3. Fixtures: insert + mint a token, return a handle
+
+Build state through the app's own primitives rather than over HTTP where you can —
+insert the row with `server.sql`, mint auth with the app's token signer, hand back a
+reusable handle:
+
+```ts
+async function makeUser(phone: string) {
+  const [row] = await server.sql<{ id: string }[]>`
+    insert into profile (phone, claimed_at) values (${phone}, now()) returning id`
+  const token = server.signAccessToken(row.id)   // app-decorated signer
+  return { id: row.id, auth: { authorization: `Bearer ${token}` } }
+}
+```
+
+Then drive behaviour over `inject` with `headers: user.auth`. Prefer minting tokens
+to replaying the full login flow — exercise the real auth path in the *auth* suite,
+and shortcut it everywhere else.
+
+### 4. One process, one DB — so guard shared state
+
+The runner executes every test file in **one process against the one shared
+`app_test`**. That's what makes scoped truncates safe — but it means **mutable
+process state leaks across suites**:
+
+- **`process.env` bleeds.** A suite that bumps an env knob (e.g. raising a
+  minimum-supported-build floor to exercise a 4xx path) must capture the prior value
+  in `beforeAll` and **restore it in `afterAll`** — otherwise the override silently
+  changes every later suite. Frameworks that read env *at registration time* (e.g.
+  `@fastify/env`) sharpen this: set the override *before* `register`, restore after
+  `close`.
+- **Don't parallelize files against the shared DB.** Scoped truncates assume serial
+  execution; running suites concurrently against one DB lets one suite's `truncate`
+  yank another's rows mid-test. If you ever need parallelism, give each worker its
+  own DB (a per-worker suffix on `app_test`) — don't loosen the reset.
+
+## Stay hermetic (the `ci-quality-gates` line)
+
+Everything above needs only Postgres — no secrets, no outbound calls — so these
+suites run in the pre-merge gate (**`ci-quality-gates`**) and on fork PRs. The moment
+a test needs real credentials or a third-party endpoint it's a different, later gate;
+don't drag secrets into this set. Stub external providers at the app boundary.
+
+## Refine after the next adopter
+
+This authoring playbook is n=1. When the next project picks it up, come back and:
+promote what generalized, flag what was project-specific (the framework's
+`inject`/decorator details, the truncate-vs-rollback call, the token-minting helper
+shape), and add whatever that project hit that this one didn't. Until then, treat the
+conventions as defaults to question, not rules.
