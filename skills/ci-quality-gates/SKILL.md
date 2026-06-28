@@ -29,12 +29,48 @@ re-deciding — or skipping it.
 One-sentence charter: **how a repo gates a PR before it merges.** If credentials
 or a release tag are involved, it's a different skill.
 
+## Enforcement philosophy
+
+Three decisions shape how everything below is wired:
+
+**1. CI is the only gate — no pre-commit.** The gate lives in CI and nowhere else.
+Pre-commit hooks are per-developer (must be installed, drift between machines, and
+are one `--no-verify` from being skipped), add commit-time friction, and only ever
+*duplicate* what CI already enforces authoritatively. So **don't ship a
+`.pre-commit-config.yaml`.** Run each linter **directly** in CI — `oxlint`,
+`oxfmt --check`, `ruff check`, `sqlfluff lint --format github-annotation-native` —
+which keeps inline PR annotations without the framework. Local fast feedback comes
+from the **editor** (oxc-vscode, ruff, a sqlfluff LSP) and from running the same
+`bun run <gate>` / tool commands by hand — never a git hook.
+
+**2. Organize workflows by gate; co-locate by toolchain.** The default lanes are
+`lint` and `test`, each a workflow whose jobs fan out per package/language. But when
+a domain brings a **distinct toolchain**, give it its **own workflow whose jobs are
+named by gate** instead of forcing that toolchain into the generic lint/test
+workflows. Terraform (`tf-validate.yml`: `fmt` + `validate`) is the first instance;
+**dbt** is the second — its `sqlfluff` linter compiles models *through dbt*, so it
+needs the same `uv` + `dbt deps` + profile setup as `dbt parse`/unit-tests.
+Co-locating those in one `dbt.yml` (jobs `lint` / `parse` / `unit-test`) stands the
+toolchain up once and keeps the gate semantics legible; splitting them across
+`lint.yml` and `test.yml` would provision dbt twice. **Rule of thumb: one workflow
+per toolchain, jobs named by gate.** Fold into the shared `lint.yml`/`test.yml` only
+when a check rides the *same* toolchain those already set up.
+
+**3. Stack skills own their tools; this skill owns the harness.** Each
+`jarvus-{tech}` stack skill defines its tech's linter/formatter/test choices,
+configs, and `package.json`/script contract, and carries a short "CI & Code Quality"
+section pointing here. This skill owns provisioning, the gate taxonomy, the
+path-filter / lockfile-frozen / credential-free rules, and the workflow templates. A
+stack skill that introduces a distinct toolchain ships its **domain workflow** (its
+lane of this contract) — e.g. **`jarvus-dbt`** ships `dbt.yml`. A new stack plugs
+into these rules rather than reinventing CI.
+
 ## The two reference deep-dives
 
 | File | Read when |
 |---|---|
 | [provisioning.md](references/provisioning.md) | the CI harness — asdf + cache composite, lockfile-frozen installs, path filters, credential-free principle, private-dep git rewrite |
-| [tool-standards.md](references/tool-standards.md) | the linters/formatters — the TS script contract, oxc + ruff configs, the `typecheck` naming convention, pre-commit's optional role, the one-time adoption migration |
+| [tool-standards.md](references/tool-standards.md) | the linters/formatters — the TS script contract, oxc + ruff configs, the `typecheck` naming convention, the editor-feedback loop (no pre-commit), the one-time adoption migration |
 
 ## The gate set
 
@@ -128,9 +164,11 @@ Plus three rules that make CI reproducible and cheap (full rationale in
   Vite scaffold ships a default eslint; remove it when adopting oxc.
 - **Type-check is a gate, not a nicety.** `tsc --noEmit` / strict mode catches
   bugs no linter does — keep it required.
-- **Pre-commit is optional, not the gate.** CI is the source of truth; the IDE is
-  local feedback. Only reach for a `.pre-commit-config.yaml` on multi-linter
-  Python repos (ruff + sqlfluff + markdown + …). See
+- **No pre-commit framework.** CI is the only gate; run linters directly in CI (they
+  emit PR annotations natively). Local feedback is the editor + running the gate
+  commands by hand. Don't add a `.pre-commit-config.yaml` — even on multi-linter
+  repos (ruff + sqlfluff + markdown), run each tool directly in CI or in the domain's
+  workflow. See the enforcement philosophy above and
   [tool-standards.md](references/tool-standards.md).
 - **Stay before the merge line.** Release, build, publish, deploy, and
   credentialed plans belong to other skills. If you're editing

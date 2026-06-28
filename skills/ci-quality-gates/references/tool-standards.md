@@ -113,20 +113,22 @@ root module. Format + config-validity only — never `tofu plan` in this gate
 A docs site (mkdocs) gets a build gate: `mkdocs build --strict` so a broken link
 or missing nav entry fails the PR. Trigger on `docs/**` + `mkdocs.yml`.
 
-## IDE recommendation, not pre-commit
+## Local feedback: the editor, never a git hook
 
 Local fast feedback comes from the editor, not git hooks. Commit
 `templates/vscode-extensions.json` as `.vscode/extensions.json` to recommend the
-**oxc.oxc-vscode** extension (lint + format-on-save matching CI). For Python,
-ruff's editor integration plays the same role.
+**oxc.oxc-vscode** extension (lint + format-on-save matching CI). Ruff's editor
+integration and a sqlfluff LSP play the same role for Python and SQL.
 
-**Pre-commit is an optional extra tier, not the gate.** The flagship
-(continuous-gtfs) and the newest repos deliberately run checks in CI + IDE and
-*skip* a pre-commit framework. Where it earns its keep is multi-linter Python
-repos that also lint SQL/markdown/notebooks (e.g. ruff + sqlfluff + markdownlint +
-nbstripout) — there a `.pre-commit-config.yaml` driven by `pre-commit/action` in
-CI consolidates many hooks. Don't add it to a plain TS or single-linter Python
-repo; it's friction without payoff there.
+**No pre-commit framework — including on multi-linter repos.** CI is the only gate
+(see the enforcement philosophy in `SKILL.md`). Even a repo that lints SQL + Python +
+markdown + notebooks runs each tool **directly** in CI (or in its domain workflow),
+not behind `pre-commit/action`: `sqlfluff lint --format github-annotation-native`,
+`ruff check`, and `oxlint` all emit PR annotations on their own. The framework only
+adds per-developer install friction and a `--no-verify` bypass without buying
+anything CI doesn't already enforce. (This is a deliberate move *away* from the
+pre-commit-driven CI some older repos use, e.g. wmata's `pre_commit.yaml` — new and
+migrated repos run the tools directly.)
 
 ## Adopting on an existing repo: the one-time migration
 
