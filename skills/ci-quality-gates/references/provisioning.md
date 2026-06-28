@@ -111,8 +111,9 @@ fork-safe-ish; just be aware forks won't have the secret.
 
 ## What this deliberately is NOT
 
-- **No pre-commit framework as the gate.** CI is the gate; the IDE is the fast
-  local feedback loop (see `tool-standards.md`). Pre-commit is an optional extra
-  tier, not the source of truth — the flagship and newest repos skip it.
+- **No pre-commit framework — at all.** CI is the gate; the editor is the fast
+  local feedback loop (see `tool-standards.md`). Linters run **directly** in CI and
+  emit their own PR annotations; we don't wrap them in `pre-commit/action`, even on
+  multi-linter (SQL/Python/markdown) repos.
 - **No build/publish/deploy here.** Those belong to per-stack build docs and the
   deploy/sysadmin skills. Release PR automation belongs to `release-flow`.
