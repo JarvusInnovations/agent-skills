@@ -1,0 +1,77 @@
+name: dbt
+
+# Credential-free dbt gate for the DuckDB stack: SQL lint + per-tenant parse + unit tests.
+# Reads only public data, so it needs no warehouse secret and runs on fork PRs. Mirror your
+# repo's existing provisioning (this uses uv directly, like the dbt projects do).
+# ADAPT: the path filters, the `tenants` matrix, and the working directories.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/dbt-*/**'        # ADAPT
+      - 'tenants/**'               # ADAPT
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.tool-versions'
+      - '.github/workflows/dbt.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'packages/dbt-*/**'
+      - 'tenants/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.tool-versions'
+      - '.github/workflows/dbt.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  sqlfluff:
+    name: sqlfluff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0           # sqlfluff-lint-ci diffs against origin/main
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Lint changed SQL (inline annotations)
+        run: |
+          uv run pre-commit run --hook-stage manual sqlfluff-lint-ci \
+            --from-ref origin/main --to-ref HEAD
+
+  parse:
+    name: dbt parse (${{ matrix.tenant }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tenant: [septa, mta, rfta]   # ADAPT: every tenant/project must parse
+    defaults:
+      run:
+        working-directory: tenants/${{ matrix.tenant }}/${{ matrix.tenant }}   # ADAPT
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: dbt deps + parse
+        run: |
+          uv run --project ../../.. dbt deps --profiles-dir .
+          uv run --project ../../.. dbt parse --profiles-dir .
+
+  unit-tests:
+    name: dbt unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Run dbt unit tests (fixtures, no warehouse)
+        run: |
+          # ADAPT to your project layout; unit tests use fixtures, not live data.
+          uv run dbt build --select "test_type:unit" --profiles-dir .
