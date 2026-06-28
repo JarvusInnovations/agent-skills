@@ -1,0 +1,43 @@
+# Jarvus house sqlfluff config — paste into the project's pyproject.toml.
+# DuckDB shown; for BigQuery set dialect = "bigquery" and swap the adapter deps in
+# the CI lint job. ADAPT: project_dir / profiles_dir to your dbt dir.
+
+[tool.sqlfluff.core]
+dialect = "duckdb"            # ADAPT: or "bigquery"
+templater = "dbt"
+max_line_length = 120
+indent_unit = "space"
+tab_space_size = 4
+layout_config_style = "vertical"   # keywords on new lines
+output_line_length = 120
+
+[tool.sqlfluff.templater.dbt]
+project_dir = "warehouse"          # ADAPT
+profiles_dir = "warehouse"         # ADAPT
+target = "local"
+
+[tool.sqlfluff.layout.type.comma]
+line_position = "trailing"
+
+# --- lowercase everything ---
+[tool.sqlfluff.rules.capitalisation.keywords]
+capitalisation_policy = "lower"
+[tool.sqlfluff.rules.capitalisation.identifiers]
+extended_capitalisation_policy = "lower"
+[tool.sqlfluff.rules.capitalisation.functions]
+extended_capitalisation_policy = "lower"
+[tool.sqlfluff.rules.capitalisation.types]
+extended_capitalisation_policy = "lower"
+[tool.sqlfluff.rules.capitalisation.literals]
+capitalisation_policy = "lower"
+
+# --- house rules that stock sqlfluff can enforce ---
+[tool.sqlfluff.rules.aliasing.forbid]
+force_enable = true                # forbid unnecessary table aliases
+[tool.sqlfluff.rules.references.qualification]   # require qualified columns
+[tool.sqlfluff.rules.structure.column_order]
+[tool.sqlfluff.rules.layout.indent]
+indent_unit = "space"
+
+# Semantic-noun aliases, no-inner-joins, and staging-no-aggregation are NOT stock rules —
+# enforce via a custom sqlfluff plugin or a CI grep step (see linting-and-ci.md).
