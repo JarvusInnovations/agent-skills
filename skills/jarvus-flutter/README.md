@@ -1,4 +1,4 @@
-# mobile-flutter
+# jarvus-flutter
 
 The Jarvus convention set for building cross-platform apps with **Flutter + Riverpod + go_router** —
 screens, state management, declarative routing, the `dio` HTTP client, storybook component
@@ -18,7 +18,7 @@ the repo means every developer (and their agents) gets the same guidance — ver
 the code and updated alongside it.
 
 ```bash
-npx skills add JarvusInnovations/agent-skills --skill mobile-flutter
+npx skills add JarvusInnovations/agent-skills --skill jarvus-flutter
 ```
 
 (Add `--global` if you'd rather have it available everywhere.) See `SKILL.md` for the stack and patterns

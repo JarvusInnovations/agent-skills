@@ -1,4 +1,4 @@
-# backend-fastify
+# jarvus-fastify
 
 The Jarvus convention set for building backends with **Fastify 5 + TypeScript on Bun** — routes,
 services, the plugin pattern, `@fastify/env` environment validation, CORS, and logging. Bun is the
@@ -18,7 +18,7 @@ the repo means every developer (and their agents) gets the same guidance — ver
 the code and updated alongside it.
 
 ```bash
-npx skills add JarvusInnovations/agent-skills --skill backend-fastify
+npx skills add JarvusInnovations/agent-skills --skill jarvus-fastify
 ```
 
 (Add `--global` if you'd rather have it available everywhere.) See `SKILL.md` for the stack and patterns

@@ -1,6 +1,6 @@
 # shadcn/ui (optional component library)
 
-shadcn/ui is an **optional** layer on top of the [frontend-react](../SKILL.md) base stack.
+shadcn/ui is an **optional** layer on top of the [jarvus-react](../SKILL.md) base stack.
 It is not a dependency you install — it's a CLI that copies component source into your repo
 (under `components/ui/`), which you then own and edit. Reach for it when a project wants a
 ready-made, accessible component set (built on Radix + `class-variance-authority`); skip it

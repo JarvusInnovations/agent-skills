@@ -1,5 +1,5 @@
 ---
-name: frontend-react
+name: jarvus-react
 description: Frontend development using Bun + Vite + React + Tailwind CSS + React Router v7. Use when creating new frontend projects, adding UI components, implementing routing, styling with Tailwind, or working with the React frontend stack. shadcn/ui is an optional component-library layer (see references/shadcn.md).
 ---
 
