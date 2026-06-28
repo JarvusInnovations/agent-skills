@@ -35,7 +35,7 @@ npx skills add JarvusInnovations/agent-skills --skill <name>
 - [`frontend-react`](skills/frontend-react/README.md) — Frontend development using Bun + Vite + React 19 + Tailwind CSS v4 + React Router v7 (shadcn/ui optional)
 - [`backend-fastify`](skills/backend-fastify/README.md) — Backend development using Fastify 5 + TypeScript on Bun
 - [`mobile-flutter`](skills/mobile-flutter/README.md) — Mobile app development using Flutter + Riverpod + go_router
-- [`dbt-practices`](skills/dbt-practices/README.md) — Jarvus house conventions for dbt (modeling, testing, sqlfluff/CI); the opinionated layer over dbt-labs' first-party dbt skills
+- [`dbt-jarvus`](skills/dbt-jarvus/README.md) — Jarvus house conventions for dbt (modeling, testing, sqlfluff/CI); the opinionated layer over dbt-labs' first-party dbt skills
 
 ### Global — install once for all projects
 

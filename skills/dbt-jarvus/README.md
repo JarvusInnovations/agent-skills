@@ -1,4 +1,4 @@
-# dbt-practices
+# dbt-jarvus
 
 Jarvus's house conventions for **writing, testing, and linting dbt** — the opinionated layer
 that sits on top of [dbt-labs' first-party dbt skills](https://github.com/dbt-labs/dbt-agent-skills)
@@ -20,7 +20,7 @@ mechanics.
 **Recommended scope: per-project**, alongside the dbt-labs skills:
 
 ```bash
-npx skills add JarvusInnovations/agent-skills --skill dbt-practices
+npx skills add JarvusInnovations/agent-skills --skill dbt-jarvus
 # plus the first-party mechanics skills it references:
 npx skills add dbt-labs/dbt-agent-skills
 ```
