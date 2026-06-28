@@ -1,6 +1,6 @@
 # Jarvus house sqlfluff config — paste into the project's pyproject.toml.
 # DuckDB shown; for BigQuery set dialect = "bigquery" and swap the adapter deps in
-# .pre-commit-config.yaml. ADAPT: project_dir / profiles_dir to your dbt dir.
+# the CI lint job. ADAPT: project_dir / profiles_dir to your dbt dir.
 
 [tool.sqlfluff.core]
 dialect = "duckdb"            # ADAPT: or "bigquery"

@@ -28,20 +28,23 @@ permissions:
   contents: read
 
 jobs:
-  sqlfluff:
+  lint:
     name: sqlfluff
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0           # sqlfluff-lint-ci diffs against origin/main
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-      - name: Lint changed SQL (inline annotations)
+      - name: Set up dbt (sqlfluff uses the dbt templater)
         run: |
-          uv run pre-commit run --hook-stage manual sqlfluff-lint-ci \
-            --from-ref origin/main --to-ref HEAD
+          # ADAPT: write a throwaway DuckDB profile + install deps so sqlfluff can compile models
+          uv run dbt deps        # ADAPT --project-dir as needed
+      - name: sqlfluff lint (inline annotations, run directly — no pre-commit)
+        run: |
+          uv run sqlfluff lint packages tenants \
+            --config pyproject.toml \
+            --format github-annotation-native --annotation-level failure   # ADAPT paths
 
   parse:
     name: dbt parse (${{ matrix.tenant }})

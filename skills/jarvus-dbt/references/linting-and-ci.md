@@ -1,6 +1,6 @@
 # Linting & CI
 
-`sqlfluff` (dbt templater) for SQL, run via pre-commit locally and a path-filtered CI gate.
+`sqlfluff` (dbt templater) for SQL, run directly in a path-filtered CI gate.
 Copy-paste config is in [templates/](templates/); this explains the choices.
 
 ## sqlfluff config
@@ -38,7 +38,7 @@ force_enable = true                 # no unnecessary table aliases
 
 `templater = "dbt"` means sqlfluff compiles models through dbt, so it needs the dbt adapter
 available and a `profiles_dir` (in CI we write a throwaway DuckDB profile — see the gate
-below). Pin the sqlfluff and adapter versions in the pre-commit `additional_dependencies`.
+below). Pin the sqlfluff and adapter versions in the CI lint job install (the `uv` linters group).
 
 ### Which conventions stock sqlfluff covers — and which it doesn't
 
@@ -59,22 +59,25 @@ Two ways to enforce those:
    model path; flag `group by`/`distinct` inside `models/staging/`). These then lint + annotate
    in CI exactly like built-in rules. This is the path to graduate the conventions in
    [conventions.md](conventions.md) from prose into enforced checks. Ship the plugin in the
-   repo (or a shared internal package) and add it to the pre-commit `additional_dependencies`.
+   repo (or a shared internal package) and install it alongside sqlfluff in CI (the `uv`
+   linters group).
 2. **A lightweight grep/AST check** in CI (a script run as its own step) — faster to stand up,
    no plugin packaging; good for a first cut before investing in real rules.
-3. **`dbt-checkpoint`** pre-commit hooks for *model-metadata* rules orthogonal to SQL text —
-   `check-model-has-tests`, `check-model-has-description`, `check-column-desc-are-same`.
-   Consider once the basics are in.
+3. **`dbt-checkpoint`** checks for *model-metadata* rules orthogonal to SQL text —
+   `check-model-has-tests`, `check-model-has-description`, `check-column-desc-are-same`. These
+   ship as pre-commit hooks but are plain CLI entry points — run them **directly** as a CI step
+   (we don't use pre-commit — see below). Consider once the basics are in.
 
 Start with stock rules + (2) or `dbt-checkpoint`; invest in (1) custom plugins for the rules
 worth blocking merges on (no-inner-joins is the strongest candidate, given the silent-drop
 case study).
 
-## pre-commit
+## Local feedback (editor, not git hooks)
 
-Use YAML anchors to define `sqlfluff-lint`, `sqlfluff-fix`, and a manual `sqlfluff-lint-ci`
-(GitHub-annotation format) from one base — see [templates/pre-commit-dbt.yaml](templates/pre-commit-dbt.yaml).
-Local devs get lint+fix on commit; CI runs the annotation variant.
+Per the `ci-quality-gates` enforcement philosophy, **CI is the only gate — no pre-commit.**
+sqlfluff runs *directly* in CI (it emits PR annotations natively; see the gate below). For
+local fast feedback use a **sqlfluff editor integration** (the vscode-sqlfluff extension or a
+sqlfluff LSP) and run `sqlfluff lint` / `sqlfluff fix` by hand — don't wire a git hook.
 
 ## The CI gate
 
@@ -84,10 +87,11 @@ than a composite if that's what the repo already uses). Full workflow in
 [templates/github-actions/dbt.yml](templates/github-actions/dbt.yml). Shape:
 
 1. **detect-changes** — only run on changes under the dbt dir(s) + config (path filter).
-2. **sqlfluff** — write a throwaway local DuckDB `profiles.yml`, `dbt deps`, then
-   `pre-commit run --hook-stage manual sqlfluff-lint-ci --from-ref origin/main --to-ref HEAD`
-   (annotates the PR inline). Cache `dbt_packages` (key on `packages.yml`) and the pre-commit
-   env.
+2. **lint** — install sqlfluff (+ the dbt adapter), write a throwaway local DuckDB
+   `profiles.yml`, `dbt deps`, then
+   `sqlfluff lint <model paths> --format github-annotation-native --annotation-level failure`
+   (annotates the PR inline — no pre-commit needed). Cache `dbt_packages` (key on
+   `packages.yml`).
 3. **parse (every tenant)** — `dbt parse` (or `dbt compile`) for **each** configured
    tenant/project. This is the "must work for all tenants" gate from
    [conventions.md](conventions.md), and it needs **no data**.

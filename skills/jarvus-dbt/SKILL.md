@@ -1,6 +1,6 @@
 ---
 name: jarvus-dbt
-description: Jarvus house conventions for writing, testing, and linting dbt projects — model layering and grain, what each stage may/may not do, the no-inner-joins and semantic-alias rules, the generic + quality-model + unit-test patterns, the sqlfluff/pre-commit config, and a credential-free multi-tenant CI gate. Use when building or reviewing dbt models, deciding materialization or test coverage, setting up dbt linting/CI, or when "dbt", "sqlfluff", "staging/intermediate/marts", "dbt test", or "TIDES" come up. This is the opinionated house layer ON TOP OF dbt-labs' first-party dbt skills (which cover the mechanics) — see "Relationship to other skills".
+description: Jarvus house conventions for writing, testing, and linting dbt projects — model layering and grain, what each stage may/may not do, the no-inner-joins and semantic-alias rules, the generic + quality-model + unit-test patterns, the sqlfluff config, and a credential-free multi-tenant CI gate. Use when building or reviewing dbt models, deciding materialization or test coverage, setting up dbt linting/CI, or when "dbt", "sqlfluff", "staging/intermediate/marts", "dbt test", or "TIDES" come up. This is the opinionated house layer ON TOP OF dbt-labs' first-party dbt skills (which cover the mechanics) — see "Relationship to other skills".
 ---
 
 # dbt practices (Jarvus house conventions)
@@ -55,7 +55,7 @@ See [testing.md](references/testing.md). In short: generic tests (`not_null`/`un
 
 ## Linting & CI
 
-`sqlfluff` (dbt templater) + pre-commit + a path-filtered CI gate. See
+`sqlfluff` (dbt templater), run directly in a path-filtered CI gate. See
 [linting-and-ci.md](references/linting-and-ci.md) and the copy-paste templates in
 [references/templates/](references/templates/). The DuckDB stack reads public data, so the
 **lint + multi-tenant `dbt parse` + unit-test gate is credential-free and fork-safe** — no
@@ -82,6 +82,6 @@ warehouse secret needed (unlike a BigQuery project, which needs a service accoun
 |---|---|
 | [conventions.md](references/conventions.md) | writing/reviewing models — the modeling rules + rationale |
 | [testing.md](references/testing.md) | deciding test coverage; generic vs quality-model vs unit tests |
-| [linting-and-ci.md](references/linting-and-ci.md) | setting up sqlfluff, pre-commit, and the CI gate |
-| [references/templates/](references/templates/) | copy-paste config (sqlfluff, pre-commit, CI workflow) |
+| [linting-and-ci.md](references/linting-and-ci.md) | setting up sqlfluff and the CI gate |
+| [references/templates/](references/templates/) | copy-paste config (sqlfluff, CI workflow) |
 | [deployment.md](references/deployment.md) | **deferred** — run/orchestration/publish (second pass) |
