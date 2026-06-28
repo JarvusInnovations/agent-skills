@@ -1,5 +1,5 @@
 ---
-name: mobile-flutter
+name: jarvus-flutter
 description: Mobile app development using Flutter + Riverpod + go_router. Use when creating Flutter apps, adding screens, managing state with Riverpod, implementing routing, building offline-first features, or setting up storybook component development. Also use when the user mentions Flutter, Dart, mobile apps, or cross-platform development.
 ---
 

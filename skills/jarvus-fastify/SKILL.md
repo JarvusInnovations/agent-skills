@@ -1,5 +1,5 @@
 ---
-name: backend-fastify
+name: jarvus-fastify
 description: Backend development using Fastify + TypeScript on Bun. Use when creating new backend APIs, adding routes, implementing services, working with plugins, or configuring environment variables.
 ---
 
