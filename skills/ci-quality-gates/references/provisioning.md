@@ -17,7 +17,32 @@ python 3.12.13
 opentofu 1.11.5
 ```
 
-## The composite action (use this, don't copy-paste the block)
+## First: does the asdf composite even fit this repo?
+
+The composite below installs **every** tool in `.tool-versions` via
+`asdf-vm/actions/install`, which runs `asdf plugin add <tool>` for each. That only
+works if **every pinned tool has a plugin in the asdf registry.** Repos often pin
+tools that don't — `duckdb`, say, has no registry plugin, so `asdf plugin add
+duckdb` fails and takes down *every job that uses the composite* (a real failure
+seen adopting this on a DuckDB monorepo: lint + tf all red, only the non-asdf
+Docker job survived). It works locally only because the dev already has the tool.
+
+So choose provisioning by what the repo pins:
+
+- **All pinned tools have asdf plugins** → use the composite (next section). One
+  provisioning path, fully cached.
+- **`.tool-versions` includes a tool with no asdf plugin** (duckdb, niche tools),
+  **or** a job only needs one tool → **skip the composite and provision just what
+  each gate needs** with targeted setup actions. This is also faster (no installing
+  python/uv/duckdb for a lint job):
+  - TS lint/test → `oven-sh/setup-bun@v2` with `bun-version-file: .tool-versions`
+  - IaC → `opentofu/setup-opentofu@v1` with `tofu_version` (+ `tofu_wrapper: false`)
+  - Python → `astral-sh/setup-uv@v7` (or asdf if uv+python both have plugins)
+
+  Targeted actions still read versions from `.tool-versions` where they can, so
+  it stays the single source of truth.
+
+## The composite action (when every pinned tool has a plugin)
 
 The provisioning steps repeat in every job. continuous-gtfs currently inlines
 them ~6 times across `lint.yml` / `test.yml` / `ui-checks.yml`; that's the proven

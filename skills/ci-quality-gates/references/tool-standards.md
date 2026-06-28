@@ -73,6 +73,15 @@ bun add -d oxlint oxfmt
 - **tsc** — type-check only, `--noEmit` (Bun runs the source; tsc never builds).
   `strict: true` belongs in `tsconfig.json` — type-check *is* a gate, it catches
   a whole class of bugs no linter does.
+  - **Project-references monorepo:** if the root `tsconfig.json` has a
+    `references` array (packages depending on packages), type-check at the **root
+    with `tsc -b`** (build mode), as one job — `tsc -b` builds referenced projects
+    in dependency order. A per-package `tsc --noEmit` does *not* build its deps, so
+    it fails in a clean CI checkout when a referenced package's declarations don't
+    exist yet (it passes locally only because a prior build left them around). So
+    the root `typecheck` script is `tsc -b`, and the lint matrix runs per-package
+    **lint + format only** (neither needs type info). See the root `typecheck` job
+    in `templates/github-actions/lint.yml`.
 
 **Philosophy: correctness-as-error, style-as-warn.** The base config sets the
 `correctness` category to `error` and little else — no opinionated style churn on
