@@ -1,6 +1,6 @@
 # Deployment patterns (DEFERRED — second pass)
 
-> **Not written yet.** The first pass of `dbt-jarvus` covers model *quality* (conventions,
+> **Not written yet.** The first pass of `jarvus-dbt` covers model *quality* (conventions,
 > testing, lint/CI). The run/orchestration/publish side is deliberately deferred so it can be
 > distilled properly from our deployment-heavy projects rather than guessed.
 
