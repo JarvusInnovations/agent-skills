@@ -5,40 +5,19 @@ Copy-paste config is in [templates/](templates/); this explains the choices.
 
 ## sqlfluff config
 
-Config lives in `pyproject.toml` (co-located with the project's other tooling). The house
-baseline — DuckDB shown; swap `dialect`/adapter deps for BigQuery:
+The full config (with `# ADAPT` markers) is the copy-paste template
+[templates/sqlfluff.pyproject.toml](templates/sqlfluff.pyproject.toml) — paste it into the
+project's `pyproject.toml`. The choices that matter:
 
-```toml
-[tool.sqlfluff.core]
-dialect = "duckdb"          # or "bigquery"
-templater = "dbt"
-max_line_length = 120
-layout_config_style = "vertical"   # keywords on new lines
-
-[tool.sqlfluff.templater.dbt]
-project_dir = "warehouse"
-profiles_dir = "warehouse"
-target = "local"
-
-[tool.sqlfluff.layout.type.comma]
-line_position = "trailing"
-
-# lowercase everything
-[tool.sqlfluff.rules.capitalisation.keywords]
-capitalisation_policy = "lower"
-[tool.sqlfluff.rules.capitalisation.identifiers]
-extended_capitalisation_policy = "lower"
-# (functions / types / literals likewise)
-
-# house rules that ARE machine-enforceable with stock sqlfluff:
-[tool.sqlfluff.rules.aliasing.forbid]
-force_enable = true                 # no unnecessary table aliases
-[tool.sqlfluff.rules.references.qualification]   # require qualified columns
-```
+- `templater = "dbt"`, `dialect = "duckdb"` (or `"bigquery"`), `max_line_length = 120`,
+  `vertical` layout, trailing commas.
+- **lowercase** keywords / identifiers / functions / types / literals.
+- house rules stock sqlfluff *can* enforce: **`aliasing.forbid`** (no unnecessary aliases) and
+  **`references.qualification`** (qualified columns).
 
 `templater = "dbt"` means sqlfluff compiles models through dbt, so it needs the dbt adapter
-available and a `profiles_dir` (in CI we write a throwaway DuckDB profile — see the gate
-below). Pin the sqlfluff and adapter versions in the CI lint job install (the `uv` linters group).
+available and a `profiles_dir` (in CI we write a throwaway DuckDB profile — see the gate below).
+Pin the sqlfluff and adapter versions in the CI lint job install (the `uv` linters group).
 
 ### Which conventions stock sqlfluff covers — and which it doesn't
 

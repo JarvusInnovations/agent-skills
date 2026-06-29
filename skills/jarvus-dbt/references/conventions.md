@@ -27,12 +27,13 @@ Never assume a default. Choose per model and record why:
 - **incremental** (incl. `microbatch`) — large append-mostly facts; pick the grain and
   `event_time` carefully.
 
-Pick the **grain** before the materialization, and don't multiply rows you don't need.
-*Case in point:* a schedule fact built as one row per `(service_date, trip_id)` exploded a
-TIDES dataset to ~229M rows; rebuilt as **date-free, feed-scoped facts** (one row per
-`(_feed_digest, trip_id)`) plus a narrow calendar map, it dropped to ~53M — consumers join
-the calendar and compute timestamps inline. Prefer a date-free fact + calendar map over
-materializing a schedule across every service date.
+Pick the **grain** before the materialization, and let **observed performance when the model
+is consumed** drive the choice — not table size on its own. A big table isn't a problem until
+something querying it is slow; a "small" model can still warrant a table if it's on a hot path.
+*Example:* a schedule fact keyed per `(service_date, trip_id)` was fine to build but slow once
+consumed; re-grained to date-free, feed-scoped facts (one row per `(_feed_digest, trip_id)`)
+plus a narrow calendar map that consumers join, it performed. The transferable lesson is the
+**method** — choose grain, then measure consumption — not a blanket "avoid date-scoped facts."
 
 ## No inner joins
 
@@ -69,6 +70,29 @@ scheduled_trips as (
 Readability + dependency tracing: a reader sees every input in one place, and the logic CTEs
 reference clearly-named relations rather than inline `ref()` calls.
 
+## End every model with a named, fully-enumerated SELECT
+
+A model's final statement is a CTE **named the same as the model**, with **every output column
+enumerated** (no `select *` from upstream), followed by `select * from <model_name>`:
+
+```sql
+dim_stops as (
+    select
+        stop_id,
+        stop_name,
+        stop_lat,
+        stop_lon,
+    from ...
+)
+
+select * from dim_stops
+```
+
+Three payoffs: the **model's name appears inside its own file** (so a VS Code search for the
+model name lands in its code), the **column list is explicit** so it's easy to audit against the
+model's docs, and **PR diffs highlight what's actually changing on the output** rather than
+burying it in intermediate logic.
+
 ## Semantic table aliases
 
 **Never letter abbreviations** (`vp`, `st`, `sv`, `tp`, `dsf`, `t`, `s`). Derive a short noun
@@ -94,7 +118,9 @@ human call — see [linting-and-ci.md](linting-and-ci.md).
 
 ## Timeless comments
 
-Comments describe what the code **persistently is**, never what changed. Don't write
+(General code-comment hygiene, not dbt-specific — kept here because AI-generated models
+frequently narrate their own edits.) Comments describe what the code **persistently is**, never
+what changed. Don't write
 "renamed from X", "replaced the in-flight Z", "now uses…". Write what the thing is and why it
 exists. Change narration belongs in the commit message, not the source.
 

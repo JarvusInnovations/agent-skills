@@ -1,28 +1,24 @@
 name: dbt
 
-# Credential-free dbt gate for the DuckDB stack: SQL lint + per-tenant parse + unit tests.
+# Credential-free dbt gate for the DuckDB stack: SQL lint + per-project parse + unit tests.
 # Reads only public data, so it needs no warehouse secret and runs on fork PRs. Mirror your
 # repo's existing provisioning (this uses uv directly, like the dbt projects do).
-# ADAPT: the path filters, the `tenants` matrix, and the working directories.
+#
+# Everything in ALL-CAPS / <angle-brackets> below is a PLACEHOLDER — replace it. The path
+# filters, the project matrix, and the working directories are all repo-specific. (For a real,
+# working instance see transit-lake's .github/workflows/dbt.yml.)
 on:
   pull_request:
     branches: [main]
-    paths:
-      - 'packages/dbt-*/**'        # ADAPT
-      - 'tenants/**'               # ADAPT
+    paths: &dbt_paths
+      - '<DBT_PROJECT_GLOB>/**'        # ADAPT: e.g. packages/dbt-*/**, warehouse/**, tenants/**
       - 'pyproject.toml'
       - 'uv.lock'
       - '.tool-versions'
       - '.github/workflows/dbt.yml'
   push:
     branches: [main]
-    paths:
-      - 'packages/dbt-*/**'
-      - 'tenants/**'
-      - 'pyproject.toml'
-      - 'uv.lock'
-      - '.tool-versions'
-      - '.github/workflows/dbt.yml'
+    paths: *dbt_paths
 
 permissions:
   contents: read
@@ -39,23 +35,26 @@ jobs:
       - name: Set up dbt (sqlfluff uses the dbt templater)
         run: |
           # ADAPT: write a throwaway DuckDB profile + install deps so sqlfluff can compile models
-          uv run dbt deps        # ADAPT --project-dir as needed
+          uv run dbt deps        # ADAPT: --project-dir / --profiles-dir as needed
       - name: sqlfluff lint (inline annotations, run directly — no pre-commit)
         run: |
-          uv run sqlfluff lint packages tenants \
+          uv run sqlfluff lint <MODEL_DIRS> \
             --config pyproject.toml \
-            --format github-annotation-native --annotation-level failure   # ADAPT paths
+            --format github-annotation-native --annotation-level failure   # ADAPT: <MODEL_DIRS>
 
   parse:
-    name: dbt parse (${{ matrix.tenant }})
+    name: dbt parse (${{ matrix.project }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        tenant: [septa, mta, rfta]   # ADAPT: every tenant/project must parse
+        # ADAPT: one entry per dbt project dir — EVERY tenant/project must parse.
+        project:
+          - <path/to/projectA>
+          - <path/to/projectB>
     defaults:
       run:
-        working-directory: tenants/${{ matrix.tenant }}/${{ matrix.tenant }}   # ADAPT
+        working-directory: ${{ matrix.project }}
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
@@ -63,9 +62,11 @@ jobs:
           enable-cache: true
       - name: dbt deps + parse
         run: |
-          uv run --project ../../.. dbt deps --profiles-dir .
-          uv run --project ../../.. dbt parse --profiles-dir .
+          # ADAPT: --project points at the uv project that has dbt installed.
+          uv run --project "$GITHUB_WORKSPACE/<UV_PROJECT_DIR>" dbt deps --profiles-dir .
+          uv run --project "$GITHUB_WORKSPACE/<UV_PROJECT_DIR>" dbt parse --profiles-dir .
 
+  # OPTIONAL — delete if there are no dbt unit tests yet. Fixtures only, no warehouse.
   unit-tests:
     name: dbt unit tests
     runs-on: ubuntu-latest

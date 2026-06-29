@@ -47,8 +47,11 @@ models:
 
 ## 2. Quality-model pattern (record-level validation in the DAG)
 
-For facts where some records are invalid but you don't want to silently drop them, split
-validation into a model so the result is materialized, queryable, and monitorable:
+A pattern to **consider** — not a blanket requirement. It carries real overhead (an extra
+model per fact), so reach for it where record-level validity genuinely matters, and **ask the
+developer** before adding it rather than applying it everywhere by default. Where it fits: facts
+where some records are invalid but you don't want to silently drop them — split validation into
+a model so the result is materialized, queryable, and monitorable:
 
 ```
 int_<thing>  →  fct_<thing>_quality  →  fct_<thing>

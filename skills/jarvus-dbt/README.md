@@ -20,9 +20,10 @@ mechanics.
 **Recommended scope: per-project**, alongside the dbt-labs skills:
 
 ```bash
-npx skills add JarvusInnovations/agent-skills --skill jarvus-dbt
-# plus the first-party mechanics skills it references:
+# the first-party dbt mechanics skills this builds on (install first):
 npx skills add dbt-labs/dbt-agent-skills
+# then the Jarvus house layer:
+npx skills add JarvusInnovations/agent-skills --skill jarvus-dbt
 ```
 
 See `SKILL.md` for the conventions and `references/` for the modeling rules, testing patterns,
