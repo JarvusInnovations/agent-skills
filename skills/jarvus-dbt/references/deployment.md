@@ -1,4 +1,4 @@
-# Deployment patterns (DEFERRED — second pass)
+# Deployment patterns — TODO (deferred second pass, not yet written)
 
 > **Not written yet.** The first pass of `jarvus-dbt` covers model *quality* (conventions,
 > testing, lint/CI). The run/orchestration/publish side is deliberately deferred so it can be
@@ -14,6 +14,9 @@ even though they're not authorities on model quality):
   for asset lineage (jarvus-data-pipeline pattern).
 - **External materialization & handoff** — DuckDB → object storage (GCS) external models and
   cross-container handoff (co-air-quality-udda pattern); `on-run-start` registration macros.
+  (Note: this one straddles deployment *and* data-access / client-facing performance — it lands
+  here mainly because it doesn't merit its own skill and isn't a modeling "convention"; revisit
+  the placement when this section is written.)
 - **Warehouse auth in CI/prod** — BigQuery service account / Workload Identity vs the
   credential-free DuckDB path; CI targets and keyfile handling.
 - **Cross-platform moves** — DuckDB ↔ BigQuery; reference dbt-labs' `dbt-migration` skills.
