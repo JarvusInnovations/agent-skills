@@ -1,6 +1,6 @@
 ---
 name: agent-dev-workflow
-description: Set up an agent-friendly local dev workflow — a bin/ task-runner (inspired by GitHub's scripts-to-rule-them-all) over a shared Postgres container that gives every git worktree its own isolated database and port, plus a dedicated test database so tests never clobber dev data. Use this whenever a project needs worktree-isolated local development, when setting up for AI agent orchestrators (Conductor and similar) that spin up a worktree per session and register setup/run/cleanup commands, when multiple copies of a backend must run concurrently on one machine, when replacing a docker-compose-for-local-postgres setup, or when tests keep wiping local dev/demo data. Triggers on "bin/ scripts", "worktree isolation", "per-worktree database/port", "scripts to rule them all", "agent dev environment", "setup/run/cleanup scripts", or tests clobbering the dev database.
+description: Set up an agent-friendly local dev workflow — a bin/ task-runner (inspired by GitHub's scripts-to-rule-them-all) over a shared Postgres container that gives every git worktree its own isolated database and ports, plus a dedicated test database so tests never clobber dev data. Use this whenever a project needs worktree-isolated local development, when setting up for AI agent orchestrators (Conductor and similar) that spin up a worktree per session and register setup/run/cleanup commands, when multiple copies of a backend must run concurrently on one machine, when replacing a docker-compose-for-local-postgres setup, when deciding whether auxiliary dev services (a validator container, a local OIDC IdP) replicate per worktree or run shared, or when tests keep wiping local dev/demo data. Triggers on "bin/ scripts", "worktree isolation", "per-worktree database/port", "scripts to rule them all", "agent dev environment", "setup/run/cleanup scripts", "shared auxiliary services", or tests clobbering the dev database.
 ---
 
 # Agent-friendly dev workflow (bin/ + worktree isolation)
@@ -26,14 +26,21 @@ a separate DB, the payoff is small.
 ## The core idea: identity derives from the worktree
 
 One shared Postgres container (started once, reused by name — path-independent, so
-it survives worktree deletion). Each context gets a **database** and a **port**
-derived from its worktree path:
+it survives worktree deletion). Each context gets a **database** and a **port per
+process it runs**, derived from its worktree path:
 
-| Context | Database | Backend port |
-|---|---|---|
-| Main checkout | the canonical name (durable dev data) | the default (e.g. 4000) |
-| Each agent worktree | `app_<hash-of-path>` (isolated) | next free port |
+| Context | Database | Port(s) |
+| --- | --- | --- |
+| Main checkout | the canonical name (durable dev data) | the default(s) (e.g. 4000) |
+| Each agent worktree | `app_<hash-of-path>` (isolated) | next free in each range |
 | The test runner | `app_test` (forced) | n/a |
+
+A worktree isn't necessarily one process: a repo may run an HTTP API + a gRPC
+service + a Vite frontend per worktree. The pattern generalizes cleanly — the
+project's port band claims **one range per process kind**, `_common.sh` grows one
+picker per kind, and `bin/setup` emits every derived port **plus the wiring vars
+that connect the processes** (e.g. `ORCHESTRATOR_URL`). One note: gRPC ports
+aren't curl-checkable — readiness-probe them with a plain TCP check.
 
 Because identity comes from the path, two sessions never collide and re-running
 setup is idempotent. Every derived value has an env override (`APP_DATABASE`,
@@ -57,11 +64,12 @@ know which parts you copy verbatim and which you adapt.
 **Project-specific** (the knobs you set):
 
 - the prefix, PG user/password/image, container/volume names
-- the **base port band** — the default PG port plus the backend/frontend worktree
-  ranges. This is the project's claim on the machine: worktree isolation keeps a
-  project's *own* copies apart, but the base band is what keeps *different projects*
-  from colliding when several run at once. Pick a distinct, uncommon band per repo
-  (see gotchas) and keep PG + backend + frontend in one coherent range.
+- the **base port band** — the default PG port plus one worktree range **per
+  process kind** (backend HTTP, gRPC, frontend, …). This is the project's claim on
+  the machine: worktree isolation keeps a project's *own* copies apart, but the
+  base band is what keeps *different projects* from colliding when several run at
+  once. Pick a distinct, uncommon band per repo (see gotchas) and keep PG + every
+  process range in one coherent band.
 - the Postgres **major** — pin the same one production runs (`references/snapshots.md`)
 - `app_server_dir` — repo root (single package) vs a subdir (monorepo)
 - `app_migrate` — how migrations run → **`references/migrations-and-seeds.md`**
@@ -70,6 +78,34 @@ know which parts you copy verbatim and which you adapt.
 - the **seed posture** — synthetic SQL, snapshot-as-seed, or empty + per-suite
   fixtures (`references/migrations-and-seeds.md`), and whether it has prod snapshots
   at all (`references/snapshots.md`)
+- whether the repo has **auxiliary services** and what shared endpoints to seed
+  into worktree envs (next section)
+
+## Auxiliary services: shared per machine, never per worktree
+
+What replicates per worktree is **the app + its database — nothing more**.
+Auxiliary services (a GTFS validator container, a local OIDC IdP, a fake object
+store) run **once per machine** and are shared by every worktree instance; each
+worktree's env just points at the shared endpoints. N worktrees hitting one
+validator is fine — one container instead of N is the difference between "docker
+is fine" and "my laptop is swapping".
+
+This fixes the docker-compose question cleanly:
+
+- **No aux services** (the dev flow is just app + DB) → **no compose at all**.
+  `bin/` owns the shared Postgres container directly, as prescribed.
+- **Aux services exist** → compose covers **only those**: `docker compose up -d`
+  once per machine. The compose file never contains the per-worktree app or
+  Postgres — those stay with `bin/`.
+
+Don't expand `bin/` into orchestrating aux containers; hold the boundary instead:
+**`bin/` = per-worktree identity** (DB, ports, app processes); **compose =
+machine-wide singletons**.
+
+**Env seeding** is the connective tissue: `bin/setup` emits the shared endpoints
+alongside the per-worktree values (e.g. `VALIDATOR_URL=http://localhost:9010`,
+overridable via env like everything else), so one stdout capture threads into the
+run step and every worktree converges on the same shared services.
 
 ## Build order
 
@@ -87,8 +123,10 @@ know which parts you copy verbatim and which you adapt.
    DB-backed test suite: it's the step that stops tests wiping dev data. It's a clean
    add later, but if you know tests are coming, scaffolding `bin/test` + the preload
    up front means the *first* test is born-isolated.
-6. `chmod +x bin/*` (not `_common.sh`). Remove any `docker-compose.yml` that only
-   templated local Postgres, and update `.env.example` + the project's agent docs
+6. `chmod +x bin/*` (not `_common.sh`). If a `docker-compose.yml` exists, evict
+   its Postgres (and app) services — delete the file outright if that's all it had;
+   keep it only as the once-per-machine aux-services runner (see "Auxiliary
+   services" and gotchas). Update `.env.example` + the project's agent docs
    (CLAUDE.md or equivalent) to point at `bin/`.
 7. **Verify** end to end (don't assume): `bin/setup` on a clean checkout; the
    sentinel-row test from `test-isolation.md`; `bin/dev` twice concurrently lands on
@@ -98,7 +136,7 @@ know which parts you copy verbatim and which you adapt.
 ## Reference files
 
 | File | Read when |
-|---|---|
+| --- | --- |
 | `references/bin/` | always — the script templates you copy + adapt |
 | `references/test-isolation.md` | wiring tests to `app_test` (the preload), **and** authoring suites against it (in-process `inject`, scoped truncate, fixtures) — almost always |
 | `references/migrations-and-seeds.md` | setting `app_migrate`; deciding on seeds |
@@ -118,6 +156,11 @@ preload's `??=` is the handshake that lets CI's explicit `DATABASE_URL` win. Ado
 both together for a DB-backed app — the CI skill defines the gate, this skill keeps
 it from clobbering dev data. (SquadQuest is the worked example: a `"test": "bun test"`
 script, `bin/test`, and a `bunfig.toml` preload that defers via `??=`.)
+
+Some repos deliberately run CI with **no database at all** (live-DB suites
+self-skip). That's a legitimate posture too — but the preload must then skip
+when Postgres is unreachable instead of failing the run. See
+`test-isolation.md` §CI for both postures.
 
 ## Guardrails
 

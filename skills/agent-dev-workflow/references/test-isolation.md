@@ -19,6 +19,13 @@ This reference has two halves: the **plumbing** — a dedicated, auto-migrated t
 preload = ["./test/setup.ts"]
 ```
 
+Mind existing `[test]` config: `bun test` globs **across nested packages**, so a
+monorepo's root `bunfig.toml` may already carry `[test] pathIgnorePatterns` to
+keep sub-package suites out of the root run. **Extend that existing `[test]`
+block** with the `preload` key — pasting the snippet as a second `[test]` block
+(or overwriting the file) clobbers the ignore patterns and suddenly pulls every
+nested package's tests into the run.
+
 `test/setup.ts` runs once before any test file. It must:
 
 1. Default `DATABASE_URL` to the test DB **with `??=`** — so an explicit env
@@ -60,6 +67,11 @@ Then delete the per-file `process.env.DATABASE_URL = …` lines from each test �
 the preload centralizes them. Keep any per-suite *override* (e.g. a suite that
 sets `MIN_SUPPORTED_BUILD=500` to exercise a code path) — just drop the shared DB/secret defaults.
 
+Apps that read discrete `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USER`/`DB_PASSWORD`
+vars instead of a URL: `??=` each discrete var the same way — or better, teach
+the app to accept `DATABASE_URL` with a discrete-var fallback, so the preload,
+`bin/`, and CI all speak one URL.
+
 ## Why `??=` and not `=`
 
 `??=` only fills in a default when nothing was provided. CI sets `DATABASE_URL`
@@ -72,6 +84,21 @@ CI already points at a throwaway service-container DB via an explicit
 `DATABASE_URL` and runs its own migrate step. This whole pattern is a **local-dev**
 change — verify CI is green after adding the preload, but you should not need to
 edit the CI workflow.
+
+**Unless CI deliberately has no database.** Some repos run CI DB-less: live-DB
+suites self-skip (`describe.skipIf(...)`) and only pure suites gate merges. The
+preload as written breaks that CI — it unconditionally connects and migrates,
+and there's nothing to connect to. Two legitimate postures; pick one on purpose:
+
+- **Add a service container** (the `ci-quality-gates` default) — DB coverage on
+  every PR; the preload works unchanged.
+- **Skip when unreachable** — the preload probes Postgres with a
+  short-timeout connect; on failure it sets a flag the live-DB suites check
+  (feeding their `skipIf`) and returns instead of throwing. Keeps fork PRs and
+  minimal runners green at the cost of DB coverage in that lane.
+
+Don't leave it implicit — a preload that hard-fails in a deliberately DB-less CI
+looks like a flaky suite, not a design choice.
 
 ## Residual footgun to document, not over-engineer
 

@@ -13,7 +13,12 @@ set -euo pipefail
 
 APP_PG_USER="app"
 APP_PG_PASSWORD="app"
-APP_PG_IMAGE="postgres:17-alpine"     # see gotchas.md before choosing 18
+# Pin the SAME Postgres major production runs (see gotchas.md). postgres:18
+# moved the data directory — if prod is 18, change BOTH lines together:
+#   APP_PG_IMAGE="postgres:18-alpine"
+#   APP_PG_DATA_DIR="/var/lib/postgresql"        # NOT .../data on 18
+APP_PG_IMAGE="postgres:17-alpine"
+APP_PG_DATA_DIR="/var/lib/postgresql/data"
 APP_CONTAINER_NAME="app-postgres"
 APP_VOLUME_NAME="app-pgdata"
 
@@ -67,6 +72,17 @@ app_database_url() {
   echo "postgres://${APP_PG_USER}:${APP_PG_PASSWORD}@localhost:$(app_pg_port)/$(app_db_name)"
 }
 
+# Not every app reads DATABASE_URL — some consume discrete DB_HOST/DB_PORT/…
+# vars. Emit BOTH forms from bin/setup (uncomment there), or better: teach the
+# app DATABASE_URL with a discrete-var fallback so one URL rules everywhere.
+app_db_env() {
+  echo "DB_HOST=localhost"
+  echo "DB_PORT=$(app_pg_port)"
+  echo "DB_NAME=$(app_db_name)"
+  echo "DB_USER=${APP_PG_USER}"
+  echo "DB_PASSWORD=${APP_PG_PASSWORD}"
+}
+
 # ── Shared Postgres container ────────────────────────────────────────────────
 ensure_postgres() {
   local container="$APP_CONTAINER_NAME" port
@@ -84,7 +100,7 @@ ensure_postgres() {
       -e POSTGRES_USER="$APP_PG_USER" \
       -e POSTGRES_PASSWORD="$APP_PG_PASSWORD" \
       -e POSTGRES_DB=app \
-      -v "${APP_VOLUME_NAME}:/var/lib/postgresql/data" \
+      -v "${APP_VOLUME_NAME}:${APP_PG_DATA_DIR}" \
       "$APP_PG_IMAGE" >/dev/null
   fi
   wait_for_postgres
@@ -171,3 +187,16 @@ app_pick_port() {
   if ! port_in_use 4000; then echo "4000"; return; fi
   find_available_port 4001 4099
 }
+
+# Multi-process backends: a worktree may run SEVERAL processes (HTTP API + gRPC
+# service + Vite, …). Add one picker PER PROCESS KIND, each with a DISJOINT range
+# inside the project's band (e.g. HTTP 4000-4049, gRPC 4050-4099, Vite 4100-4199 —
+# shrink app_pick_port's range to match), and have bin/setup emit every derived
+# port plus the wiring vars between them (e.g. ORCHESTRATOR_URL). Readiness note:
+# gRPC ports aren't curl-checkable — probe with a plain TCP check, e.g.
+# `(exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null`.
+# app_pick_grpc_port() {
+#   if [ -n "${GRPC_PORT:-}" ]; then echo "$GRPC_PORT"; return; fi
+#   if ! port_in_use 4050; then echo "4050"; return; fi
+#   find_available_port 4051 4099
+# }
