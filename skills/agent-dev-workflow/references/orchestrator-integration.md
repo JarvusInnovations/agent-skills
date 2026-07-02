@@ -9,12 +9,22 @@ with zero manual config. These scripts provide exactly that contract.
 
 - **setup** → `bin/setup`. Idempotent: ensures the shared container, creates this
   worktree's DB (derived from its path), installs deps, migrates. It **prints
-  `KEY=VALUE` env lines to stdout** (`DATABASE_URL`, `APP_DATABASE`, `PORT`, and
-  `VITE_PORT` for fullstack) and all human status to **stderr** — so an
-  orchestrator can capture stdout and inject those vars into the run step.
-- **run** → `bin/dev` (or `bin/server`). Picks the same free port and derives the
+  `KEY=VALUE` env lines to stdout** and all human status to **stderr** — so an
+  orchestrator can capture stdout and inject those vars into the run step. The
+  stdout block must be **complete**: `DATABASE_URL` + `APP_DATABASE`, *every*
+  derived port (one per process kind — `PORT`, `GRPC_PORT`, `VITE_PORT`, …), the
+  inter-service wiring vars (`ORCHESTRATOR_URL=http://localhost:${GRPC_PORT}`),
+  and the shared aux-service endpoints (`VALIDATOR_URL=…` — see SKILL.md
+  "Auxiliary services"). Apps that read discrete `DB_*` vars instead of a URL:
+  emit both forms (`app_db_env`).
+- **run** → `bin/dev` (or `bin/server`). Picks the same free ports and derives the
   same DB, so it works whether or not the orchestrator threaded `setup`'s output
-  through. Uses `exec` for clean signal handling.
+  through. Uses `exec` for clean signal handling. Binds **loopback by default**
+  (`HOST=127.0.0.1`): an orchestrator that needs LAN exposure must opt in
+  explicitly — and must never widen a dev-auth-bypass instance (an
+  AUTH_DISABLED-style everyone-is-admin mode) beyond loopback. If the
+  orchestrator health-checks the service, `curl` works for HTTP ports but **not
+  gRPC** — probe those with a plain TCP connect.
 - **cleanup** → `bin/cleanup`. Drops this worktree's DB (refuses the canonical
   one without `--force`); stops the dev session if a fullstack `bin/dev` left a
   PID file. Leaves the shared container up for other worktrees.
@@ -37,5 +47,6 @@ needs no per-session config — just register the three scripts once.
 ## Override hooks
 
 Every derived value has an env override for when an orchestrator wants explicit
-control: `APP_DATABASE`, `APP_PG_PORT`, `PORT`, `VITE_PORT`. Honor these first in
+control: `APP_DATABASE`, `APP_PG_PORT`, `PORT`, `VITE_PORT`, plus one per extra
+process kind (`GRPC_PORT`, …) and `HOST` (default loopback). Honor these first in
 every script (the templates do).

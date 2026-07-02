@@ -26,14 +26,29 @@ echo "Backend:  http://localhost:${PORT}" >&2
 pidfile="$root/.dev.pid"
 echo $$ > "$pidfile"
 
-# kill 0 signals the whole process group → both children die when this script exits.
+# kill 0 signals the whole process group → all children die when this script exits.
 trap 'rm -f "$pidfile"; kill 0' EXIT
 
-# Backend
-env DATABASE_URL="$DATABASE_URL" PORT="$PORT" HOST="${HOST:-0.0.0.0}" \
+# Backend. HOST defaults to LOOPBACK — widen to 0.0.0.0 only deliberately (LAN /
+# mobile-device testing), and NEVER while a dev-auth bypass is active: an
+# AUTH_DISABLED-style mode that treats every request as admin is only safe
+# because it's loopback-contained. Don't export 0.0.0.0 unconditionally.
+env DATABASE_URL="$DATABASE_URL" PORT="$PORT" HOST="${HOST:-127.0.0.1}" \
   bash -c 'cd "$0"/<server-subdir> && bun run dev' "$root" &
 
-# Frontend — proxy to the actual backend port (important for non-default worktree ports).
-(cd "$root/<web-subdir>" && API_TARGET="http://localhost:${PORT}" VITE_PORT="$VITE_PORT" bun run dev) &
+# Repos with N backend processes per worktree (e.g. gRPC service + HTTP gateway):
+# start each the same way with its own picked port, threading the wiring env into
+# dependents — they all die via the same trap:
+#   GRPC_PORT="$(app_pick_grpc_port)"
+#   env DATABASE_URL="$DATABASE_URL" GRPC_PORT="$GRPC_PORT" \
+#     bash -c 'cd "$0"/<grpc-subdir> && bun run dev' "$root" &
+#   ...and pass ORCHESTRATOR_URL="http://localhost:${GRPC_PORT}" to consumers.
+
+# Frontend — proxy to the actual backend port (important for non-default worktree
+# ports). Convention: name the var VITE_API_TARGET (what real adopters use; the
+# vite config reads it to set server.proxy) rather than a bare API_TARGET. Proxy
+# /auth as well as /api when dev session cookies ride the proxy — a /api-only
+# proxy silently breaks login.
+(cd "$root/<web-subdir>" && VITE_API_TARGET="http://localhost:${PORT}" VITE_PORT="$VITE_PORT" bun run dev) &
 
 wait

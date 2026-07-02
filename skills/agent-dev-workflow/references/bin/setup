@@ -54,3 +54,12 @@ app_migrate "$url"
 echo "DATABASE_URL=${url}"
 echo "APP_DATABASE=${db}"
 echo "PORT=$(app_pick_port)"
+# Emit EVERY derived port (one per process kind) plus the wiring vars that
+# connect the processes, and the shared aux-service endpoints (SKILL.md
+# "Auxiliary services") — the orchestrator captures this one stdout block:
+#   grpc_port="$(app_pick_grpc_port)"
+#   echo "GRPC_PORT=${grpc_port}"
+#   echo "ORCHESTRATOR_URL=http://localhost:${grpc_port}"
+#   echo "VALIDATOR_URL=${VALIDATOR_URL:-http://localhost:9010}"
+# Apps that read discrete DB_* vars instead of DATABASE_URL: also emit both forms.
+#   app_db_env

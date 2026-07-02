@@ -6,7 +6,7 @@ is where you adapt.
 
 ## Migrations
 
-Set `app_migrate()` to however the project applies migrations. Two shapes seen
+Set `app_migrate()` to however the project applies migrations. Three shapes seen
 across real projects:
 
 - **A package script** (simplest — reuse what `package.json` already defines):
@@ -32,13 +32,51 @@ across real projects:
   }
   ```
 
+- **A self-migrating app** — the app runs its own programmatic migration runner
+  at boot: fresh-bootstrap when the DB is empty, baseline detection on an
+  existing schema, then additive incremental migrations. The division of labor
+  flips: **`bin/dev` needs no migrate step** (starting the app *is* migrating),
+  and `bin/setup` + the test preload call the app's own runner instead of
+  shelling out to a migration CLI. For `bin/setup` that means a thin entrypoint
+  into the runner:
+
+  ```bash
+  app_migrate() {
+    local url="$1"
+    echo "Running migrations..." >&2
+    (cd "$(app_server_dir)" && DATABASE_URL="$url" \
+      uv run python -c 'from app.db.migrations import run; run()') >&2
+  }
+  ```
+
+  Keep the `app_migrate` call in `setup`/`reset-db` anyway — it makes the DB
+  queryable via `bin/db` before first boot, and a skipped migrate is
+  self-healing here (the next app start covers it).
+
 The **test preload** migrates in-process instead of shelling out (it's already in
-JS and wants no Docker dependency) — typically drizzle-orm's programmatic
-`migrate(drizzle(sql), { migrationsFolder })`. Both read the same migrations
-folder; they're two callers of one migration set, not two migration systems.
+the app's language and wants no Docker dependency) — drizzle-orm's programmatic
+`migrate(drizzle(sql), { migrationsFolder })`, or for a self-migrating app,
+importing and awaiting the app's own runner. Both read the same migration set as
+`app_migrate`; they're two callers of one migration system, not two systems.
 
 Non-bun stacks: `alembic upgrade head` (Python), `rails db:migrate`,
 `migrate -path … up` (golang-migrate), etc. — same idea, swap the command.
+
+### The `/docker-entrypoint-initdb.d` mount — recognize it, then retire it
+
+A common pre-`bin/` idiom you'll meet during adoption: the compose file mounts
+the migrations directory into the Postgres container at
+`/docker-entrypoint-initdb.d`, so the official image applies the `.sql` files
+itself. Its trap: those scripts run **only on the first boot of an empty
+volume**. Add a migration later and every existing volume silently never sees
+it — the "migration system" stops migrating the moment anyone has data. It also
+couples schema application to container creation, which the shared-container
+pattern deliberately decouples.
+
+Retirement path: point `app_migrate` at the same migration files via a real
+runner (any of the three shapes above), drop the mount from the container
+definition, and let `bin/setup`/`bin/reset-db` own schema application. Existing
+volumes don't need recreating — the runner brings them forward.
 
 ## Seeds (optional) — three postures
 

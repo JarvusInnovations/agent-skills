@@ -65,24 +65,40 @@ Two ways to choose it:
 On `postgres:18` the volume must mount at `/var/lib/postgresql`, **not**
 `/var/lib/postgresql/data` (the path used through 17). Mount the wrong one and the
 container's healthcheck never goes ready and `wait_for_postgres` times out after
-30s. If you pin `postgres:17-alpine` (the template default) use `…/data`; only
-change the mount if you deliberately move to 18.
+30s.
 
 **Pin the same major production runs.** Whatever major your prod DB is (Cloud SQL,
 RDS, …), pin that in `_common.sh` so `strip_cloudsql`'d snapshots restore without
-version-mismatch surprises. Across Jarvus repos this currently drifts (16 / 17 / 18
-all in use) — match *your* prod, and mind the data-dir caveat above when it's 18.
+version-mismatch surprises. That rule cuts both ways: when prod runs 18, you don't
+get to stay on the 17 template default to dodge the mount change. The `_common.sh`
+template carries the mount as `APP_PG_DATA_DIR` — for 18, change **both** lines
+together:
 
-## docker-compose can't do per-context isolation — remove it
+```bash
+APP_PG_IMAGE="postgres:18-alpine"
+APP_PG_DATA_DIR="/var/lib/postgresql"     # NOT /var/lib/postgresql/data
+```
 
-If the repo had a `docker-compose.yml` just to template a local Postgres, **delete
-it** once these scripts exist. Compose pins one fixed DB name and one fixed host
-port — exactly what defeats per-worktree databases and ports. It also breaks in
-this workflow specifically: compose ties operations to the directory it was first
-run from, so when an agent worktree is deleted while its compose containers keep
-running, you can't manage them without recreating that exact path. The `bin/`
-scripts manage a path-independent shared container by name instead. Keeping both
-invites "which Postgres am I talking to?" confusion — pick the scripts.
+Across Jarvus repos the major currently drifts (16 / 17 / 18 all in use) — match
+*your* prod. And remember container-reuse (below): switching majors on an existing
+container/volume needs a deliberate `docker rm` + volume removal.
+
+## docker-compose can't do per-context isolation — evict Postgres from it
+
+Compose pins one fixed DB name and one fixed host port — exactly what defeats
+per-worktree databases and ports. It also breaks in this workflow specifically:
+compose ties operations to the directory it was first run from, so when an agent
+worktree is deleted while its compose containers keep running, you can't manage
+them without recreating that exact path. So once these scripts exist, **remove the
+Postgres service (and the app itself) from compose** — the `bin/` scripts manage a
+path-independent shared container by name instead. Keeping a compose Postgres
+alongside the bin/ one invites "which Postgres am I talking to?" confusion.
+
+That's an eviction, not necessarily a deletion. Compose keeps exactly one job:
+the **once-per-machine auxiliary-services runner** (a validator container, a local
+OIDC IdP — see SKILL.md "Auxiliary services"). Those are shared across all
+worktrees, never replicated per worktree, so compose's one-fixed-port model is
+correct for them. If the file only templated Postgres, delete it outright.
 
 ## `cd` inside a piped/exec'd script
 
