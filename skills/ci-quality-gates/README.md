@@ -26,7 +26,7 @@ credentialed checks (`tofu plan`, integration tests) are a separate later gate.
 ## What it gives the agent
 
 - a one-place **provisioning composite action** (asdf + cache + reshim) to call from every job,
-- copy-ready **GitHub Actions** templates (`lint`, `test`, `ui-checks`, `tf-validate`),
+- copy-ready **GitHub Actions** templates (`lint`, `test`, `ui-checks`, `tf-validate`, `docs`),
 - the **oxlint/oxfmt** configs (base + stricter React) and the **ruff** rule block,
 - the **TS script contract** and the one-time **adoption migration** recipe so an existing repo
   goes green on the gate's first run.
