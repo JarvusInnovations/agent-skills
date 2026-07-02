@@ -42,11 +42,32 @@ So choose provisioning by what the repo pins:
   Targeted actions still read versions from `.tool-versions` where they can, so
   it stays the single source of truth.
 
+- **A subdirectory pins its own tool** — a repo can deliberately keep a tool
+  *out* of the root `.tool-versions` and pin it in a subdir's own
+  `.tool-versions` instead (asdf resolves the nearest file walking up). Seen in
+  a client deployment repo: the root file pins uv/python/opentofu for the
+  pipeline + IaC gates, while a self-contained UI package pins its own bun in
+  `<pkg>/.tool-versions`. The composite won't install that tool (it only reads
+  the root file), so the package's gate provisions it with a targeted action
+  pointed at the nested file:
+
+  ```yaml
+  - uses: oven-sh/setup-bun@v2
+    with:
+      bun-version-file: <pkg>/.tool-versions
+  ```
+
+  The nested file is still the single source of truth for that package — local
+  asdf and CI read the same file, just a different one than the root.
+
 ## The composite action (when every pinned tool has a plugin)
 
-The provisioning steps repeat in every job. continuous-gtfs currently inlines
-them ~6 times across `lint.yml` / `test.yml` / `ui-checks.yml`; that's the proven
-behavior but it rots. Consolidate into one local composite action and call it:
+The provisioning steps repeat in every job. Consolidate them into one local
+composite action and call it — this is the proven state, not an aspiration:
+the continuous-gtfs flagship calls `./.github/actions/setup-asdf` from every
+job across `lint.yml` / `test.yml` / `ui-checks.yml` / `docs.yml` (zero
+inlined copies), and its composite is byte-identical to the template here.
+Don't regress to inlining the block per job — that's how the copies rot apart.
 
 ```yaml
 steps:
@@ -69,6 +90,15 @@ Drop `templates/github-actions/setup-asdf/action.yml` at
 
 `checkout` must come first so the local `./.github/actions/setup-asdf` path
 exists before it's referenced.
+
+**Cache-key caveat for nested `.tool-versions`:** the composite's cache key is
+`hashFiles('.tool-versions')` — the **root** file only. If the repo also has
+per-package `.tool-versions` files (previous section) *and* the composite is
+what provisions those jobs, a bump to a nested file won't change the key, so
+CI restores a stale toolchain. Either provision those packages with targeted
+setup actions (the usual answer — then the composite key correctly covers only
+what the composite installs), or widen the key to include them:
+`hashFiles('.tool-versions', '**/.tool-versions')`.
 
 ## Reproducibility: lockfiles + frozen installs
 
@@ -108,6 +138,21 @@ The one exception: pulling a **private git dependency/module**. That needs a
 repo-scoped token, not cloud credentials — a `git config --global url.…insteadOf`
 rewrite (commented in `test.yml` / `tf-validate.yml`). It stays cheap and
 fork-safe-ish; just be aware forks won't have the secret.
+
+**Keep that exception out of the lint gate.** On a Python repo whose
+`pyproject.toml` carries a private git dependency, a plain
+`uv run --frozen ruff check` syncs the *whole* environment first — dragging the
+private dep (and therefore the token) into a job that never imports the
+project. ruff doesn't need the project installed at all, so run it lean:
+
+```bash
+uv run --frozen --no-install-project --only-group dev ruff check .
+uv run --frozen --no-install-project --only-group dev ruff format --check .
+```
+
+That installs only the `dev` dependency group (where ruff lives), so lint stays
+credential-free and fork-safe. The token rewrite is scoped to `test.yml` /
+`tf-validate.yml` — the gates that genuinely need the dependency resolved.
 
 ## What this deliberately is NOT
 
