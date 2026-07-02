@@ -20,7 +20,7 @@ re-deciding — or skipping it.
 ## Scope: what's in, what's out
 
 | In scope (gates a PR before merge) | Out of scope (hand off) |
-|---|---|
+| --- | --- |
 | asdf provisioning + tool caching | Release-PR automation → **`release-flow`** |
 | lint, format-check, type-check, test | Container build / image publish → per-stack build docs |
 | IaC `fmt` + `validate` (credential-free) | Deploy / `tofu apply` → **`sysadmin`** / deploy skill |
@@ -28,6 +28,15 @@ re-deciding — or skipping it.
 
 One-sentence charter: **how a repo gates a PR before it merges.** If credentials
 or a release tag are involved, it's a different skill.
+
+**Know the hole this scope leaves: Dockerfiles.** Image builds being
+out-of-scope means a Dockerfile break passes every PR gate and first fails
+*after* merge, on the push-triggered build workflow. Adopters should accept
+that consciously — the fix, when it has bitten, is a docker-build smoke job in
+the PR gate set (build, don't push; still credential-free), not moving
+publish/deploy here. Where image builds *are* gated is the per-stack build
+docs and deploy skills. (Frontend `vite build` is different — that one is
+in-scope and cheap; see `ui-checks.yml`.)
 
 ## Enforcement philosophy
 
@@ -68,14 +77,14 @@ into these rules rather than reinventing CI.
 ## The two reference deep-dives
 
 | File | Read when |
-|---|---|
+| --- | --- |
 | [provisioning.md](references/provisioning.md) | the CI harness — asdf + cache composite, lockfile-frozen installs, path filters, credential-free principle, private-dep git rewrite |
 | [tool-standards.md](references/tool-standards.md) | the linters/formatters — the TS script contract, oxc + ruff configs, the `typecheck` naming convention, the editor-feedback loop (no pre-commit), the one-time adoption migration |
 
 ## The gate set
 
 | Gate | TypeScript | Python | IaC |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Lint | `oxlint` | `ruff check` | — |
 | Format | `oxfmt --check` | `ruff format --check` | `tofu fmt -check` |
 | Types | `tsc --noEmit` | `mypy` (optional) | `tofu validate -backend=false` |
@@ -114,6 +123,13 @@ Plus three rules that make CI reproducible and cheap (full rationale in
   `uv run --frozen …`. A PR can't pass against unrecorded dependency versions.
 - **Path-filtered triggers** — each workflow fires only on its domain (and on
   edits to itself).
+- **Leave `pull_request.branches` unrestricted** — filter PR triggers by
+  `paths`, never by base branch. In the develop→main Release-PR flow, the
+  release PR targets `main`; an unrestricted `pull_request` trigger re-runs the
+  full gate set on it alongside release-validate, re-gating exactly what's
+  about to ship. Adding `branches: [develop]` to `pull_request` silently
+  un-gates release PRs. (The `push` trigger *does* restrict to
+  `branches: [develop]` — that one's correct.)
 - **Credential-free** — lint/format/type-check/validate/hermetic-tests need no
   secrets, so they run on fork PRs and start instantly.
 
@@ -122,12 +138,13 @@ Plus three rules that make CI reproducible and cheap (full rationale in
 `references/templates/` — copy and adapt (each carries `# ADAPT:` markers):
 
 | Template | Drop at | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | `github-actions/setup-asdf/action.yml` | `.github/actions/setup-asdf/action.yml` | the shared provisioning composite |
 | `github-actions/lint.yml` | `.github/workflows/lint.yml` | ruff + oxc/tsc lint gate (per-package matrix) |
 | `github-actions/test.yml` | `.github/workflows/test.yml` | pytest + bun test gate |
-| `github-actions/ui-checks.yml` | `.github/workflows/ui-checks.yml` | single-package frontend lint+fmt+types |
+| `github-actions/ui-checks.yml` | `.github/workflows/ui-checks.yml` | single-package frontend lint+fmt+types+test+build |
 | `github-actions/tf-validate.yml` | `.github/workflows/tf-validate.yml` | OpenTofu fmt + validate |
+| `github-actions/docs.yml` | `.github/workflows/docs.yml` | mkdocs strict build gates PRs; Pages deploy on push only |
 | `oxlintrc.base.json` | `.oxlintrc.json` (or root `.oxlintrc.base.json` in a monorepo) | TS lint config — correctness=error |
 | `oxlintrc.react.json` | `<ui>/.oxlintrc.json` | stricter React/UI lint config |
 | `ruff.pyproject.toml` | append to `pyproject.toml` | ruff rule set |
