@@ -112,7 +112,7 @@ not the linter's.
 - **If `pyproject.toml` carries a private git dependency**, don't let lint sync
   it: `uv run --frozen` installs the whole project env, which pulls the private
   dep and forces a token into a gate that never imports the code. Run ruff
-  lean instead — `uv run --frozen --no-install-project --only-group dev
+  lean instead — `uv run --frozen --only-group dev
   ruff check .` (and the `format --check` twin) — so lint stays credential-free
   and fork-safe. Full rationale in `provisioning.md` ("Credential-free by
   design").

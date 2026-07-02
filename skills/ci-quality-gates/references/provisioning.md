@@ -146,8 +146,8 @@ private dep (and therefore the token) into a job that never imports the
 project. ruff doesn't need the project installed at all, so run it lean:
 
 ```bash
-uv run --frozen --no-install-project --only-group dev ruff check .
-uv run --frozen --no-install-project --only-group dev ruff format --check .
+uv run --frozen --only-group dev ruff check .
+uv run --frozen --only-group dev ruff format --check .
 ```
 
 That installs only the `dev` dependency group (where ruff lives), so lint stays
