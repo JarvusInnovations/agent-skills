@@ -63,6 +63,17 @@ bun add -d oxlint oxfmt
     adjustment applies to the React config below when it lives in a subpackage —
     fix its `$schema` to match the package's depth.
 
+    **Third layout: multi-package repo *without* a workspace root.** Not every
+    multi-package repo is a bun workspace — the continuous-gtfs flagship has no
+    root `package.json` at all; each `services/*` package runs its own
+    `bun install` and carries its own lockfile. There oxlint is installed *per
+    package*, so each `.oxlintrc.json` keeps the single-package
+    `"$schema": "./node_modules/oxlint/configuration_schema.json"` (nothing is
+    hoisted to point up at), while `extends` still climbs to the shared root
+    config: `"extends": ["../../.oxlintrc.base.json"]`. Pick the `$schema` path
+    by **where oxlint's `node_modules` actually is**, not by whether the repo
+    "looks like" a monorepo.
+
     A server package that contains a UI subfolder ignores it so the UI is linted
     by its own stricter config: add `"ignorePatterns": ["ui"]`.
 - **React/UI packages** get a stricter config — `templates/oxlintrc.react.json`
@@ -98,6 +109,13 @@ not the linter's.
   generated files (protobuf, etc.) via `per-file-ignores`.
 - Add it with `uv add --dev ruff`. CI runs `uv run --frozen ruff check` and
   `uv run --frozen ruff format --check`.
+- **If `pyproject.toml` carries a private git dependency**, don't let lint sync
+  it: `uv run --frozen` installs the whole project env, which pulls the private
+  dep and forces a token into a gate that never imports the code. Run ruff
+  lean instead — `uv run --frozen --only-group dev
+  ruff check .` (and the `format --check` twin) — so lint stays credential-free
+  and fork-safe. Full rationale in `provisioning.md` ("Credential-free by
+  design").
 - **mypy is optional.** Data/infra repos that want strict typing add
   `uv add --dev mypy` and a `uv run mypy src/` step with `strict = true`. The
   flagship pipeline skips it; reach for it when the type surface is worth it.
@@ -111,7 +129,24 @@ root module. Format + config-validity only — never `tofu plan` in this gate
 ## Docs (optional)
 
 A docs site (mkdocs) gets a build gate: `mkdocs build --strict` so a broken link
-or missing nav entry fails the PR. Trigger on `docs/**` + `mkdocs.yml`.
+or missing nav entry fails the PR. Trigger on `docs/**` + `mkdocs.yml` + the
+workflow file itself.
+
+**The build gates PRs; the deploy stays push-only.** Docs repos usually already
+have a push-to-develop Pages deploy — and it's tempting to leave it at that, but
+then a broken link merges green and only fails *after* it's on develop, inside
+the deploy run. Split the two in **one workflow with a shared build job**: the
+strict build runs on both `pull_request` and `push`, while the Pages
+upload/deploy jobs carry `if: github.event_name == 'push'` so PRs get the gate
+without the deploy (and without needing the `pages`/`id-token` permissions on
+fork PRs). `templates/github-actions/docs.yml` is that shape.
+
+Invoke mkdocs through `uvx` so the theme/plugins ride along without a
+project-level dependency:
+`uvx --with mkdocs-material mkdocs build --strict` (add a `--with` per plugin
+the site uses). No lockfile governs `uvx` here — the docs toolchain floats,
+which is acceptable for a docs gate; pin `--with 'mkdocs-material==X.Y'` if a
+theme release ever breaks the build.
 
 ## Local feedback: the editor, never a git hook
 
@@ -167,3 +202,31 @@ source). When adopting a gate on such a repo, **rebuild and commit the artifact*
 after the format/fix commits (e.g. `bun run build:<tool>`) — or scope
 oxlint/oxfmt to exclude the generated source so the bundle never moves. The
 committed `.mjs` is `linguist-generated`, so the rebuild collapses in review.
+
+**Beyond adoption: make drift a standing CI gate.** If the repo doesn't already
+have a drift check, add one — a job (in the workflow owning that toolchain) that
+regenerates the committed artifact with the **pinned** toolchain and fails on
+any diff. The flagship's shape, for committed protobuf/gRPC bindings:
+
+```yaml
+- name: Regenerate bindings
+  run: >
+    uv run --frozen python -m grpc_tools.protoc
+    --proto_path=../proto --python_out=src --grpc_python_out=src
+    ../proto/<pkg>/<service>.proto
+- name: Re-apply formatter          # only if the committed files are formatted post-generation
+  run: uv run --frozen ruff format src/<pkg>/<service>_pb2.py src/<pkg>/<service>_pb2_grpc.py
+- name: Fail on drift
+  run: git diff --exit-code -- src/<pkg>/<service>_pb2.py src/<pkg>/<service>_pb2_grpc.py
+```
+
+Without this, a `.proto` edit that skips the regen ships a stale client
+silently — every other gate stays green. Trigger the workflow on the source
+paths (`proto/**`) as well as the artifact's package. Two prerequisites:
+
+- **The generator's version must be lockfile-pinned** (`grpcio-tools` in
+  `uv.lock`, invoked via `uv run --frozen`). A floating generator makes the
+  gate flap on toolchain drift — red on someone else's upgrade, not on a real
+  stale artifact.
+- **Regenerate exactly like a developer would** — including any post-generation
+  formatting pass — or the diff never comes back clean.
