@@ -26,10 +26,10 @@ Three GitHub Actions, each triggered by a different event — you don't run them
 react to them:
 
 | Workflow | Trigger | What it does |
-|---|---|---|
-| `release-prepare` | push to `develop` | Opens (or updates) the **`Release: vX.Y.Z`** PR into `main`, and posts/refreshes a bot **`## Changelog`** comment listing the commits since the last release with `@author` suffixes. |
-| `release-validate` | PR to `main` opened/edited/synced | Gates the Release PR (e.g. checks the title version is valid and not already published). Re-runs every time you edit the PR. |
-| `release-publish` | Release PR **closed/merged** | Cuts the tag and publishes (npm, etc.) at the version in the PR title. **Merging is the publish.** |
+| --- | --- | --- |
+| `release-prepare` | push to `develop` | Opens the **`Release: vX.Y.Z`** PR into `main` and posts/refreshes a bot **`## Changelog`** comment listing the commits since the last release with `@author` suffixes. The title is computed **once, at PR creation**, as last tag + patch increment — no commit analysis — and later pushes never recompute it (they only refresh the changelog comment). |
+| `release-validate` | PR to `main` opened/edited/synced | Gates the Release PR with **exactly two checks**: title matches `^Release: v\d+\.\d+\.\d+(-rc\.\d+)?$`, and that tag doesn't already exist. **The body is not checked.** Re-runs every time you edit the PR. |
+| `release-publish` | Release PR **closed/merged** | Cuts the tag and publishes (npm, etc.) at the version in the PR title, with the merged PR body **verbatim** as the release notes. **Merging is the publish.** |
 
 `ci.yml` (build + test on push/PR to main and develop) runs orthogonally and must be
 green like any other check.
@@ -42,8 +42,15 @@ Key consequences for how you work:
 - **Editing the PR re-triggers `release-validate`.** After you change the title or body,
   give it a few seconds and confirm the latest validate run is green before telling the
   user it's ready.
-- **The bot's default version is often just a patch bump.** It doesn't reliably read
-  `feat:`/`BREAKING CHANGE` intent — judging the right bump is *your* job (see below).
+- **The bot's title is always last-tag + patch.** `release-prepare` does no commit
+  analysis and never revisits the title after creation — recomputing the bump from the
+  changelog and retitling is *always* your job (step 6), not an occasional correction.
+- **Title and body are safe to draft early.** Later `develop` pushes only refresh the
+  changelog comment; nothing you write in the title or body ever gets clobbered.
+- **The body is not gated.** `release-validate` checks only the title and tag — a PR
+  whose body is still the default near-empty template validates green and, once merged,
+  ships that template verbatim as the release notes. Getting the body right before
+  merge is entirely on you.
 
 ## Detecting that this workflow is in effect
 
@@ -130,8 +137,15 @@ the changelog:
 - **Major** (`v1.x → v2.0.0`) — a breaking change (commit body notes `BREAKING CHANGE`,
   or you know the public surface broke). Confirm with the user before recommending major.
 
-State your reasoning in one line. The bot's pre-filled title is a starting guess, not the
-answer — correct it when the work warrants.
+State your reasoning in one line. **Always recompute — this is not optional.** The
+bot's pre-filled title is mechanically last-tag + patch, computed once at PR creation
+with no commit analysis; it is never the product of judgment. Recompute the bump
+yourself from the changelog (feats ⇒ minor, breaking ⇒ major) and retitle whenever
+your answer differs.
+
+An rc title is also valid: `Release: vX.Y.Z-rc.N` passes validation and publishes as a
+GitHub **prerelease**. Use it to cut a candidate before the final `vX.Y.Z`, which then
+goes through this same flow.
 
 ### 7. Present the draft and get the call
 
@@ -142,7 +156,7 @@ the merge is always the user's explicit go — never merge unprompted.
 ### 8. On approval — apply and merge
 
 ```sh
-# Body (always); title only if the version changed from what the PR already shows
+# Body (always); title whenever your recomputed version differs from the current title
 gh pr edit <number> --body-file <notes-file>
 gh pr edit <number> --title "Release: v<version>"
 ```
@@ -162,6 +176,18 @@ gh pr merge <number> --merge
 `release-publish` fires on merge. Watch it through and confirm the published artifact
 (e.g. `npm view <pkg> version`, or the new tag/GitHub release) before declaring done.
 
+Then verify the release notes actually landed:
+
+```sh
+gh release view v<version> --json body --jq .body
+```
+
+If the body is the unedited template (bare `## Improvements` / `## Technical` headers),
+fix it: `gh release edit v<version> --notes-file <notes-file>`. One residual race to
+know about: `release-publish` reads the body from the closed-PR webhook payload, so a
+body edited seconds before the merge can lose the race. Avoid last-moment body edits —
+finalize the body, confirm validate is green, *then* merge.
+
 ## Notes and gotchas
 
 - **Use `gh-axi` if available** (a token-efficient `gh` wrapper); otherwise plain `gh`.
@@ -170,10 +196,17 @@ gh pr merge <number> --merge
   multi-line markdown survives intact and you avoid shell-quoting accidents.
 - **`main` can look "behind" the latest tag.** Some setups tag a CI bump commit that never
   lands on the `main` branch ref. It looks odd but doesn't block: `release-prepare`
-  computes the next version from the last tag + new commits regardless. Flag it to the
-  user as a known quirk, not a blocker.
+  computes the default title from the last tag alone (`git describe --tags` + patch
+  increment) regardless. Flag it to the user as a known quirk, not a blocker.
+- **`release-validate` fires on *every* PR into `main`** — the workflow trigger has no
+  title filter. A hotfix PR to `main` shows a red "PR title must match format" check by
+  design. Don't "fix" it by retitling a non-release PR; the red check is expected there.
 - **A red `release-validate` after the tag already exists is usually benign** — it's a
   re-run reporting "version already exists" after a successful publish. Check *when* it
   ran relative to the merge before treating it as a real failure.
+- **A repo can override the default PR body template** via `.github/release-pr-template.md`
+  (see `references/workflow-internals.md`). Prefer one that fails obviously when
+  unedited — e.g. a `<!-- DRAFT: replace before merging -->` sentinel — since the
+  default near-empty template looks deceptively publish-ready.
 - See `references/workflow-internals.md` for the workflow file shapes and the
   infra-components action refs, when you need to inspect or set up the automation itself.

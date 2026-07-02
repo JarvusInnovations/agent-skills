@@ -33,6 +33,30 @@ jobs:
 On every push to `develop`: ensures a single open `Release: vX.Y.Z` PR into
 `release-branch`, and posts/updates the bot `## Changelog` comment.
 
+The PR title is computed **once, at PR creation**: `git describe --tags` for the last
+tag, then patch-increment its final number. No commit analysis. Subsequent pushes
+update only the changelog comment — never the title or body, so edits you make to
+either are never clobbered.
+
+**Token variant.** A PR created with the default `GITHUB_TOKEN` cannot trigger other
+workflows — GitHub suppresses workflow events for actions taken with that token — so
+`release-validate` will **not** run on the bot-created PR until someone edits it.
+Repos that want validate green from the start pass the bot token to prepare too:
+
+```yaml
+        github-token: ${{ secrets.BOT_GITHUB_TOKEN }}
+```
+
+Trade-off: `GITHUB_TOKEN` is least-privilege but the first validate run only happens
+after your first title/body edit (or a `develop` sync); `BOT_GITHUB_TOKEN` makes
+validate fire immediately at the cost of using the PAT/app token in one more place.
+
+**Custom PR body template.** If the repo has a `.github/release-pr-template.md`,
+prepare uses it for the new PR's body; otherwise the body is a near-empty default
+(bare `## Improvements` / `## Technical` headers). Since validate never inspects the
+body, that default looks deceptively publish-ready — prefer a template that fails
+obviously when unedited, e.g. one starting with `<!-- DRAFT: replace before merging -->`.
+
 ### `release-validate.yml`
 
 ```yaml
@@ -50,8 +74,13 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-Re-runs on every edit to the PR (including title/body edits you make). Validates the
-release (version well-formed, not already published, etc.).
+Re-runs on every edit to the PR (including title/body edits you make). Exactly two
+checks: the PR title matches `^Release: v\d+\.\d+\.\d+(-rc\.\d+)?$`, and the tag in
+the title does not already exist. Nothing else — **the body is not inspected**.
+
+Note the trigger has no title filter: this fires on **every** PR into `main`, so a
+non-release PR (e.g. a hotfix) shows a red title check by design. Don't retitle such
+a PR to appease it.
 
 ### `release-publish.yml`
 
@@ -71,9 +100,11 @@ jobs:
 ```
 
 Fires when the PR closes. On a *merged* close it cuts the tag and publishes at the
-title's version. Note it uses `BOT_GITHUB_TOKEN` (a PAT/app token), not the default
-`GITHUB_TOKEN` — publishing usually needs to push tags/trigger downstream workflows
-that `GITHUB_TOKEN` can't.
+title's version, with the PR body passed **verbatim** as the release notes — taken
+from the closed-PR webhook payload, so a body edited seconds before merge can race
+the payload. A title ending `-rc.N` publishes with `prerelease: true`. Note it uses
+`BOT_GITHUB_TOKEN` (a PAT/app token), not the default `GITHUB_TOKEN` — publishing
+usually needs to push tags/trigger downstream workflows that `GITHUB_TOKEN` can't.
 
 ### `ci.yml` (illustrative — language-specific)
 
