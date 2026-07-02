@@ -39,10 +39,10 @@ repo also ships an npm-distributed CLI that needs the Node toolchain.
 ## Reference Files
 
 | File | When to Use |
-|------|-------------|
+| ------ | ------------- |
 | [setup-guide.md](references/setup-guide.md) | Starting a new backend project from scratch |
 | [patterns.md](references/patterns.md) | Implementing routes, services, schema validation |
-| [authentication.md](references/authentication.md) | Adding JWT auth, authorization, protected routes |
+| [authentication.md](references/authentication.md) | Auth: deny-by-default gateway, sessions, tokens, OIDC, local dev mode |
 | [api-design.md](references/api-design.md) | Swagger/OpenAPI integration, response format, errors |
 | [mcp-integration.md](references/mcp-integration.md) | Integrating MCP server for AI agent access |
 | [gotchas.md](references/gotchas.md) | Debugging issues, common mistakes and fixes |
@@ -103,10 +103,19 @@ const apiKey = fastify.config.API_KEY
 const port = process.env.PORT  // Don't do this
 ```
 
+`@fastify/env`'s JSON Schema covers per-variable shape validation. When config needs
+cross-field contracts ("exactly one of these two modes"), environment-detection guards,
+or strict tri-state booleans, hand-rolled fail-fast validation at boot is the right tool
+— see setup-guide.md "When JSON Schema isn't enough".
+
 ### Response Format
 
+Pick one convention per API and stick to it. The envelope below is one option; structured
+domain-specific bodies (e.g. `{error: "forbidden", required, environment, your_role}`) are
+equally valid and often spec-mandated — see [api-design.md](references/api-design.md).
+
 ```typescript
-// Standard response structure
+// The envelope option
 {
   success: boolean
   data?: T

@@ -193,6 +193,26 @@ LOG_LEVEL=info
 - `dotenv: true` automatically loads `.env` file
 - Failed validation prevents server from starting
 
+**When JSON Schema isn't enough.** `@fastify/env` validates each variable in isolation —
+JSON Schema cannot express:
+
+- **Cross-field contracts** — "exactly one of `OIDC_ISSUER_URL` or `AUTH_DISABLED=1`
+  must be set; both or neither is a boot error"
+- **Environment-detection guards** — "refuse to boot if `AUTH_DISABLED` is set while
+  Cloud Run markers (`K_REVISION`) are present"
+- **Strict tri-state booleans** — unset / true-ish / false-ish, where a typo'd value
+  throws instead of silently picking a mode (schema `enum` gets close, but not the
+  "unset means X" + normalization + custom error message combination)
+- **Value-quality checks with actionable errors** — "must be a well-formed https URL",
+  "signing key must be ≥32 bytes because HS256 requires a 256-bit key"
+
+For those, write a plain `resolveConfig(env: NodeJS.ProcessEnv)` function that throws
+with an **actionable message** (name the variable, show the offending value, say what
+would fix it) and call it at boot before anything else. Keep `@fastify/env` for the
+simple per-variable cases; hand-rolled fail-fast validation is the right tool for the
+contracts above — not a workaround. See gotchas.md "Environment Variable Parsing
+Footguns" for the strict number/boolean parses.
+
 **Commit:** `feat(backend): add environment configuration plugin`
 
 ---
@@ -516,6 +536,60 @@ export default defineConfig({
 ```
 
 **Commit:** `config: add Vite proxy for backend API requests`
+
+---
+
+## Serving a Built SPA
+
+When the backend also serves the frontend's production build (one deployable unit),
+use `@fastify/static` plus an index.html not-found fallback:
+
+```bash
+bun add @fastify/static
+```
+
+```typescript
+// In index.ts, after routes are registered
+import fastifyStatic from '@fastify/static'
+import { existsSync } from 'node:fs'
+import path from 'node:path'
+
+const uiDist = process.env.UI_DIST_PATH ?? path.join(import.meta.dir, 'ui', 'dist')
+if (existsSync(uiDist)) {
+  app.register(fastifyStatic, { root: uiDist })
+  app.setNotFoundHandler((req, reply) => {
+    if (req.method === 'GET' && !req.url.startsWith('/api/')) {
+      return reply.sendFile('index.html')
+    }
+    reply.status(404)
+    return { error: 'not found' }
+  })
+} else {
+  app.log.warn(`UI dist not found at ${uiDist} — serving API only`)
+}
+```
+
+**Key patterns:**
+
+- **API routes win by specificity** — the router prefers the more specific `/api/*`
+  routes over the static plugin's wildcard route, so no ordering tricks are needed
+- **The index.html fallback is REQUIRED, not a convenience** — an SPA with
+  browser/history routing means every deep link and refresh to a client route
+  (e.g. `/run/123`) misses the static files and must boot the SPA from `index.html`;
+  API misses still get a JSON 404
+- **Graceful API-only mode** — when the dist dir is absent (dev, or a backend-only
+  build) the server logs a warning and runs API-only instead of crashing; local
+  frontend dev uses the Vite proxy above
+
+**Interaction with a global auth hook:** the static plugin registers a wildcard route,
+so the global auth gateway DOES see every static-asset request — they don't bypass
+hooks. Your anonymous allowlist must therefore cover safe-method (GET/HEAD) requests
+outside the API and auth namespaces, or the SPA shell can never load for an
+anonymous visitor who needs it to reach the login redirect. See authentication.md
+"The Anonymous Allowlist" — the shell is safe to serve anonymously because it contains
+no data; everything it renders comes from the authenticated API.
+
+**Commit:** `feat(backend): serve built SPA with history-routing fallback`
 
 ---
 
