@@ -120,3 +120,76 @@ the old container (and possibly the volume) once, deliberately.
 Linux/coreutils has `md5sum`; BSD/macOS has `md5 -q`. The `app_hash` helper
 branches on which exists so worktree DB names are stable on both. Don't hard-code
 `md5sum`.
+
+## `trap 'kill 0' EXIT` can kill the caller
+
+`kill 0` signals the **whole process group** — which is not "my children". A
+script launched from a non-interactive shell (another script, a CI step, an
+agent's exec call) *shares* its caller's process group, so a supervisor that
+traps `kill 0` on EXIT takes the caller down with it the moment anything asks it
+to stop. This is exactly the failure the old fullstack `dev` template had:
+`bin/cleanup` would kill the dev session and then die mid-cleanup, killed by the
+session's own trap.
+
+Fix (in the current `dev-fullstack` template): `set -m` before backgrounding
+children so **each child leads its own process group**, record the child pids,
+and have the trap `kill -- -$child_pid` each group individually. That kills each
+service's whole subtree (`bun run` → vite) without ever signalling the script's
+inherited group.
+
+## PIDs get recycled — record and verify start-time identity before killing
+
+A pid file (or a `state.env`) can outlive its process: SIGKILL skips traps,
+reboots reset the pid space, and the OS reuses pids. A later `kill -0 $pid`
+proving "something is alive at that pid" is not proof it's *your* process — and
+blindly `kill`ing it can shoot an innocent bystander. Record each pid **with its
+start time** and re-verify before every liveness verdict and every kill:
+
+```bash
+app_pid_lstart() {          # start time of a live process; empty when gone
+  { ps -o lstart= -p "$1" 2>/dev/null || true; } | sed 's/^ *//;s/ *$//'
+}
+# store: echo "SERVER_PID_LSTART=$(app_pid_lstart "$server_pid")"
+# check: [ "$(app_pid_lstart "$pid")" = "$recorded_lstart" ]
+```
+
+The `_common.sh` template carries this as `app_pid_is`; the fullstack `dev` and
+`gc` templates consult it before every kill and every health verdict.
+
+## Commands that read stdin inside `while read` loops silently eat the stream
+
+`docker exec -i` (what `app_psql` wraps), `gh`, `ssh`, `ffmpeg` — anything that
+reads stdin — will, inside a `while read` loop fed on stdin, slurp the rest of
+the loop's input as *its* stdin. No error: the loop just ends after the first
+iteration that ran such a command. In a sweep like `bin/gc` that means "removed
+one worktree, silently skipped the rest".
+
+Fix: feed the loop on a **different file descriptor** so the commands inside
+keep their normal stdin:
+
+```bash
+while IFS=$'\t' read -r -u 3 wt br locked prunable; do
+  ...app_psql / gh calls...
+done 3<<<"$records"
+```
+
+(`read -u 3` + `3<<<` — the gc template does exactly this.)
+
+## macOS `TMPDIR` has a trailing slash — `"$TMPDIR"/*` patterns break
+
+On macOS, `TMPDIR` is set to something like `/var/folders/.../T/` — **with a
+trailing slash**. Appending `/*` yields `.../T//*`, and in a `case` glob (or any
+pattern match) the double slash must match literally, so real tmp paths (from
+`mktemp -d`, no double slash) silently fail the match. Anything gated on "is
+this path under tmp?" — e.g. a guard that only `rm -rf`s recorded paths inside
+tmp — then never fires on macOS.
+
+Fix: strip the trailing slash before appending (two steps — bash can't nest
+`${${TMPDIR:-/tmp}%/}`):
+
+```bash
+tmp="${TMPDIR:-/tmp}"; tmp="${tmp%/}"
+case "$path" in
+  /tmp/*|"$tmp"/*) rm -rf "$path" ;;
+esac
+```

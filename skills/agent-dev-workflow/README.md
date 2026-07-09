@@ -10,6 +10,11 @@ A Postgres-backed project where you want any of:
 
 - multiple copies of the backend running concurrently on one machine (one per worktree),
 - the `setup` / `run` / `cleanup` contract that AI agent orchestrators (Conductor and similar) expect,
+- a fullstack `bin/dev` that runs as an **attach-aware per-worktree singleton** — a second invocation
+  reuses the healthy running session (`KEY=VALUE` endpoints on stdout, `status`/`stop`/`logs`
+  subcommands, on-disk `.dev/logs/`) instead of double-booting,
+- a `bin/gc` that **sweeps merged agent worktrees** — proof-based (ancestry / `git cherry` / merged
+  PR), stopping their dev sessions and dropping their derived databases along the way,
 - an end to tests clobbering local dev/demo data,
 - a replacement for a docker-compose-just-for-local-Postgres setup.
 

@@ -1,6 +1,6 @@
 ---
 name: agent-dev-workflow
-description: Set up an agent-friendly local dev workflow — a bin/ task-runner (inspired by GitHub's scripts-to-rule-them-all) over a shared Postgres container that gives every git worktree its own isolated database and ports, plus a dedicated test database so tests never clobber dev data. Use this whenever a project needs worktree-isolated local development, when setting up for AI agent orchestrators (Conductor and similar) that spin up a worktree per session and register setup/run/cleanup commands, when multiple copies of a backend must run concurrently on one machine, when replacing a docker-compose-for-local-postgres setup, when deciding whether auxiliary dev services (a validator container, a local OIDC IdP) replicate per worktree or run shared, or when tests keep wiping local dev/demo data. Triggers on "bin/ scripts", "worktree isolation", "per-worktree database/port", "scripts to rule them all", "agent dev environment", "setup/run/cleanup scripts", "shared auxiliary services", or tests clobbering the dev database.
+description: Set up an agent-friendly local dev workflow — a bin/ task-runner (inspired by GitHub's scripts-to-rule-them-all) over a shared Postgres container that gives every git worktree its own isolated database and ports, plus a dedicated test database so tests never clobber dev data. Use this whenever a project needs worktree-isolated local development, when setting up for AI agent orchestrators (Conductor and similar) that spin up a worktree per session and register setup/run/cleanup commands, when multiple copies of a backend must run concurrently on one machine, when replacing a docker-compose-for-local-postgres setup, when deciding whether auxiliary dev services (a validator container, a local OIDC IdP) replicate per worktree or run shared, when merged agent worktrees pile up and need sweeping, or when tests keep wiping local dev/demo data. Triggers on "bin/ scripts", "worktree isolation", "per-worktree database/port", "scripts to rule them all", "agent dev environment", "setup/run/cleanup scripts", "shared auxiliary services", "sweep merged worktrees", or tests clobbering the dev database.
 ---
 
 # Agent-friendly dev workflow (bin/ + worktree isolation)
@@ -53,13 +53,24 @@ know which parts you copy verbatim and which you adapt.
 
 **Invariant** (copy from `references/bin/`, just swap the `app`/`APP_` prefix):
 
-- worktree-aware DB naming (`app_db_name`, `is_main_worktree`, `app_hash`)
+- worktree-aware DB naming (`app_db_name`, `app_db_name_for_root`,
+  `is_main_worktree`, `app_hash`)
 - shared-container management (`ensure_postgres`, `wait_for_postgres`, `app_psql`)
 - DB create/recreate helpers; the `setup`/`reset-db`/`db`/`cleanup`/`test` scripts
   (keep these names — e.g. `db`, not `query` — so the muscle memory transfers across repos)
 - port picking (`port_in_use`, `find_available_port`, `app_pick_port`) — **including
   the macOS `lsof`/`ss` split; do not "simplify" it away** (see gotchas)
 - stdout=env / stderr=status discipline
+- the dev-session **state machine** (fullstack variant): the atomic noclobber
+  claim of `.dev/state.env` with `PHASE=booting` → `PHASE=running` only after
+  ports listen, snapshot-coherent reads, the ownership-checked EXIT/INT/TERM
+  trap, per-child process groups via `set -m` (never `kill 0`), and
+  `app_dev_stop`
+- **pid + start-time identity** (`app_pid_lstart`, `app_pid_is`) consulted
+  before every kill and every health verdict (see gotchas — pid recycling)
+- the `bin/gc` proof structure: mandatory gates + at least one containment
+  proof, the long-lived-branch denylist, the canonical-DB guard, and the fd-3
+  record stream (see gotchas — stdin-slurping loops)
 
 **Project-specific** (the knobs you set):
 
@@ -73,8 +84,11 @@ know which parts you copy verbatim and which you adapt.
 - the Postgres **major** — pin the same one production runs (`references/snapshots.md`)
 - `app_server_dir` — repo root (single package) vs a subdir (monorepo)
 - `app_migrate` — how migrations run → **`references/migrations-and-seeds.md`**
-- single-service `dev` (frontend runs separately) vs fullstack `dev` (starts both,
+- single-service `dev` (frontend runs separately) vs fullstack `dev` (an
+  attach-aware per-worktree singleton that starts both, supervises both, and
   kills both) → use `references/bin/dev` or `references/bin/dev-fullstack`
+- `bin/gc`'s integration branch — `APP_GC_BASE_REF` defaults to `origin/main`;
+  set `origin/develop` in repos that integrate on develop
 - the **seed posture** — synthetic SQL, snapshot-as-seed, or empty + per-suite
   fixtures (`references/migrations-and-seeds.md`), and whether it has prod snapshots
   at all (`references/snapshots.md`)
@@ -107,6 +121,24 @@ alongside the per-worktree values (e.g. `VALIDATOR_URL=http://localhost:9010`,
 overridable via env like everything else), so one stdout capture threads into the
 run step and every worktree converges on the same shared services.
 
+## Worktree lifecycle: create under `.claude/worktrees/`, sweep with `bin/gc`
+
+Agent worktrees should live under the repo's **`.claude/worktrees/`** directory
+(gitignore `**/.claude/worktrees/` so nested checkouts never show as untracked
+files). That location is what makes the end of the lifecycle automatic: a
+worktree is alive while its PR is in review and becomes garbage the moment it
+merges — but merges happen on the reviewer's schedule, with no local session
+listening. `bin/gc` closes that gap with a lazy, state-based sweep: it
+enumerates linked worktrees under any `*/.claude/worktrees/` path and removes
+only the ones it can **prove** merged (ancestry, `git cherry` patch
+containment, or a merged PR via `gh` — plus mandatory gates: clean, unlocked,
+not the main/current worktree, not a long-lived branch), stopping any recorded
+`bin/dev` session and dropping the derived database along the way. Everything
+unproven is skipped with a one-line reason; a `--nudge` mode is cheap enough to
+run from a SessionStart hook. Worktrees created *outside* `.claude/worktrees/`
+escape the sweep entirely — that's the trade you make by putting them
+elsewhere.
+
 ## Build order
 
 1. **Read the relevant references first** (below) — they encode hard-won bugs.
@@ -117,7 +149,11 @@ run step and every worktree converges on the same shared services.
    cleanly (`references/snapshots.md`).
 3. Set `app_server_dir` and `app_migrate` for this project
    (`references/migrations-and-seeds.md`).
-4. Choose the `dev` variant (single-service vs `dev-fullstack`).
+4. Choose the `dev` variant (single-service vs `dev-fullstack`). The fullstack
+   variant carries the whole session protocol (singleton claim, attach,
+   status/stop/logs, supervision) — copy its mechanics verbatim and adapt only
+   the two child-launch blocks. Copy `bin/gc` alongside it and set
+   `APP_GC_BASE_REF` if the repo integrates on a branch other than `main`.
 5. Wire **test isolation** — the preload that points tests at `app_test`
    (`references/test-isolation.md`). Do this when (or before) the project grows a
    DB-backed test suite: it's the step that stops tests wiping dev data. It's a clean
@@ -129,9 +165,12 @@ run step and every worktree converges on the same shared services.
    services" and gotchas). Update `.env.example` + the project's agent docs
    (CLAUDE.md or equivalent) to point at `bin/`.
 7. **Verify** end to end (don't assume): `bin/setup` on a clean checkout; the
-   sentinel-row test from `test-isolation.md`; `bin/dev` twice concurrently lands on
-   two different ports; `bin/cleanup` in a throwaway worktree leaves the main DB
-   intact. `bash -n` every script.
+   sentinel-row test from `test-isolation.md`; `bin/dev` in two *worktrees* lands on
+   two different ports; `bin/dev` twice in the *same* worktree → the second
+   attaches (exit 0, `KEY=VALUE` block) instead of double-booting; kill one
+   child process → the whole stack exits loudly (no half-dead session);
+   `bin/gc --dry-run` reports sane verdicts; `bin/cleanup` in a throwaway
+   worktree leaves the main DB intact. `bash -n` every script.
 
 ## Reference files
 

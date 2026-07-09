@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Drop this worktree's database (leaves the shared container running for others).
-# Refuses to drop the canonical main-worktree DB unless forced.
+# Refuses to drop the canonical main-worktree DB unless forced. Also stops a
+# `bin/dev` session left running in this worktree.
 #
 # Usage:
 #   bin/cleanup            # drop this worktree's derived DB
@@ -11,19 +12,10 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/_common.sh"
 
-root="$(app_root)"
-
-# If a fullstack bin/dev wrote a PID file, stop that session's process group first.
-# (Single-service setups can omit this block.)
-pidfile="$root/.dev.pid"
-if [ -f "$pidfile" ]; then
-  dev_pid="$(cat "$pidfile")"
-  if kill -0 "$dev_pid" 2>/dev/null; then
-    echo "Stopping dev session (PID $dev_pid)..." >&2
-    kill "$dev_pid" 2>/dev/null || true
-  fi
-  rm -f "$pidfile"
-fi
+# Stop any bin/dev session recorded for this worktree first (state.env
+# sessions and legacy .dev.pid ones alike). Single-service setups whose
+# bin/dev just execs in the foreground can omit this line.
+app_dev_stop
 
 db="$(app_db_name)"
 if [ "$db" = "app" ] && [ "${1:-}" != "--force" ]; then
