@@ -56,16 +56,27 @@ app_hash() {
   fi
 }
 
+# Derived DB name for an ARBITRARY worktree root of this repo — bin/gc needs
+# it for worktrees other than the current one. Main worktree → the canonical
+# name; any other → app_<hash-of-path>. APP_DATABASE is deliberately NOT
+# consulted here: that override belongs to the *current* context only
+# (app_db_name below).
+app_db_name_for_root() {
+  local root="$1" main_worktree
+  main_worktree="$(git -C "$root" worktree list --porcelain | head -1 | sed 's/^worktree //')"
+  if [ "$root" = "$main_worktree" ]; then
+    echo "app"
+  else
+    echo "app_$(app_hash "$root")"
+  fi
+}
+
 app_db_name() {
   if [ -n "${APP_DATABASE:-}" ]; then
     echo "$APP_DATABASE"
     return
   fi
-  if is_main_worktree; then
-    echo "app"
-  else
-    echo "app_$(app_hash "$(app_root)")"
-  fi
+  app_db_name_for_root "$(app_root)"
 }
 
 app_database_url() {
@@ -188,6 +199,14 @@ app_pick_port() {
   find_available_port 4001 4099
 }
 
+# The frontend (Vite) port — used by the fullstack dev variant; harmless to
+# keep in single-service repos. Override with VITE_PORT.
+app_pick_vite_port() {
+  if [ -n "${VITE_PORT:-}" ]; then echo "$VITE_PORT"; return; fi
+  if ! port_in_use 4100; then echo "4100"; return; fi
+  find_available_port 4101 4199
+}
+
 # Multi-process backends: a worktree may run SEVERAL processes (HTTP API + gRPC
 # service + Vite, …). Add one picker PER PROCESS KIND, each with a DISJOINT range
 # inside the project's band (e.g. HTTP 4000-4049, gRPC 4050-4099, Vite 4100-4199 —
@@ -200,3 +219,156 @@ app_pick_port() {
 #   if ! port_in_use 4050; then echo "4050"; return; fi
 #   find_available_port 4051 4099
 # }
+
+# ── Dev session state (fullstack bin/dev singleton) ─────────────────────────
+# The fullstack bin/dev runs as a per-worktree SINGLETON. A running session
+# records itself in .dev/state.env (supervisor PID, child PIDs, chosen ports,
+# DATABASE_URL) and writes each service's output to .dev/logs/<service>.log.
+# These helpers are shared by bin/dev (attach/status/stop), bin/cleanup, and
+# bin/gc. Single-service repos (the plain `dev` template, which just execs)
+# don't use them — harmless to keep either way.
+#
+# The helpers assume the fullstack template's two children (SERVER + WEB) and
+# two ports (PORT + VITE_PORT). A stack with more processes extends BOTH key
+# lists in app_dev_session_healthy and the sweep list in app_dev_stop — one
+# entry per recorded child.
+
+app_dev_state_dir() { echo "$(app_root)/.dev"; }
+app_dev_state_file() { echo "$(app_dev_state_dir)/state.env"; }
+app_dev_log_dir() { echo "$(app_dev_state_dir)/logs"; }
+
+# ── PID identity ─────────────────────────────────────────────────────────────
+# A bare `kill -0 $pid` proves only that SOME process has that pid. state.env
+# survives a SIGKILLed supervisor and a reboot, and the OS recycles pids —
+# so every recorded pid is stored WITH its start time, and both the health
+# check and the stop path refuse to treat (or kill!) a recycled pid as ours.
+
+# Start time of a live process; empty when the pid is gone.
+app_pid_lstart() {
+  { ps -o lstart= -p "$1" 2>/dev/null || true; } | sed 's/^ *//;s/ *$//'
+}
+
+# True when $1 is alive AND is the exact process recorded as ($1, $2).
+# An empty recorded start time (state written by an older bin/dev) falls
+# back to plain liveness so in-flight sessions stay stoppable across the
+# upgrade.
+app_pid_is() {
+  local pid="$1" lstart="$2"
+  [ -n "$pid" ] || return 1
+  if [ -z "$lstart" ]; then
+    kill -0 "$pid" 2>/dev/null
+    return
+  fi
+  [ "$(app_pid_lstart "$pid")" = "$lstart" ]
+}
+
+# ── State reads ──────────────────────────────────────────────────────────────
+# Deliberately not `source`d: sourcing would clobber caller-provided env
+# overrides (PORT, VITE_PORT, ...) that the port pickers honor. The file can
+# vanish between any two reads (a dying supervisor's trap removes it), so
+# callers that need a COHERENT view take one app_dev_snapshot and read every
+# key from it — never a healthy-check against one read and an emit from
+# another.
+app_dev_snapshot() {
+  cat "$(app_dev_state_file)" 2>/dev/null || true
+}
+
+app_snap_get() {
+  printf '%s\n' "$1" | sed -n "s/^$2=//p" | head -1
+}
+
+# One-off single-key read (no coherence needed). Empty when file is missing.
+app_dev_state_get() {
+  app_snap_get "$(app_dev_snapshot)" "$1"
+}
+
+# Healthy = the boot finished (PHASE=running), the supervisor and both
+# services are alive AND are the exact recorded processes (pid + start time),
+# and both ports are listening. Anything less is a half-dead stack that
+# should be torn down, not attached to — a dead backend behind a live
+# frontend port serves nothing but proxy errors, and a foreign listener on
+# our recorded port is someone else's stack, not ours.
+# Takes an optional snapshot; snapshots itself when not given one.
+app_dev_session_healthy() {
+  local snap="${1:-$(app_dev_snapshot)}"
+  local key port
+  [ -n "$snap" ] || return 1
+  [ "$(app_snap_get "$snap" PHASE)" = "running" ] || return 1
+  for key in DEV SERVER WEB; do
+    app_pid_is "$(app_snap_get "$snap" "${key}_PID")" \
+      "$(app_snap_get "$snap" "${key}_PID_LSTART")" || return 1
+  done
+  for key in PORT VITE_PORT; do
+    port="$(app_snap_get "$snap" "$key")"
+    [ -n "$port" ] || return 1
+    port_in_use "$port" || return 1
+  done
+}
+
+# Booting = state.env claimed (PHASE=booting) by a supervisor that is still
+# alive. Distinct from unhealthy: a boot in progress should be WAITED ON,
+# never torn down — the pre-state window (postgres ensure, migrate, seed) can
+# run 10+ seconds and would otherwise be indistinguishable from a half-dead
+# session.
+app_dev_session_booting() {
+  local snap="${1:-$(app_dev_snapshot)}"
+  [ -n "$snap" ] || return 1
+  [ "$(app_snap_get "$snap" PHASE)" = "booting" ] || return 1
+  app_pid_is "$(app_snap_get "$snap" DEV_PID)" "$(app_snap_get "$snap" DEV_PID_LSTART)"
+}
+
+# Stop the recorded session: TERM the supervisor (its signal-aware EXIT trap
+# kills each child's process group), wait briefly, then sweep anything that
+# outlived it (e.g. a SIGKILLed supervisor): service + log-streamer process
+# groups. Every kill is identity-checked — a recycled pid is never signalled.
+# Also stops legacy .dev.pid-only sessions from the pre-singleton fullstack
+# template — those recorded no ports, so they can't be attached to. Always
+# returns 0; silent when nothing is running.
+app_dev_stop() {
+  local snap state pid lstart child key i
+  state="$(app_dev_state_file)"
+  # Snapshot everything up front: the supervisor's own EXIT trap removes
+  # state.env, so it can vanish the moment the kill below lands.
+  snap="$(app_dev_snapshot)"
+  if [ -n "$snap" ]; then
+    pid="$(app_snap_get "$snap" DEV_PID)"
+    lstart="$(app_snap_get "$snap" DEV_PID_LSTART)"
+    if app_pid_is "$pid" "$lstart"; then
+      echo "Stopping dev session (PID ${pid})..." >&2
+      kill "$pid" 2>/dev/null || true
+      for i in $(seq 1 50); do
+        app_pid_is "$pid" "$lstart" || break
+        sleep 0.2
+      done
+    fi
+    # Sweep survivors by process GROUP (bin/dev runs under `set -m`, so each
+    # child leads its own group and the group kill takes service grandchildren
+    # — bun run → vite — down too); plain pid as fallback for pre-set -m state.
+    for key in SERVER WEB TAIL; do
+      child="$(app_snap_get "$snap" "${key}_PID")"
+      if app_pid_is "$child" "$(app_snap_get "$snap" "${key}_PID_LSTART")"; then
+        kill -- -"$child" 2>/dev/null || kill "$child" 2>/dev/null || true
+      fi
+    done
+    rm -f "$state"
+  fi
+  local legacy
+  legacy="$(app_root)/.dev.pid"
+  if [ -f "$legacy" ]; then
+    pid="$(cat "$legacy" 2>/dev/null || true)"
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+      echo "Stopping legacy dev session (PID ${pid})..." >&2
+      # The legacy supervisor traps only EXIT — a bare TERM kills it without
+      # its `kill 0` trap ever running, orphaning its children. When it
+      # leads its own process group (interactive launches), kill the whole
+      # group; only then is -$pid guaranteed to be ITS group and nobody else's.
+      if [ "$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ')" = "$pid" ]; then
+        kill -- -"$pid" 2>/dev/null || true
+      else
+        kill "$pid" 2>/dev/null || true
+      fi
+    fi
+    rm -f "$legacy"
+  fi
+  return 0
+}
