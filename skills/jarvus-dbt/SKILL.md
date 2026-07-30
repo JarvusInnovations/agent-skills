@@ -1,6 +1,6 @@
 ---
 name: jarvus-dbt
-description: Jarvus house conventions for writing, testing, and linting dbt projects — model layering and grain, what each stage may/may not do, the no-inner-joins and semantic-alias rules, the generic + quality-model + unit-test patterns, the sqlfluff config, and a credential-free multi-tenant CI gate. Use when building or reviewing dbt models, deciding materialization or test coverage, setting up dbt linting/CI, or when "dbt", "sqlfluff", "staging/intermediate/marts", "dbt test", or "TIDES" come up. This is the opinionated house layer ON TOP OF dbt-labs' first-party dbt skills (which cover the mechanics) — see "Relationship to other skills".
+description: Jarvus house conventions for writing, testing, and linting dbt projects — model layering and grain, what each stage may/may not do, the no-inner-joins and semantic-alias rules, the fast (<5 min) local dev-loop requirement, the no-unvalidated-demo-work-in-main rule, the generic + quality-model + unit-test patterns, the sqlfluff config, and a credential-free multi-tenant CI gate. Use when building or reviewing dbt models, deciding materialization or test coverage, setting up dbt linting/CI, or when "dbt", "sqlfluff", "staging/intermediate/marts", "dbt test", or "TIDES" come up. This is the opinionated house layer ON TOP OF dbt-labs' first-party dbt skills (which cover the mechanics) — see "Relationship to other skills".
 ---
 
 # dbt practices (Jarvus house conventions)
@@ -44,6 +44,12 @@ These are the rules to apply on every model; rationale and examples in
   ("renamed from…", "replaced…").
 - **It must work for every tenant.** Changes parse and run across *all* configured
   tenants/projects, not just the one you touched — the CI gate enforces this.
+- **A fast (<5 min) dev loop is a project requirement.** Every dbt project needs a documented,
+  quickly runnable way to exercise it (local target, sampled slice, unit tests, `state:modified`)
+  so modeling work is never blocked by slow full-pipeline runs or remote fetch paths.
+- **Unvalidated demo work doesn't live in `main`.** Demos stay on branches; if they merged for
+  a demo, remove them after, leaving breadcrumbs (tag/branch + a note). Plausible-looking but
+  unvalidated models in the main DAG are a liability others can't ignore.
 
 ## Testing
 
