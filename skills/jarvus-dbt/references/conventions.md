@@ -130,3 +130,52 @@ A change has to **parse and run across all configured tenants** (or target proje
 the one you edited — tenant-specific divergence hides bugs. The CI gate runs `dbt parse` for
 every tenant on each PR ([linting-and-ci.md](linting-and-ci.md)); don't merge on the strength
 of one tenant compiling.
+
+## A fast (<5 min) dev loop is a project requirement
+
+Every dbt project must have a documented, quickly runnable way to **exercise the project end to
+end in under ~5 minutes**. Local-only is fine — it doesn't have to be the production path. What
+it must do is give a developer editing models a quick feedback cycle, so data-modeling work is
+never blocked by pipeline performance — especially where there are slow fetch paths between
+remote sources and local dev.
+
+Treat this as part of **project setup**, not a later nicety: if iterating on a model requires a
+long remote fetch or a full rebuild, that's a project bug to fix *before* more modeling work
+piles onto it. Building blocks, cheapest first:
+
+- **dbt unit tests** — fixture-based, no data read at all ([testing.md](testing.md)).
+- **`dbt parse` / `dbt compile`** — catches ref/config/jinja errors with no data.
+- **`dbt build` against a small local target** — a local DuckDB target, a sampled/thin slice of
+  source data (seeds or a cached extract), or `--empty` runs to validate SQL shape.
+- **`state:modified` + deferral** (dbt-labs' `using-dbt-state`) — scope the build to changed
+  models instead of rebuilding the world.
+
+Whatever the combination, **write it down in the project README** ("how to iterate locally in
+<5 minutes") so it's the default workflow rather than tribal knowledge, and keep it working —
+a fast path that has rotted is the same as not having one.
+
+## Unvalidated demo work doesn't live in `main`
+
+Demo/spike models that haven't been **validated** don't get merged into the main dbt project —
+or, if they had to merge for a demo, they get **removed after the demo**, leaving breadcrumbs
+(a tag or branch preserving the code, plus a short note — README, ADR, or closing PR comment —
+saying what it was and where it lives) so someone doing similar work later can find it.
+
+Why this is a hard rule: once demo models are integrated into the main DAG, they're impossible
+to just ignore — they look plausible, other models can come to depend on them, and untangling
+an at-best-partially-correct implementation costs more than building fresh. It also poisons the
+project for whoever comes next: a repo full of plausible-looking but unvalidated models makes
+"start over vs. build on this" undecidable (is the package structure sound scaffolding, or is
+it as unvalidated as the models inside it?).
+
+In practice:
+
+- Demos live on a **branch** until the models are validated to the normal bar (tested grain,
+  reviewed logic — see [testing.md](testing.md)).
+- If demo code did land in `main`, **removal is the default** once the demo is over. Preserving
+  it is what the breadcrumbs are for; keeping it "because it might be useful" is how the DAG
+  accretes half-right models.
+- When you **inherit** a project containing plausible-looking but unvalidated work: treat the
+  structure as scaffolding at most, and require validation before treating any model as
+  correct. "Looks plausible" is not evidence. Prefer explicitly starting a model over from its
+  spec to incrementally untangling a partially-correct implementation.

@@ -58,6 +58,10 @@ sqlfluff runs *directly* in CI (it emits PR annotations natively; see the gate b
 local fast feedback use a **sqlfluff editor integration** (the vscode-sqlfluff extension or a
 sqlfluff LSP) and run `sqlfluff lint` / `sqlfluff fix` by hand — don't wire a git hook.
 
+Lint feedback is only part of the loop: the project must also have a **<5-minute way to
+actually exercise the dbt project** (build/run, not just lint) — that requirement and its
+building blocks are in [conventions.md](conventions.md).
+
 ## The CI gate
 
 Path-filtered, **credential-free** for the DuckDB stack (it reads public data; no warehouse
