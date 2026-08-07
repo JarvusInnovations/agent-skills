@@ -1,49 +1,51 @@
 # Development Patterns
 
-Patterns for building features in Bun + Vite + React + Tailwind + React Router v7 projects.
-The routing, state, and layout patterns here are stack-agnostic. Examples that import from
-`@/components/ui/*` assume the **optional** shadcn/ui layer (see [shadcn.md](shadcn.md)); the
-base-stack equivalents (hand-built with Tailwind + `cn()`) are in
-[setup-guide.md](setup-guide.md).
+Base-stack patterns for Bun, Vite, React, Tailwind CSS, and React Router v7. These examples
+do not require shadcn/ui. For shadcn components and its sidebar layout, use
+[shadcn.md](shadcn.md).
+
+## Contents
+
+- [Project Structure](#project-structure)
+- [Routing Architecture](#routing-architecture)
+- [URL State](#url-state)
+- [Component and Page Design](#component-and-page-design)
+- [Accessibility and Responsive Quality](#accessibility-and-responsive-quality)
+- [Verification](#verification)
 
 ## Project Structure
 
-```
+```text
 src/
-├── components/
-│   ├── ui/              # shadcn/ui components — only if you adopted shadcn (see shadcn.md)
-│   ├── AppShell.tsx     # Main layout with header and outlet
-│   └── AppSidebar.tsx   # Navigation sidebar
-├── pages/               # Route page components (organized by feature)
-│   ├── dashboard/
-│   └── settings/
-├── hooks/               # Custom React hooks
+├── components/       # Shared application components
+│   └── AppShell.tsx
+├── hooks/            # Custom React hooks
 ├── lib/
-│   └── utils.ts         # cn() helper and shared utilities
-├── App.tsx              # Route definitions
-├── main.tsx             # Entry point with BrowserRouter
-└── index.css            # Tailwind import (+ theme variables)
+│   └── utils.ts      # cn() and shared utilities
+├── pages/            # Route components grouped by feature
+├── App.tsx           # Route definitions
+├── main.tsx          # Entry point and BrowserRouter
+└── index.css         # Tailwind import and theme tokens
 ```
 
-**Conventions:**
-
-- Use `pages/` directory for page components organized by feature area
-- Utility functions go in `lib/` directory
-- Path alias `@/*` maps to `./src/*`
-- Build components by hand with Tailwind + `cn()`; reach for shadcn/ui (`components/ui/`)
-  only when the project has opted into it
+- Keep route-level components in `pages/` and reusable UI in `components/`.
+- Put non-React helpers in `lib/` and reusable hooks in `hooks/`.
+- Use the `@/*` alias only after it is configured in Vite and the tsconfig that covers
+  `src/`.
+- Add `components/ui/` only if the project adopts shadcn/ui.
 
 ## Routing Architecture
 
-### React Router v7 Setup
+Follow the router mode already present in the repository. A small browser-routed app can
+use declarative routing:
 
-```typescript
-// main.tsx - Entry point
+```tsx
+// main.tsx
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
-import './index.css'
 import App from './App'
+import './index.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -54,22 +56,18 @@ createRoot(document.getElementById('root')!).render(
 )
 ```
 
-```typescript
-// App.tsx - Route definitions
-import { Routes, Route } from 'react-router'
-import { SidebarProvider } from '@/components/ui/sidebar'
-import { AppSidebar } from '@/components/AppSidebar'
-import { AppShell } from '@/components/AppShell'
+Use a layout route and `<Outlet />` instead of repeating application chrome:
 
-function App() {
+```tsx
+import { Route, Routes } from 'react-router'
+import { AppShell } from '@/components/AppShell'
+import { DashboardPage } from '@/pages/dashboard/DashboardPage'
+import { SettingsPage } from '@/pages/settings/SettingsPage'
+
+export default function App() {
   return (
     <Routes>
-      <Route path="/" element={
-        <SidebarProvider>
-          <AppSidebar />
-          <AppShell />
-        </SidebarProvider>
-      }>
+      <Route path="/" element={<AppShell />}>
         <Route index element={<DashboardPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
@@ -78,241 +76,109 @@ function App() {
 }
 ```
 
-### Key Imports
+Use `NavLink` for navigation state. `end` keeps the root link from matching every nested
+route:
 
-All routing imports come from `react-router` (NOT `react-router-dom`):
+```tsx
+import { NavLink } from 'react-router'
+import { cn } from '@/lib/utils'
 
-```typescript
-import {
-  BrowserRouter,    // Wrap app in main.tsx
-  Routes, Route,    // Define routes in App.tsx
-  Link,             // Navigation links
-  Outlet,           // Render child routes
-  useLocation,      // Get current path
-  useParams,        // Get route params
-  useSearchParams,  // Get/set query params
-} from 'react-router'
+<NavLink
+  to="/"
+  end
+  className={({ isActive }) =>
+    cn(
+      'rounded px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2',
+      isActive ? 'bg-muted font-medium' : 'text-muted-foreground hover:bg-muted',
+    )
+  }
+>
+  Dashboard
+</NavLink>
 ```
 
-### Nested Routes with Outlet
+Import v7 APIs from `react-router`, not `react-router-dom`. Prefer router matching APIs
+over manual exact comparisons with `location.pathname`, especially for nested routes.
 
-```typescript
-// Parent route renders layout + Outlet
-<Route path="/" element={<Layout />}>
-  {/* Child routes render into Outlet */}
-  <Route index element={<Home />} />
-  <Route path="about" element={<About />} />
-</Route>
-```
+## URL State
 
-## State Management
+Put state in the URL when users should be able to bookmark, refresh, or share it. Typical
+examples are search terms, filters, sorting, pagination, and the selected tab.
 
-### URL-Based State
+Read and validate values before using them:
 
-Use `useSearchParams` for state that should persist in the URL:
-
-```typescript
+```tsx
 const [searchParams, setSearchParams] = useSearchParams()
-
-// Read value
-const environment = searchParams.get('env')
-
-// Update value
-setSearchParams({ env: 'production' })
+const environment = searchParams.get('env') ?? 'all'
+const page = Math.max(1, Number(searchParams.get('page')) || 1)
 ```
 
-### Route-Based Logic
+When updating one parameter, copy the current params so unrelated state survives:
 
-Use `useLocation` for determining active states:
+```tsx
+function setEnvironment(environment: string) {
+  setSearchParams((current) => {
+    const next = new URLSearchParams(current)
 
-```typescript
-const location = useLocation()
-const isActive = location.pathname === '/dashboard'
-```
+    if (environment === 'all') {
+      next.delete('env')
+    } else {
+      next.set('env', environment)
+    }
 
-### Query Parameter Preservation
-
-Create a helper to preserve query params across navigation:
-
-```typescript
-function createNavLink(path: string, searchParams: URLSearchParams) {
-  const params = searchParams.toString()
-  return params ? `${path}?${params}` : path
+    next.delete('page') // the filter changed, so reset dependent pagination
+    return next
+  })
 }
 ```
 
-## Component Patterns
+Avoid `setSearchParams({ env: 'production' })` when other parameters may exist: replacing
+the whole query string can silently discard them.
 
-### Layout System
+## Component and Page Design
 
-> The `AppSidebar` example below imports shadcn/ui's `sidebar` component — it assumes the
-> optional shadcn layer ([shadcn.md](shadcn.md)). For a base-stack layout without shadcn,
-> see the hand-built `AppShell` in [setup-guide.md](setup-guide.md).
+Keep pages responsible for feature composition and components responsible for reusable
+behavior. A page should expose a useful heading hierarchy and explicit UI states:
 
-**AppShell** - Main content wrapper with header:
+```tsx
+export function ResultsPage() {
+  const query = useResults()
 
-```typescript
-import { Outlet } from 'react-router'
-import { SidebarTrigger } from '@/components/ui/sidebar'
+  if (query.isPending) return <p role="status">Loading results…</p>
+  if (query.isError) return <p role="alert">Could not load results.</p>
+  if (query.data.length === 0) return <p>No results match these filters.</p>
 
-export function AppShell() {
   return (
-    <div className="flex-1 flex flex-col h-screen bg-background">
-      <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:px-6">
-        <SidebarTrigger />
-        <div className="flex-1" />
-      </header>
-      <main className="flex-1 overflow-auto">
-        <Outlet />
-      </main>
-    </div>
+    <section aria-labelledby="results-heading" className="space-y-4 p-4 sm:p-6">
+      <h1 id="results-heading" className="text-2xl font-semibold">Results</h1>
+      <ResultsList results={query.data} />
+    </section>
   )
 }
 ```
 
-**AppSidebar** - Navigation with active states:
+For status styles, pair color with text, an icon, or another programmatic cue. Do not make
+red, amber, or green the only way to understand a state.
 
-```typescript
-import { useLocation, Link } from 'react-router'
-import {
-  Sidebar, SidebarContent, SidebarGroup,
-  SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem,
-} from '@/components/ui/sidebar'
+## Accessibility and Responsive Quality
 
-export function AppSidebar() {
-  const location = useLocation()
+- Prefer native `button`, `a`, `nav`, `main`, `form`, and heading elements.
+- Give every control an accessible name; use a visible `<label>` when practical.
+- Keep focus visible and verify the interface with a keyboard alone.
+- Use ARIA only to fill a semantic gap, not to replace native behavior.
+- Provide loading, empty, error, disabled, and success feedback where each applies.
+- Start with narrow layouts, then add `sm:`, `md:`, or `lg:` changes when content needs
+  them; avoid breakpoint-driven complexity without a layout reason.
+- Respect `prefers-reduced-motion` with Tailwind's `motion-reduce:` utilities when adding
+  nonessential transitions or animation.
+- Avoid assuming light or dark mode exists. Use the project's defined semantic tokens.
 
-  return (
-    <Sidebar>
-      <SidebarHeader className="border-b px-4 py-4">
-        <span className="font-semibold">App Name</span>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={location.pathname === '/'}>
-                  <Link to="/">
-                    <Home className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
-  )
-}
-```
+## Verification
 
-### Page Components
-
-Consistent structure with header and content sections:
-
-```typescript
-export function DashboardPage() {
-  return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your data</p>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {/* Content cards */}
-      </div>
-    </div>
-  )
-}
-```
-
-### Collapsible Sidebar Sections
-
-```typescript
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ChevronDown } from 'lucide-react'
-
-<Collapsible defaultOpen className="group/collapsible">
-  <SidebarMenuItem>
-    <CollapsibleTrigger asChild>
-      <SidebarMenuButton>
-        <FolderIcon className="mr-2 h-4 w-4" />
-        Section
-        <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
-      </SidebarMenuButton>
-    </CollapsibleTrigger>
-    <CollapsibleContent>
-      <SidebarMenuSub>
-        {/* Sub items */}
-      </SidebarMenuSub>
-    </CollapsibleContent>
-  </SidebarMenuItem>
-</Collapsible>
-```
-
-## UI Patterns
-
-### Common Layouts
-
-- **Two-column layouts** for complex forms
-- **Card-based layouts** for dashboards and listings
-- **Consistent navigation** with back links and breadcrumbs
-
-### Design Conventions
-
-**shadcn/ui components:**
-
-- Button, Input, Badge, Card, Tabs
-- Sidebar, Dialog, Command, Table
-- Tooltip, Dropdown Menu, Select
-
-**Tailwind patterns:**
-
-- `bg-muted`, `text-muted-foreground` - Muted backgrounds/text
-- `space-y-4`, `gap-4` - Consistent spacing
-- `flex-1` - Flexible sizing
-- `border-b`, `border-r` - Borders
-
-### Color-Coded Status
-
-```typescript
-// Status badges with semantic colors
-<Badge variant="default">Active</Badge>      // Primary color
-<Badge variant="secondary">Pending</Badge>   // Muted
-<Badge variant="destructive">Error</Badge>   // Red
-<Badge variant="outline">Draft</Badge>       // Outlined
-```
-
-## Development Workflow
-
-### Before Starting Dev Server
-
-Check if a dev server is already running on port 5173:
-
-```bash
-lsof -i :5173
-```
-
-### Testing Changes
-
-1. Run the dev server and verify navigation works
-2. Ensure query parameter preservation across route transitions
-3. Verify active states for all sidebar menu items
-4. Check conditional rendering for context-dependent sections
-
-### Package Management
-
-- Always use `bun add <package-name>` to add dependencies
-- Never manually edit `package.json` to add packages
-- If using shadcn/ui, add components with `bunx --bun shadcn@latest add <component> -y`
-
-### Theming Considerations
-
-- Project typically uses light theme only (configure dark mode if needed)
-- CSS variables defined in `index.css` control theme colors
-- Avoid adding `dark:` classes unless dark mode is implemented
+1. Exercise every changed route directly and through navigation.
+2. Refresh and share URLs containing filters or pagination; confirm state is restored.
+3. Update one query parameter and confirm unrelated parameters remain.
+4. Check keyboard order, visible focus, labels, and status announcements.
+5. Check loading, empty, error, disabled, and success states that apply.
+6. Test a narrow viewport, a wide viewport, and reduced motion.
+7. Run the repository's lint, format check, typecheck, tests, and production build.

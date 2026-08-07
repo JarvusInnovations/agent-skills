@@ -1,89 +1,62 @@
 ---
 name: jarvus-react
-description: Frontend development using Bun + Vite + React + Tailwind CSS + React Router v7. Use when creating new frontend projects, adding UI components, implementing routing, styling with Tailwind, or working with the React frontend stack. shadcn/ui is an optional component-library layer (see references/shadcn.md).
+description: Build or maintain Jarvus frontend applications that use Bun, Vite, React 19, TypeScript, Tailwind CSS v4, and React Router v7. Use when a repository already uses this stack or when the user explicitly asks to bootstrap or migrate to it; preserve an existing package manager, framework, and routing mode unless migration is requested. shadcn/ui is optional.
 ---
 
-# Frontend React Stack (Bun)
+# Jarvus React
 
-Modern React frontend stack, run on **Bun**:
+Use this skill for the Jarvus React base stack:
 
-- **Bun** - Runtime, package manager, and script runner (no Node.js or npm)
-- **Vite** - Build tooling and dev server
-- **React 19** - UI framework
-- **TypeScript** - Type safety
-- **Tailwind CSS v4** - Utility-first styling (`@tailwindcss/vite` plugin)
-- **React Router v7** - Client-side routing (package `react-router`, not `react-router-dom`)
-- **`cn()` helper** - `clsx` + `tailwind-merge` for conditional classes
+- Bun for dependency management and scripts
+- Vite, React 19, and TypeScript
+- Tailwind CSS v4 through `@tailwindcss/vite`
+- React Router v7 through `react-router`
+- `clsx` plus `tailwind-merge` for conditional classes
 
-**Component library is a choice, not a default.** This skill is the React base stack.
-**shadcn/ui** is a popular, optional layer on top — when a project wants it, follow
-[shadcn.md](references/shadcn.md). Without it, hand-build components against Tailwind and
-the `cn()` helper.
+Treat shadcn/ui as an optional component-library layer. Do not initialize it unless the
+project already uses it or the user chooses it.
 
-## Environment Setup
+## Guardrails
 
-Use [asdf](https://asdf-vm.com/) to manage Bun:
+1. Inspect the repository before changing dependencies or configuration.
+2. Preserve its package manager, framework, routing mode, component system, and quality
+   tools unless the user explicitly requests a migration.
+3. Use `bun add` in Bun projects; do not hand-edit dependency versions or regenerate a
+   lockfile with another package manager.
+4. Pin React Router to the supported major with `bun add react-router@7`; an unqualified
+   install can move the project to a later major.
+5. Keep URL state shareable and preserve unrelated query parameters when updating it.
+6. Never commit, push, or publish unless the user has authorized that action.
 
-```bash
-# Install the Bun plugin (one-time)
-asdf plugin add bun
+## Choose the Relevant Reference
 
-# Pin Bun for the project (writes .tool-versions)
-asdf set bun latest
-asdf install
-```
+| Task | Reference |
+|------|-----------|
+| Bootstrap the base stack | [setup-guide.md](references/setup-guide.md) |
+| Apply routing, URL-state, layout, and accessibility patterns | [patterns.md](references/patterns.md) |
+| Add or maintain shadcn/ui | [shadcn.md](references/shadcn.md) |
+| Add or debug MapLibre GL JS | [maplibre.md](references/maplibre.md) |
+| Research library APIs and components | [mcp-tools.md](references/mcp-tools.md) |
 
-## Reference Files
+Read only the references needed for the task. For a new project, start with the setup
+guide, then open the patterns guide. Open the shadcn or MapLibre reference only when that
+layer is in scope.
 
-| File | When to Use |
-|------|-------------|
-| [setup-guide.md](references/setup-guide.md) | Starting a new project from scratch (base stack) |
-| [patterns.md](references/patterns.md) | Routing, state, layout, and component patterns |
-| [shadcn.md](references/shadcn.md) | **Optional** — adding the shadcn/ui component library |
-| [maplibre.md](references/maplibre.md) | Working with MapLibre GL JS maps |
-| [mcp-tools.md](references/mcp-tools.md) | Looking up docs (context7) and shadcn components via MCP |
+## Base Conventions
 
-## Quick Reference
-
-### Commands
-
-```bash
-# Dev server
-bun run dev          # → vite
-
-# Production build
-bun run build        # → tsc -b && vite build
-
-# Type check
-bun run typecheck    # → tsc --noEmit
-```
-
-### Package Management
-
-Use **Bun** for all dependency management — never edit `package.json` by hand:
-
-```bash
-bun add react-router clsx tailwind-merge      # runtime deps
-bun add -d @types/node                        # dev deps
-```
-
-`bun add` resolves the latest compatible version and keeps `bun.lock` in sync. Commit
-`bun.lock`.
-
-### Key Imports
+### Imports
 
 ```typescript
-// React Router v7 - use 'react-router' NOT 'react-router-dom'
-import { Routes, Route, Link, useLocation, useSearchParams } from 'react-router'
-
-// Path alias - @/ maps to src/
+import { NavLink, Route, Routes, useSearchParams } from 'react-router'
 import { cn } from '@/lib/utils'
 ```
 
-### The cn() helper
+Use `react-router`, not `react-router-dom`, for this v7 stack. Follow an existing
+repository's established router mode rather than replacing it automatically.
+
+### Class composition
 
 ```typescript
-// src/lib/utils.ts
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
@@ -92,89 +65,67 @@ export function cn(...inputs: ClassValue[]) {
 }
 ```
 
-### Conditional Classes
+### Semantic styling
 
-```typescript
-import { cn } from '@/lib/utils'
+Base-stack examples use tokens such as `bg-background`, `text-foreground`, `bg-muted`,
+and `text-muted-foreground`. Define those tokens in `src/index.css` as shown in the setup
+guide. Do not assume shadcn has created them.
 
-<div className={cn(
-  "base-classes",
-  condition && "conditional-classes",
-  variant === "primary" && "variant-classes"
-)} />
-```
+## Quality Baseline
 
-### Project Structure
+For every UI change:
 
-```
-src/
-├── components/       # Shared UI components (add components/ui/ if using shadcn)
-│   ├── AppShell.tsx  # Main layout with header
-│   └── AppSidebar.tsx
-├── pages/            # Route page components
-├── hooks/            # Custom hooks
-├── lib/
-│   └── utils.ts      # cn() helper
-├── App.tsx           # Route definitions
-├── main.tsx          # Entry point with BrowserRouter
-└── index.css         # Tailwind import (+ theme variables)
-```
+- Use semantic elements and programmatic labels.
+- Preserve keyboard operation and visible focus indicators.
+- Do not convey status by color alone.
+- Cover loading, empty, error, disabled, and success states that apply.
+- Check narrow and wide layouts and respect reduced-motion preferences.
+- Use `NavLink` or router matching for active navigation instead of exact pathname
+  equality when nested routes should remain active.
+- Put shareable filters, selections, and pagination in the URL; update a copy of the
+  current `URLSearchParams` so unrelated parameters survive.
 
-### Tailwind Patterns
+## Code Quality Contract
 
-```typescript
-// Common utility patterns
-"flex items-center gap-4"           // Flexbox with gap
-"bg-muted text-muted-foreground"    // Muted backgrounds
-"border-b bg-background"            // Borders and backgrounds
-"h-screen overflow-auto"            // Full height scrolling
-"space-y-4"                         // Vertical spacing
-```
-
-### Common Gotchas
-
-- **Package management**: Use `bun add <pkg>` not manual `package.json` edits
-- **React Router imports**: Use `react-router` NOT `react-router-dom`
-- **shadcn is optional**: Only reach for `components/ui/` + `bunx shadcn@latest` when the
-  project has opted into shadcn/ui (see [shadcn.md](references/shadcn.md)); otherwise build
-  components by hand with Tailwind + `cn()`
-
-## CI & Code Quality
-
-Lint, format, and type-check are part of the stack, not an afterthought — wire them into
-CI from the start. The cross-cutting setup (asdf provisioning + caching, path-filtered
-workflows, lockfile-frozen installs, the GitHub Actions templates) lives in the
-**`ci-quality-gates`** skill; this section is just the React-stack specifics that plug into it.
-
-**Linter + formatter: oxc, not eslint/prettier.** A fresh Vite scaffold ships an eslint
-config — **remove it** and adopt **oxlint + oxfmt** (the Jarvus standard). Don't run both.
+Jarvus TypeScript packages use oxc rather than ESLint and Prettier. Remove scaffolded
+ESLint only when adopting this contract, then install:
 
 ```bash
 bun add -d oxlint oxfmt
 ```
 
-**The script contract.** Expose the same four scripts every Jarvus TS package does, so CI
-just calls `bun run <name>`:
+Expose these scripts so local and CI commands agree:
 
 ```jsonc
 {
   "scripts": {
-    "dev":          "vite",
-    "build":        "tsc -b && vite build",
-    "typecheck":    "tsc --noEmit",
-    "lint":         "oxlint .",
-    "format":       "oxfmt .",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "format": "oxfmt .",
     "format:check": "oxfmt --check ."
   }
 }
 ```
 
-A React app's `.oxlintrc.json` uses the **stricter React config** (suspicious + perf
-categories, react-hooks, react-compiler) — copy `references/templates/oxlintrc.react.json`
-from `ci-quality-gates`. Commit `.vscode/extensions.json` recommending `oxc.oxc-vscode` so
-format-on-save matches CI.
+Use the stricter React config and `ui-checks.yml` from the `ci-quality-gates` skill. That
+workflow also expects a `test` script: configure the repository's chosen test runner
+before enabling the test step, or deliberately adapt the workflow. Do not add a fake or
+no-op test command merely to make CI green.
 
-**CI workflow.** Use the single-package `ui-checks.yml` template from `ci-quality-gates` —
-one job running `bun run lint`, `format:check`, and `typecheck`, provisioned by the shared
-`setup-asdf` composite. See that skill for the full build order and the one-time migration
-when turning the gate on for an existing app.
+## Completion Checks
+
+Run the repository's relevant scripts, normally:
+
+```bash
+bun run lint
+bun run format:check
+bun run typecheck
+bun run test
+bun run build
+```
+
+Skip only commands that genuinely are not configured, and report that limitation. Check
+the final diff for unintended dependency, lockfile, generated-file, and formatting
+changes.

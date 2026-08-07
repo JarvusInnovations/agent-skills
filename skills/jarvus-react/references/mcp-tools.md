@@ -1,116 +1,52 @@
-# MCP Tools for Frontend Development
+# Documentation and Component Research
 
-Two MCP servers enhance frontend development workflows: **shadcn** for UI components (only
-relevant if you've adopted the optional shadcn layer — see [shadcn.md](shadcn.md)) and
-**context7** for library documentation.
+Use the documentation and component-discovery tools available in the current agent
+environment. Tool names and providers vary, so do not assume a particular MCP server is
+installed or hard-code one provider's invocation syntax into the workflow.
 
-> **Note:** If these MCP servers are configured in your Claude Code setup, they'll be
-> available automatically. The shadcn tools below apply only when the project uses shadcn/ui.
+## Research Order
 
-## Research Workflow
+1. Inspect the repository's installed versions, lockfile, configuration, and existing
+   patterns.
+2. Use local type definitions or package documentation when they answer the question.
+3. Use an available documentation tool or the library's official documentation for
+   version-specific behavior.
+4. If the project uses shadcn/ui, use an available registry tool or the official shadcn
+   registry to find components and examples.
+5. Install only after confirming the package, supported major, and integration steps.
 
-Before implementing new features or installing unfamiliar libraries:
+This order prevents current documentation from being applied blindly to an older installed
+major and avoids adding dependencies when the repository already has an equivalent.
 
-1. **Research** with context7 MCP - Get up-to-date documentation
-2. **Understand** with shadcn MCP - Find component examples
-3. **Install** with `bun add` / `bunx` - Add the dependency
-4. **Implement** - Build the feature
+## Library Documentation
 
-## shadcn MCP Server
+Ask narrow questions that include the installed major and the relevant routing or build
+mode. Examples:
 
-Use for discovering, understanding, and installing shadcn/ui components.
+- "React Router v7 declarative mode: how does `NavLink` match nested routes?"
+- "Tailwind CSS v4 with `@tailwindcss/vite`: how are custom color tokens declared?"
+- "MapLibre GL JS installed version: what cleanup does a map instance require?"
 
-### Search for Components
+Prefer primary sources. Confirm generated examples use the package names and APIs already
+present in the repository before copying them.
 
-```
-mcp__shadcn__search_items_in_registries(registries: ["@shadcn"], query: "sidebar")
-```
+## shadcn/ui Discovery
 
-Common searches: `sidebar`, `card`, `dialog`, `dropdown`, `table`, `form`, `button`
+Only search the shadcn registry after confirming the project has adopted shadcn/ui or the
+user wants to add it. Then:
 
-### Get Component Examples
+1. Search the registry for the behavior, not just a component name.
+2. Inspect component source and usage examples.
+3. Get or construct the exact `bunx --bun shadcn@latest add ...` command.
+4. Review the generated diff, including dependencies, `components.json`, theme variables,
+   and any overwritten utilities.
+5. Run the project's quality checks.
 
-```
-mcp__shadcn__get_item_examples_from_registries(registries: ["@shadcn"], query: "button-demo")
-```
+Do not treat registry output as a dependency-free snippet: shadcn components are copied
+source that the repository owns after installation.
 
-Pattern: Use `{component}-demo` to find usage examples.
+## If No Research Tool Is Available
 
-### Get Install Command
-
-```
-mcp__shadcn__get_add_command_for_items(items: ["@shadcn/sidebar"])
-```
-
-Returns the exact shadcn add command (run it with `bunx --bun shadcn@latest add ...`).
-
-### Workflow Example
-
-```
-1. mcp__shadcn__search_items_in_registries(registries: ["@shadcn"], query: "data table")
-2. mcp__shadcn__get_item_examples_from_registries(registries: ["@shadcn"], query: "data-table-demo")
-3. mcp__shadcn__get_add_command_for_items(items: ["@shadcn/table"])
-4. Run: bunx --bun shadcn@latest add table -y
-```
-
-### After Adding Components
-
-Use `mcp__shadcn__get_audit_checklist` to verify the component was added correctly and understand any additional setup needed.
-
-## context7 MCP Server
-
-Use for accessing up-to-date documentation for React, TypeScript, and other libraries.
-
-### Resolve Library ID
-
-First, get the context7 library ID:
-
-```
-mcp__context7__resolve-library-id(libraryName: "react-router", query: "routing")
-```
-
-Returns: `/remix-run/react-router`
-
-### Query Library Docs
-
-Then fetch specific documentation:
-
-```
-mcp__context7__query-docs(
-  libraryId: "/remix-run/react-router",
-  query: "useSearchParams hook usage"
-)
-```
-
-### Common Libraries
-
-| Library | context7 ID | Common Topics |
-|---------|-------------|---------------|
-| React Router v7 | `/remix-run/react-router` | BrowserRouter, useLocation, useSearchParams |
-| React | `/facebook/react` | hooks, context, suspense |
-| Tailwind CSS | `/tailwindlabs/tailwindcss` | utilities, configuration |
-| MapLibre GL | `/maplibre/maplibre-gl-js` | Map, markers, layers |
-
-### Workflow Example
-
-```
-1. mcp__context7__resolve-library-id(libraryName: "react-router", query: "routing")
-   → Returns: /remix-run/react-router
-
-2. mcp__context7__query-docs(
-     libraryId: "/remix-run/react-router",
-     query: "nested routes configuration"
-   )
-   → Returns: Documentation on nested routing patterns
-```
-
-## When to Use Each
-
-| Scenario | Tool |
-|----------|------|
-| Adding a new UI component | shadcn MCP |
-| Understanding component API | shadcn MCP (examples) |
-| Learning React Router patterns | context7 MCP |
-| Checking latest library syntax | context7 MCP |
-| Finding component install command | shadcn MCP |
-| Debugging library behavior | context7 MCP (mode: "info") |
+Use installed source and official documentation. If network access is unavailable, state
+which version-specific point remains unverified rather than guessing. A missing MCP server
+is not a reason to block ordinary local implementation work.
