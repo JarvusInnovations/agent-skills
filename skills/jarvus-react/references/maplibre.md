@@ -212,7 +212,7 @@ addLayers(map)
 Use `setData()` to update source data:
 
 ```typescript
-function updateSourceWithCounts(map: maplibregl.Map, stats: Record<string, number>) {
+async function updateSourceWithCounts(map: maplibregl.Map, stats: Record<string, number>) {
   const source = map.getSource('regions') as maplibregl.GeoJSONSource
   if (!source) return
 
@@ -572,7 +572,7 @@ Data present on the main thread while `loaded()` stays false *for good* is stron
 
 | Cause | Fix |
 |-------|-----|
-| Bundler relocated the worker URL (Vite dep optimization, any production bundle) | `setWorkerUrl` + `?url` import — see [Worker URL Under Bundlers](#worker-url-under-bundlers) |
+| Bundler relocated the worker URL (Vite dep optimization, any production bundle) | `setWorkerUrl` + `?worker&url` import — see [Worker URL Under Bundlers](#worker-url-under-bundlers) |
 | A fetch-intercepting service worker (e.g. MSW) reconstructs worker-script and module-import responses; Firefox's worker pipeline rejected them while Chromium tolerated them (observed: maplibre-gl 6.2, msw 2.15, Firefox 153 vs Chromium 150; reproduced and fix-verified — treat as a field note, not a spec guarantee) | In the SW's fetch handler, return without `respondWith` for requests with a non-empty `destination` (`script`, `worker`, `style`, `image`, …) — API mocking only ever concerns destination-`''` fetch/XHR requests |
 | Two copies of the library on one page (e.g. a bundled copy in the app and a raw copy in a scratch page), each with its own worker configuration | Verify both sides of any works-here/fails-there comparison run identical bytes before trusting it; keep one import path |
 
