@@ -9,11 +9,11 @@ bun add maplibre-gl
 ```
 
 ```typescript
-import maplibregl from 'maplibre-gl'
+import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 ```
 
-MapLibre v6 is ESM-first; prefer named imports (`import { Map, Popup, setWorkerUrl } from 'maplibre-gl'`) — the default-export form fails to typecheck under stricter TS configs.
+**v6 removed the default export** (see the [v5→v6 migration guide](https://github.com/maplibre/maplibre-gl-js/blob/main/docs/guides/v5-to-v6-migration-guide.md)); use the namespace import above (keeps `maplibregl.*` examples working) or named imports (`import { Map, Popup, setWorkerUrl } from 'maplibre-gl'`).
 
 ### Worker URL Under Bundlers
 
@@ -21,10 +21,12 @@ MapLibre tiles GeoJSON (and more) in a module worker resolved relative to the li
 
 ```typescript
 import { setWorkerUrl } from 'maplibre-gl'
-import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 
 setWorkerUrl(workerUrl)
 ```
+
+**`?worker&url`, not plain `?url` — this is load-bearing.** Plain `?url` emits the worker file verbatim *without following its imports*, so the built asset still says `import "./maplibre-gl-shared.mjs"` next to no such file: dead on arrival in any production build, with the silent signature below. It goes unnoticed in dev, where the dev server serves `node_modules` paths directly. `?worker&url` bundles the worker entry whole. (Verified against a real Vite build: plain `?url` left a dangling shared-chunk import; `?worker&url` emitted a self-contained chunk. MapLibre's own install docs prescribe the same.)
 
 Under Vite, also consider `optimizeDeps: { exclude: ['maplibre-gl'] }` so the dev server serves the library's published files byte-for-byte — a transformed copy behaves subtly differently from the artifact you'll ship, which makes works-in-dev/fails-in-prod comparisons lie.
 
@@ -214,9 +216,12 @@ function updateSourceWithCounts(map: maplibregl.Map, stats: Record<string, numbe
   const source = map.getSource('regions') as maplibregl.GeoJSONSource
   if (!source) return
 
-  // Get current data and update properties (serialize() is the public
-  // route to the source's data; `_data` is a private field)
-  const currentData = source.serialize().data as GeoJSON.FeatureCollection
+  // Get current data and update properties. Prefer keeping source data in
+  // application state and re-deriving; when reading back from the map,
+  // v6's getData() (async) returns the actual GeoJSON — serialize().data
+  // can be the original URL string for URL-created sources, and `_data`
+  // is a private field.
+  const currentData = (await source.getData()) as GeoJSON.FeatureCollection
   const updatedFeatures = currentData.features.map(feature => ({
     ...feature,
     properties: {
@@ -558,24 +563,24 @@ When MapLibre's worker pipeline breaks, the signature is **silence**: every GeoJ
 
 ```typescript
 const src = map.getSource('lines') as maplibregl.GeoJSONSource
-src.serialize().data        // what the main thread holds (your setData landed)
+await src.getData()         // what the main thread holds (your setData landed)
 src.loaded()                // whether the worker round-trip ever completed
 map.queryRenderedFeatures() // what actually tiled and drew
 ```
 
-`serialize()` full while `loaded()` stays false means the worker pipeline is broken, not your data. Known causes, all producing this identical signature:
+Data present on the main thread while `loaded()` stays false *for good* is strong evidence the worker round-trip never completes — rule out the mundane first (very large or malformed GeoJSON, a request still legitimately in flight), then suspect the pipeline. Observed causes, all producing this identical signature:
 
 | Cause | Fix |
 |-------|-----|
 | Bundler relocated the worker URL (Vite dep optimization, any production bundle) | `setWorkerUrl` + `?url` import — see [Worker URL Under Bundlers](#worker-url-under-bundlers) |
-| A fetch-intercepting service worker (e.g. MSW) reconstructs worker-script and module-import responses; Firefox's worker pipeline rejects them while Chromium tolerates them | In the SW's fetch handler, return without `respondWith` for requests with a non-empty `destination` (`script`, `worker`, `style`, `image`, …) — API mocking only ever concerns destination-`''` fetch/XHR requests |
+| A fetch-intercepting service worker (e.g. MSW) reconstructs worker-script and module-import responses; Firefox's worker pipeline rejected them while Chromium tolerated them (observed: maplibre-gl 6.2, msw 2.15, Firefox 153 vs Chromium 150; reproduced and fix-verified — treat as a field note, not a spec guarantee) | In the SW's fetch handler, return without `respondWith` for requests with a non-empty `destination` (`script`, `worker`, `style`, `image`, …) — API mocking only ever concerns destination-`''` fetch/XHR requests |
 | Two copies of the library on one page (e.g. a bundled copy in the app and a raw copy in a scratch page), each with its own worker configuration | Verify both sides of any works-here/fails-there comparison run identical bytes before trusting it; keep one import path |
 
 ## WebGL Capability, Loss, and Test Environments
 
-- **MapLibre v3+ requires WebGL2.** Probe for exactly `webgl2`; a WebGL1-only browser passes a loose `webgl2 ?? webgl` probe and receives a map whose context dies on arrival.
+- **MapLibre v6 requires WebGL2** (v5 and earlier defaulted to `webgl2withfallback`, trying WebGL1 when WebGL2 was missing; v6.x ships no fallback — verified against 6.2.0). On v6, probe for exactly `webgl2`; a WebGL1-only browser passes a loose `webgl2 ?? webgl` probe and receives a map whose context dies on arrival.
 - **Probe once, and don't explicitly release the probe context.** `WEBGL_lose_context.loseContext()` logs "WebGL context was lost" to the console — indistinguishable from a real failure to anyone watching. One idle context until GC is the cheaper cost.
-- **The Map constructor survives GL-less environments** (happy-dom/jsdom test runners, some remote desktops and hardened browsers) **and fails at teardown instead** — `painter.destroy` throws from `remove()` on a half-initialized map. Probe before constructing, and wrap `remove()` in try/catch.
+- **The v6 Map constructor survives GL-less environments** (happy-dom/jsdom test runners, some remote desktops and hardened browsers) **and fails at teardown instead** — `painter.destroy` throws from `remove()` on a half-initialized map (observed on 6.2.0 under happy-dom). Probe before constructing so such environments take a fallback path; the try/catch around `remove()` is a last-resort guard for contexts lost mid-session, not the primary strategy.
 - **Handle `webglcontextlost`:** MapLibre attempts restoration itself; give it a beat, then degrade to a non-GL fallback rather than leaving a dead canvas that looks like a bug:
 
 ```typescript
@@ -604,14 +609,20 @@ function resolveCssColor(value: string): string | null {
     scratch = c.getContext('2d', { willReadFrequently: true })
   }
   if (!scratch) return null
-  scratch.clearRect(0, 0, 1, 1)
+  // Sentinel first: assigning an INVALID color to fillStyle is silently
+  // ignored (the previous value persists), so an unparseable token would
+  // otherwise read back as whatever was painted last.
+  scratch.fillStyle = '#010203'
   scratch.fillStyle = value
+  if (scratch.fillStyle === '#010203' && value !== '#010203') return null
+  scratch.clearRect(0, 0, 1, 1)
   scratch.fillRect(0, 0, 1, 1)
   const d = scratch.getImageData(0, 0, 1, 1).data
   return `rgba(${d[0]}, ${d[1]}, ${d[2]}, ${(d[3] ?? 255) / 255})`
 }
 
-// Token → paint, re-run on theme change (class-based dark mode shown)
+// Token → paint, re-run on theme change (class-based dark mode shown).
+// In React, run this inside an effect and disconnect on cleanup.
 const repaint = () => {
   const styles = getComputedStyle(container)
   const color = resolveCssColor(styles.getPropertyValue('--accent').trim())
@@ -620,6 +631,8 @@ const repaint = () => {
 repaint()
 const observer = new MutationObserver(repaint)
 observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+// …and when the map goes away:
+observer.disconnect()
 ```
 
 ## Issues & Resolutions
