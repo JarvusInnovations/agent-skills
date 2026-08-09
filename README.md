@@ -43,6 +43,7 @@ npx skills add JarvusInnovations/agent-skills --skill <name>
 npx skills add --global JarvusInnovations/agent-skills --skill <name>
 ```
 
+- [`repo-setup`](skills/repo-setup/README.md) — Stand up a new repo the house way: `develop` as default, `main` as release target, merge-commit-only policy, the branch rulesets that keep auto-delete from eating `develop`, and the Release-PR workflows. You reach for it *before* a repo exists — and to audit existing ones against house conventions.
 - [`ci-quality-gates`](skills/ci-quality-gates/README.md) — Stand up the pre-merge CI quality gates: asdf provisioning + caching, the `lint`/`format:check`/`typecheck`/`test` script contract, and the house linters (oxlint + oxfmt, ruff, tofu fmt/validate). You reach for it to *bootstrap* a repo's CI before code lands on develop.
 - [`agent-dev-workflow`](skills/agent-dev-workflow/README.md) — Agent-friendly local dev: a `bin/` task-runner, worktree-isolated Postgres databases + ports, and a dedicated test DB. You reach for it to *bootstrap* a project's dev workflow.
 - [`release-flow`](skills/release-flow/README.md) — Cut releases via the develop→main Release-PR automation (infra-components `release-prepare`/`validate`/`publish`). *Ambient* across the many repos Jarvus ships, most of which won't have it installed locally.
