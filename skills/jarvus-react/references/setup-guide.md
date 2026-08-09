@@ -351,6 +351,12 @@ standards in the `ci-quality-gates` skill: a bare `.` lints vendored and generat
 content, and `oxfmt` formats Markdown by default, so `oxfmt .` rewrites `README.md`
 and any docs. Extend the path list if the app grows other TypeScript entry points.
 
+**Format the scaffold once before writing code.** With the scripts in place, run
+`bun run format` and commit the result as its own change. The Vite template ships files
+that `oxfmt` has never touched, so a pristine scaffold fails `format:check` immediately —
+a red gate that reflects the template, not your work. Doing it up front keeps the first
+real `format:check` meaningful and keeps formatting churn out of your feature diffs.
+
 The `ui-checks.yml` template from `ci-quality-gates` also invokes `bun run test`. Configure
 the project's chosen test runner and add a real `test` script before enabling that step,
 or deliberately adapt the workflow. Never add a no-op test command.
