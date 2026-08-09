@@ -330,14 +330,26 @@ bun add -d oxlint oxfmt
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "typecheck": "tsc --noEmit",
-    "lint": "oxlint .",
-    "format": "oxfmt .",
-    "format:check": "oxfmt --check .",
+    "typecheck": "tsc -b",
+    "lint": "oxlint src vite.config.ts",
+    "format": "oxfmt src vite.config.ts",
+    "format:check": "oxfmt --check src vite.config.ts",
     "preview": "vite preview"
   }
 }
 ```
+
+The type-check script is `tsc -b`, not `tsc --noEmit`. The template's root
+`tsconfig.json` is `{ "files": [], "references": [...] }` — an empty project that
+delegates to `tsconfig.app.json` and `tsconfig.node.json`. `tsc --noEmit` reads that
+root, resolves zero input files, and exits 0 even when the app is full of type errors;
+references are only followed in build mode. This is why the template's own `build`
+script runs `tsc -b`.
+
+The oxc commands take explicit source paths rather than a bare `.`, per the tool
+standards in the `ci-quality-gates` skill: a bare `.` lints vendored and generated
+content, and `oxfmt` formats Markdown by default, so `oxfmt .` rewrites `README.md`
+and any docs. Extend the path list if the app grows other TypeScript entry points.
 
 The `ui-checks.yml` template from `ci-quality-gates` also invokes `bun run test`. Configure
 the project's chosen test runner and add a real `test` script before enabling that step,
