@@ -4,6 +4,15 @@ This guide bootstraps the React base stack on **Bun** — Bun is the runtime, pa
 and script runner; Vite is the build tool and dev server. shadcn/ui is **optional**; when you
 want it, layer it on afterward via [shadcn.md](shadcn.md).
 
+## Contents
+
+- [Prerequisites](#prerequisites)
+- [Step-by-Step Setup](#step-by-step-setup)
+- [File Structure After Setup](#file-structure-after-setup)
+- [package.json Scripts](#packagejson-scripts)
+- [VSCode Debugging](#vscode-debugging)
+- [Common Issues](#common-issues)
+
 ## Prerequisites
 
 - Bun (latest)
@@ -32,9 +41,9 @@ bun create vite . --template react-ts
 bun install
 ```
 
-This creates the base React 19 + TypeScript project with Vite 7.x.
-
-**Commit:** `feat: initialize Vite project with React + TypeScript`
+This creates the current React + TypeScript Vite template. Review the generated dependency
+versions and commit the resulting `bun.lock`; do not rely on this guide for a Vite minor
+version.
 
 ---
 
@@ -45,8 +54,6 @@ bun add tailwindcss @tailwindcss/vite
 ```
 
 **Note:** Tailwind v4 uses the `@tailwindcss/vite` plugin instead of a PostCSS config.
-
-**Commit:** `build: install Tailwind CSS with @tailwindcss/vite plugin`
 
 ---
 
@@ -76,10 +83,25 @@ export default defineConfig({
 })
 ```
 
-**Update `src/index.css`** (replace all content):
+**Update `src/index.css`** (replace all content). The theme tokens make the base examples
+work without shadcn/ui:
 
 ```css
 @import "tailwindcss";
+
+@theme {
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.145 0 0);
+  --color-muted: oklch(0.97 0 0);
+  --color-muted-foreground: oklch(0.556 0 0);
+  --color-border: oklch(0.922 0 0);
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground;
+  }
+}
 ```
 
 **Add the `@/*` path alias** to `tsconfig.json` (and `tsconfig.app.json` if Vite split the
@@ -95,8 +117,6 @@ config). The alias must be present in whichever tsconfig covers `src/`:
   }
 }
 ```
-
-**Commit:** `config: configure Tailwind CSS and TypeScript path aliases`
 
 ---
 
@@ -120,8 +140,6 @@ export function cn(...inputs: ClassValue[]) {
 }
 ```
 
-**Commit:** `feat: add cn() class-merging helper`
-
 ---
 
 ### 5. Install React Router v7
@@ -129,10 +147,11 @@ export function cn(...inputs: ClassValue[]) {
 **IMPORTANT:** React Router v7 uses the package name `react-router`, NOT `react-router-dom`.
 
 ```bash
-bun add react-router
+bun add react-router@7
 ```
 
-**Commit:** `build: install React Router v7`
+Pin the supported major explicitly. An unqualified install may select a newer major with a
+different contract.
 
 ---
 
@@ -192,7 +211,7 @@ and an `<Outlet />`; child routes render inside it.
 **`src/components/AppShell.tsx`:**
 
 ```tsx
-import { Outlet, Link, useLocation } from 'react-router'
+import { NavLink, Outlet } from 'react-router'
 import { cn } from '@/lib/utils'
 
 const nav = [
@@ -201,25 +220,27 @@ const nav = [
 ]
 
 export function AppShell() {
-  const location = useLocation()
   return (
     <div className="flex h-screen flex-col bg-background">
       <header className="flex h-14 items-center gap-4 border-b px-4 lg:px-6">
         <span className="font-semibold">App Name</span>
         <nav className="flex gap-2">
           {nav.map((item) => (
-            <Link
+            <NavLink
               key={item.to}
               to={item.to}
-              className={cn(
-                "rounded px-3 py-1.5 text-sm",
-                location.pathname === item.to
-                  ? "bg-muted font-medium"
-                  : "text-muted-foreground hover:bg-muted",
-              )}
+              end={item.to === '/'}
+              className={({ isActive }) =>
+                cn(
+                  "rounded px-3 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-offset-2",
+                  isActive
+                    ? "bg-muted font-medium"
+                    : "text-muted-foreground hover:bg-muted",
+                )
+              }
             >
               {item.label}
-            </Link>
+            </NavLink>
           ))}
         </nav>
       </header>
@@ -252,8 +273,6 @@ function App() {
 > Want a richer, accessible sidebar instead of this hand-built nav? Adopt shadcn/ui and use
 > its `sidebar` component — see [shadcn.md](shadcn.md).
 
-**Commit:** `feat: add app shell layout`
-
 ---
 
 ### 8. Optional: shadcn/ui Component Library
@@ -272,8 +291,6 @@ bun add maplibre-gl
 
 See [maplibre.md](maplibre.md) for a map component. (Remember to import the CSS for proper
 styling.)
-
-**Commit:** `build: install MapLibre GL JS`
 
 ---
 
@@ -301,18 +318,42 @@ styling.)
 
 ## package.json Scripts
 
-```json
+Remove the scaffolded ESLint files only when adopting the Jarvus oxc contract, then
+install its tools:
+
+```bash
+bun add -d oxlint oxfmt
+```
+
+```jsonc
 {
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b",
+    "lint": "oxlint src vite.config.ts",
+    "format": "oxfmt src vite.config.ts",
+    "format:check": "oxfmt --check src vite.config.ts",
     "preview": "vite preview"
   }
 }
 ```
 
-Run them with Bun: `bun run dev`, `bun run build`, `bun run typecheck`.
+The type-check script is `tsc -b`, not `tsc --noEmit`. The template's root
+`tsconfig.json` is `{ "files": [], "references": [...] }` — an empty project that
+delegates to `tsconfig.app.json` and `tsconfig.node.json`. `tsc --noEmit` reads that
+root, resolves zero input files, and exits 0 even when the app is full of type errors;
+references are only followed in build mode. This is why the template's own `build`
+script runs `tsc -b`.
+
+The oxc commands take explicit source paths rather than a bare `.`, per the tool
+standards in the `ci-quality-gates` skill: a bare `.` lints vendored and generated
+content, and `oxfmt` formats Markdown by default, so `oxfmt .` rewrites `README.md`
+and any docs. Extend the path list if the app grows other TypeScript entry points.
+
+The `ui-checks.yml` template from `ci-quality-gates` also invokes `bun run test`. Configure
+the project's chosen test runner and add a real `test` script before enabling that step,
+or deliberately adapt the workflow. Never add a no-op test command.
 
 ---
 
@@ -344,8 +385,6 @@ For client-side React debugging, launch Chrome against the Vite dev server.
 
 The default Vite port is `5173`; `webRoot` maps to `src/` for accurate source-map resolution.
 
-**Commit:** `config: add VSCode debugging configuration`
-
 ---
 
 ## Common Issues
@@ -365,4 +404,5 @@ Use `react-router` not `react-router-dom` for v7.
 
 ### Tailwind Classes Not Working
 
-Ensure `@import "tailwindcss";` is at the top of `index.css`.
+Ensure `@import "tailwindcss";` is at the top of `index.css` and that every semantic class
+used by the app has a corresponding token in `@theme`.

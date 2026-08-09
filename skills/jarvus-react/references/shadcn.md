@@ -9,6 +9,15 @@ when hand-built Tailwind components are enough.
 Prerequisites: the base stack from [setup-guide.md](setup-guide.md) — Vite + React +
 Tailwind v4 + the `@/` path alias + the `cn()` helper.
 
+## Contents
+
+- [Initialize shadcn/ui](#1-initialize-shadcnui)
+- [Add Components](#2-add-components)
+- [App Shell with the shadcn Sidebar](#3-app-shell-with-the-shadcn-sidebar)
+- [Collapsible Sidebar Sections](#collapsible-sidebar-sections)
+- [Status with Badge](#status-with-badge)
+- [Common Issues](#common-issues)
+
 ## 1. Initialize shadcn/ui
 
 shadcn's CLI detects Bun and uses it. Run it with `bunx`:
@@ -30,8 +39,6 @@ This will:
 - Base color: Neutral (or your preference)
 - CSS variables: Yes
 
-**Commit:** `feat: initialize shadcn/ui with Neutral color scheme`
-
 ## 2. Add Components
 
 Add components as needed — the CLI copies their source into `components/ui/`:
@@ -42,7 +49,8 @@ bunx --bun shadcn@latest add card button collapsible -y
 ```
 
 The `sidebar` component pulls in several dependencies automatically (button, separator,
-sheet, tooltip, input, skeleton). Commit each addition (or batch related ones).
+sheet, tooltip, input, skeleton). Review the generated source and dependency diff before
+continuing.
 
 Common components:
 
@@ -50,7 +58,8 @@ Common components:
 bunx --bun shadcn@latest add button card sidebar collapsible dropdown-menu avatar separator sheet tooltip input skeleton badge tabs dialog alert
 ```
 
-Use the bundled shadcn MCP server to search components and get exact add commands — see
+Use an available registry tool or the official shadcn registry to search components and
+confirm exact add commands — see
 [mcp-tools.md](mcp-tools.md).
 
 ## 3. App Shell with the shadcn Sidebar
@@ -81,7 +90,7 @@ export function AppShell() {
 **`src/components/AppSidebar.tsx`:**
 
 ```tsx
-import { useLocation, Link } from 'react-router'
+import { Link, useMatch } from 'react-router'
 import {
   Sidebar, SidebarContent, SidebarGroup,
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
@@ -90,7 +99,7 @@ import {
 import { Home } from 'lucide-react'
 
 export function AppSidebar() {
-  const location = useLocation()
+  const isHome = useMatch({ path: '/', end: true })
 
   return (
     <Sidebar>
@@ -103,7 +112,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={location.pathname === '/'}>
+                <SidebarMenuButton asChild isActive={Boolean(isHome)}>
                   <Link to="/">
                     <Home className="mr-2 h-4 w-4" />
                     Home
@@ -168,7 +177,7 @@ import { ChevronDown } from 'lucide-react'
 </Collapsible>
 ```
 
-## Color-Coded Status with Badge
+## Status with Badge
 
 ```tsx
 <Badge variant="default">Active</Badge>      // Primary color
@@ -176,6 +185,8 @@ import { ChevronDown } from 'lucide-react'
 <Badge variant="destructive">Error</Badge>   // Red
 <Badge variant="outline">Draft</Badge>       // Outlined
 ```
+
+Keep the status text or another programmatic cue; color alone must not carry the meaning.
 
 ## Common Issues
 
