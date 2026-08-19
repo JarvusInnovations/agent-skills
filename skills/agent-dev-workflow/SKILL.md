@@ -166,6 +166,13 @@ still count), and no client backends connected to any database in it. Unproven â
 one-line reason, container left running, exit 0. Same prove-then-act shape as
 `bin/gc`; `--dry-run` and `--force` are combinable.
 
+One portability note: the session proof needs the fullstack `dev`'s
+`.dev/state.env` machinery. In single-service repos those helpers don't exist,
+so the proof is **skipped** and the verdict line says so rather than claiming
+"no dev sessions" for a check that never ran. Containment survives, because a
+running single-service dev server holds a database connection and is caught by
+the connection proof.
+
 Two things it deliberately does **not** do. It never removes the container or
 volume â€” stopping is non-destructive and `bin/setup` restarts it with every
 database intact. And it does not lock other sessions out: a concurrent
