@@ -81,6 +81,10 @@ know which parts you copy verbatim and which you adapt.
 **Project-specific** (the knobs you set):
 
 - the prefix, PG user/password/image, container/volume names
+- the **publish address** (`APP_PG_BIND`, default `127.0.0.1`) — keep it on
+  loopback unless a container genuinely must be reachable off-box. Note this is
+  frozen at container creation: changing it later does nothing until the
+  container is re-created, so `ensure_postgres` warns on the drift (see gotchas)
 - the **base port band** — the default PG port plus one worktree range **per
   process kind** (backend HTTP, gRPC, frontend, …). This is the project's claim on
   the machine: worktree isolation keeps a project's *own* copies apart, but the
