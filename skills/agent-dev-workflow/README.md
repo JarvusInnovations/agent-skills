@@ -15,6 +15,9 @@ A Postgres-backed project where you want any of:
   subcommands, on-disk `.dev/logs/`) instead of double-booting,
 - a `bin/gc` that **sweeps merged agent worktrees** — proof-based (ancestry / `git cherry` / merged
   PR), stopping their dev sessions and dropping their derived databases along the way,
+- a `bin/stop` that **shuts the shared Postgres container down** once it proves nothing is using it
+  — no live dev session in any worktree, no client connections — for when idle project containers
+  pile up on one machine,
 - an end to tests clobbering local dev/demo data,
 - a replacement for a docker-compose-just-for-local-Postgres setup.
 
