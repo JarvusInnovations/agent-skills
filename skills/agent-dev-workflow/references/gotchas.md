@@ -68,7 +68,7 @@ container's healthcheck never goes ready and `wait_for_postgres` times out after
 30s.
 
 **Pin the same major production runs.** Whatever major your prod DB is (Cloud SQL,
-RDS, …), pin that in `_common.sh` so `strip_cloudsql`'d snapshots restore without
+RDS, …), pin that in `_common.sh` so `app_strip_snapshot`'d snapshots restore without
 version-mismatch surprises. That rule cuts both ways: when prod runs 18, you don't
 get to stay on the 17 template default to dodge the mount change. The `_common.sh`
 template carries the mount as `APP_PG_DATA_DIR` — for 18, change **both** lines

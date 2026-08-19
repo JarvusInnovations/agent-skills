@@ -104,6 +104,17 @@ app_db_env() {
   echo "DB_PASSWORD=${APP_PG_PASSWORD}"
 }
 
+# ── Snapshot load filter ─────────────────────────────────────────────────────
+# Managed-Postgres dumps carry directives a vanilla local Postgres chokes on,
+# so bin/setup pipes every snapshot through this hook. Identity by default:
+# a plain pg_dump needs no filtering, and an UNDEFINED function here aborts
+# `bin/setup <snapshot>` with a bare "command not found" (exit 127).
+# Override per provider — Cloud SQL (see snapshots.md):
+#   app_strip_snapshot() { grep -v -E '^\\(restrict|unrestrict) |cloudsqlsuperuser'; }
+app_strip_snapshot() {
+  cat
+}
+
 # ── Shared Postgres container ────────────────────────────────────────────────
 ensure_postgres() {
   local container="$APP_CONTAINER_NAME" port
