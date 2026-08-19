@@ -174,6 +174,46 @@ race is by design (availability beats shutdown), so a container that keeps
 reappearing is telling you another session is working in the repo — information,
 not a failure.
 
+### `bin/gc` vs `bin/stop` — complementary, not overlapping
+
+They share a shape — prove, act only on what's proven, skip the rest with a
+one-line reason, exit 0 either way — which makes them easy to confuse. They
+prove *different things* about *different scopes*:
+
+| | `bin/gc` | `bin/stop` |
+| --- | --- | --- |
+| Operates on | worktrees, branches, derived databases | the shared container |
+| Proves | **merged-ness** — this work is disposable | **idleness** — nothing is using this now |
+| Proof source | git history (ancestry, `git cherry`, merged PR) | live state (session files, `pg_stat_activity`) |
+| Reversible | no — deletes worktrees, branches, DBs | yes — `bin/setup` restarts it, data intact |
+| Facing a live `bin/dev` session | **kills it** | **refuses to act** |
+
+That last row is the real distinction. `bin/gc` finds a running session in a
+worktree it has *proven merged* and shuts it down — it earned the authority to
+kill by proving the work already landed on the integration branch. `bin/stop`
+has no such proof available, so a live session is a **veto**: someone is
+working, and pulling the database out from under them is never right. One
+treats a live process as garbage to collect; the other treats it as a stop sign.
+
+Their verdicts also age differently. Merged stays merged, so a `bin/gc` verdict
+computed a minute ago is still true. Idleness is a snapshot that can be
+invalidated a second later — hence `bin/stop`'s re-verify immediately before
+acting, and the documented race above.
+
+**The workflow is sequential: `bin/gc`, then `bin/stop`.** `gc` is what *makes*
+`stop` succeed — sweeping merged worktrees stops their sessions and drops their
+databases, which is exactly what turns a busy container into a provably idle
+one. `gc` then leaves the container running because it cannot know whether the
+main checkout still needs it; `stop` is the only thing entitled to answer that.
+Running `stop` first usually just prints a refusal.
+
+One caveat when reading `bin/stop`'s first proof: it enumerates worktrees of
+*this* repo. A **separate clone** of the same project shares the container by
+name but is invisible to `git worktree list`. That's why the connection check
+exists alongside the session check — a second clone running its own stack shows
+up as client backends even though its worktrees are unreachable from here.
+
+
 ## Build order
 
 1. **Read the relevant references first** (below) — they encode hard-won bugs.
