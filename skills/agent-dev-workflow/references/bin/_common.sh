@@ -33,18 +33,28 @@ app_server_dir() {
 }
 
 app_pg_port() {
-  echo "${APP_PG_PORT:-5432}"   # pick a project-specific default (e.g. 5532)
+  # CHANGE THIS. 5532 is a placeholder, not a recommendation — pick a port in
+  # this project's own band (see SKILL.md "base port band"). Never 5432: a
+  # host Postgres, a stray docker-compose, or another project using the
+  # default will collide, and the failure looks like "my data disappeared"
+  # rather than a port conflict.
+  echo "${APP_PG_PORT:-5532}"
 }
 
 # ── Database naming: one DB per context ──────────────────────────────────────
 # APP_DATABASE set → that name (the test runner / orchestrator forces this).
 # main worktree    → the canonical name (your durable dev data).
 # other worktree   → app_<hash-of-path> (isolated, stable per worktree).
+# The repo's main worktree — `git worktree list` always reports it first.
+# Single source of truth: is_main_worktree, app_db_name_for_root and bin/gc's
+# canonical-DB guard all resolve it through here. Takes an optional directory
+# to resolve from (any path inside the repo); defaults to the current context.
+app_main_worktree() {
+  git -C "${1:-$(app_root)}" worktree list --porcelain | head -1 | sed 's/^worktree //'
+}
+
 is_main_worktree() {
-  local worktree_root main_worktree
-  worktree_root="$(app_root)"
-  main_worktree="$(git worktree list --porcelain | head -1 | sed 's/^worktree //')"
-  [ "$worktree_root" = "$main_worktree" ]
+  [ "$(app_root)" = "$(app_main_worktree)" ]
 }
 
 # Portable 8-char hex hash (md5sum on Linux/coreutils, md5 on BSD/macOS).
@@ -63,7 +73,7 @@ app_hash() {
 # (app_db_name below).
 app_db_name_for_root() {
   local root="$1" main_worktree
-  main_worktree="$(git -C "$root" worktree list --porcelain | head -1 | sed 's/^worktree //')"
+  main_worktree="$(app_main_worktree "$root")"
   if [ "$root" = "$main_worktree" ]; then
     echo "app"
   else
