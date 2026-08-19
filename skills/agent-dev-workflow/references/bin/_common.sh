@@ -250,9 +250,11 @@ app_pick_vite_port() {
 # don't use them — harmless to keep either way.
 #
 # The helpers assume the fullstack template's two children (SERVER + WEB) and
-# two ports (PORT + VITE_PORT). A stack with more processes extends BOTH key
-# lists in app_dev_session_healthy and the sweep list in app_dev_stop — one
-# entry per recorded child.
+# two ports (PORT + VITE_PORT). A stack with more processes only has to record
+# them in bin/dev as <NAME>_PID / <NAME>_PID_LSTART: the health check and the
+# stop sweep both DERIVE their child list from state.env (app_dev_child_keys),
+# so neither needs editing. Only the PORT list in app_dev_session_healthy is
+# still explicit, and deliberately so.
 
 app_dev_state_dir() { echo "$(app_root)/.dev"; }
 app_dev_state_file() { echo "$(app_dev_state_dir)/state.env"; }
@@ -315,10 +317,16 @@ app_dev_session_healthy() {
   local key port
   [ -n "$snap" ] || return 1
   [ "$(app_snap_get "$snap" PHASE)" = "running" ] || return 1
-  for key in DEV SERVER WEB; do
+  # Supervisor + every recorded child, derived from the state file (see
+  # app_dev_child_keys) so a stack that grows a process is covered here
+  # without a second list to keep in sync.
+  for key in DEV $(app_dev_child_keys "$snap"); do
     app_pid_is "$(app_snap_get "$snap" "${key}_PID")" \
       "$(app_snap_get "$snap" "${key}_PID_LSTART")" || return 1
   done
+  # Ports stay EXPLICIT: which ports must be listening for the stack to be
+  # "up" is a real per-project assertion, and state.env also carries ports
+  # that are not liveness signals (an aux container's published port).
   for key in PORT VITE_PORT; do
     port="$(app_snap_get "$snap" "$key")"
     [ -n "$port" ] || return 1
@@ -338,39 +346,76 @@ app_dev_session_booting() {
   app_pid_is "$(app_snap_get "$snap" DEV_PID)" "$(app_snap_get "$snap" DEV_PID_LSTART)"
 }
 
+# Every recorded child key in a snapshot — derived from the state file itself
+# (any KEY_PID=, minus the supervisor's own DEV_PID) rather than a hardcoded
+# list. The list used to be spelled out here AND in app_dev_session_healthy
+# AND in bin/dev's state writer; a stack that grew a third process had to
+# update all three, and forgetting the one here orphaned that process on every
+# stop while both other lists looked correct.
+app_dev_child_keys() {
+  printf '%s\n' "$1" | sed -n 's/^\([A-Z0-9_]*\)_PID=.*/\1/p' | grep -vx 'DEV' || true
+}
+
+# Signal one recorded (pid, lstart) pair by process GROUP and wait for it to
+# die. bin/dev runs under `set -m`, so each child leads its own group and the
+# group kill takes grandchildren (bun run → vite) down too; plain pid is the
+# fallback for pre-`set -m` state. Returns 0 when the process is gone.
+app_kill_wait() {
+  local pid="$1" lstart="$2" sig="$3" deadline="$4" i
+  app_pid_is "$pid" "$lstart" || return 0
+  kill -"$sig" -- -"$pid" 2>/dev/null || kill -"$sig" "$pid" 2>/dev/null || true
+  for i in $(seq 1 "$deadline"); do
+    app_pid_is "$pid" "$lstart" || return 0
+    sleep 0.2
+  done
+  ! app_pid_is "$pid" "$lstart"
+}
+
 # Stop the recorded session: TERM the supervisor (its signal-aware EXIT trap
-# kills each child's process group), wait briefly, then sweep anything that
-# outlived it (e.g. a SIGKILLed supervisor): service + log-streamer process
-# groups. Every kill is identity-checked — a recycled pid is never signalled.
-# Also stops legacy .dev.pid-only sessions from the pre-singleton fullstack
-# template — those recorded no ports, so they can't be attached to. Always
-# returns 0; silent when nothing is running.
+# kills each child's process group), then sweep anything that outlived it
+# (e.g. a SIGKILLed supervisor). Every kill is identity-checked — a recycled
+# pid is never signalled — and every TERM ESCALATES to KILL for anything that
+# ignores or is too slow to handle it. Also stops legacy .dev.pid-only
+# sessions from the pre-singleton fullstack template.
+#
+# Returns non-zero when something survived even SIGKILL, and in that case
+# DELIBERATELY LEAVES state.env in place: the file is the only record of the
+# survivor's pid + start time, and deleting it turns a findable orphan into an
+# untraceable process holding a port and a database open. A later bin/dev or
+# bin/cleanup re-reads it and retries the kill. Silent when nothing is running.
 app_dev_stop() {
-  local snap state pid lstart child key i
+  local snap state pid lstart child clstart key survivors
   state="$(app_dev_state_file)"
   # Snapshot everything up front: the supervisor's own EXIT trap removes
   # state.env, so it can vanish the moment the kill below lands.
   snap="$(app_dev_snapshot)"
+  survivors=""
   if [ -n "$snap" ]; then
     pid="$(app_snap_get "$snap" DEV_PID)"
     lstart="$(app_snap_get "$snap" DEV_PID_LSTART)"
     if app_pid_is "$pid" "$lstart"; then
       echo "Stopping dev session (PID ${pid})..." >&2
-      kill "$pid" 2>/dev/null || true
-      for i in $(seq 1 50); do
-        app_pid_is "$pid" "$lstart" || break
-        sleep 0.2
-      done
+      # 10s for the supervisor's trap to unwind its children gracefully.
+      if ! app_kill_wait "$pid" "$lstart" TERM 50; then
+        echo "bin/dev: supervisor ${pid} ignored SIGTERM — escalating to SIGKILL" >&2
+        app_kill_wait "$pid" "$lstart" KILL 25 || survivors="${survivors} DEV(${pid})"
+      fi
     fi
-    # Sweep survivors by process GROUP (bin/dev runs under `set -m`, so each
-    # child leads its own group and the group kill takes service grandchildren
-    # — bun run → vite — down too); plain pid as fallback for pre-set -m state.
-    for key in SERVER WEB TAIL; do
+    # Sweep every recorded child that outlived the supervisor.
+    for key in $(app_dev_child_keys "$snap"); do
       child="$(app_snap_get "$snap" "${key}_PID")"
-      if app_pid_is "$child" "$(app_snap_get "$snap" "${key}_PID_LSTART")"; then
-        kill -- -"$child" 2>/dev/null || kill "$child" 2>/dev/null || true
+      clstart="$(app_snap_get "$snap" "${key}_PID_LSTART")"
+      app_pid_is "$child" "$clstart" || continue
+      if ! app_kill_wait "$child" "$clstart" TERM 25; then
+        echo "bin/dev: ${key} (PID ${child}) ignored SIGTERM — escalating to SIGKILL" >&2
+        app_kill_wait "$child" "$clstart" KILL 25 || survivors="${survivors} ${key}(${child})"
       fi
     done
+    if [ -n "$survivors" ]; then
+      echo "bin/dev: ERROR: survived SIGKILL:${survivors}" >&2
+      echo "bin/dev: keeping $(app_dev_state_file) so these stay identifiable" >&2
+      return 1
+    fi
     rm -f "$state"
   fi
   local legacy
