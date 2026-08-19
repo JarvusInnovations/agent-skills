@@ -68,7 +68,7 @@ container's healthcheck never goes ready and `wait_for_postgres` times out after
 30s.
 
 **Pin the same major production runs.** Whatever major your prod DB is (Cloud SQL,
-RDS, …), pin that in `_common.sh` so `strip_cloudsql`'d snapshots restore without
+RDS, …), pin that in `_common.sh` so `app_strip_snapshot`'d snapshots restore without
 version-mismatch surprises. That rule cuts both ways: when prod runs 18, you don't
 get to stay on the 17 template default to dodge the mount change. The `_common.sh`
 template carries the mount as `APP_PG_DATA_DIR` — for 18, change **both** lines
@@ -155,6 +155,56 @@ app_pid_lstart() {          # start time of a live process; empty when gone
 
 The `_common.sh` template carries this as `app_pid_is`; the fullstack `dev` and
 `gc` templates consult it before every kill and every health verdict.
+
+## A single SIGTERM is not a teardown — escalate, then verify
+
+`kill $pid` is a *request*. A process that traps SIGTERM and takes its time, or
+ignores it outright, keeps running — and a stop path that fires one TERM,
+deletes its state file, and returns 0 reports success while leaving a live
+process holding a port and a database open. Observed in the wild: a `bin/dev
+stop` exited 0, cleared `state.env`, and left a backend child alive for days;
+it needed SIGKILL.
+
+Deleting the state file is the part that turns a bug into an incident. That file
+is the only record of the survivor's pid **and start time**, so once it's gone
+the orphan can't be identified — you can't safely kill a bare pid (see pid
+recycling above), so the process becomes unkillable-in-practice until reboot.
+
+Every stop path therefore: TERM → wait → **KILL** → wait → **verify dead**, and
+on survival keeps `state.env` and returns non-zero:
+
+```bash
+if ! app_kill_wait "$pid" "$lstart" TERM 25; then
+  app_kill_wait "$pid" "$lstart" KILL 25 || survivors="${survivors} ${key}(${pid})"
+fi
+[ -n "$survivors" ] && return 1     # and do NOT rm state.env
+```
+
+Callers must honor the non-zero: `bin/cleanup` aborts rather than dropping a
+database out from under a surviving process (the `DROP` would fail with
+"database is being accessed by other users" anyway).
+
+## Derive the child list from `state.env`, don't hardcode it in three places
+
+The fullstack session records one `<NAME>_PID` per child. Early templates then
+spelled that list out **three times** — the writer in `bin/dev`, the liveness
+loop in `app_dev_session_healthy`, and the sweep loop in `app_dev_stop`. A stack
+that grows a third process (an orchestrator, a worker) has to update all three,
+and the failure is asymmetric: forget the *health* list and you get a false
+"healthy"; forget the *sweep* list and every stop silently orphans that process,
+while the other two lists still look correct in review.
+
+Derive it from the state file instead — one list, no drift:
+
+```bash
+app_dev_child_keys() {   # every KEY_PID= in the snapshot, minus the supervisor
+  printf '%s\n' "$1" | sed -n 's/^\([A-Z0-9_]*\)_PID=.*/\1/p' | grep -vx 'DEV' || true
+}
+```
+
+Ports stay explicit: *which* ports must be listening is a real per-project
+assertion, and `state.env` also carries ports that aren't liveness signals (an
+aux container's published port).
 
 ## Commands that read stdin inside `while read` loops silently eat the stream
 
