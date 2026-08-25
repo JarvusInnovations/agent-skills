@@ -34,9 +34,15 @@ Rules:
   Variations stay in the proxy where they're meaningful: a default `include`, a longer
   `timeout` for a heavy endpoint. Use `Slate.proxy.API` (not `.Records`) for
   non-record endpoints, adding a `reader` with `rootProperty: 'data'`.
-- **One connection singleton per app.** `Slate.API` is the standard. (SlateAdmin
-  currently has two live singletons and four proxy aliases — a known defect, see
-  slateadmin-audit.md. Don't add usage of the deprecated pair.)
+- **One connection singleton per app.** `Slate.API` is the standard. (SlateAdmin ran
+  for years with a second app-local singleton and duplicate proxy aliases; the 2026
+  cleanup deleted them. If old code or an old diff shows `SlateAdmin.API` or the
+  `slaterecords`/`slateapi` aliases, that's the retired pair — the live ones are
+  `Slate.API` and `slate-records`/`slate-api`.)
+- **File downloads go through a Blob util** (`SlateAdmin.util.Downloads` in SlateAdmin):
+  request via the API singleton with a binary response, build a Blob object URL, click
+  a temporary anchor, fire the completion callback. Never the legacy hidden-iframe +
+  cookie-polling trick.
 
 ### What the base layers give you (so you don't reimplement them)
 

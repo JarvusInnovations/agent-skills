@@ -248,9 +248,42 @@ onSectionSelectorSelect: function(sectionSelector, section) {
 route-encoded) and models (via the model's `toUrl()`). The round trip —
 selector → `redirectTo` → route handler → view config → `updateX` → event →
 controllers — is the only path. This is what makes deep links, refresh, and the back
-button work for free, and it's the first thing to restore when cleaning up an older
-screen (SlateAdmin's hand-rolled `pushState` choreography is the counterexample; see
-slateadmin-audit.md).
+button work for free. (SlateAdmin historically hand-rolled a `pushState` fork of this;
+the 2026 cleanup deleted it and converged every call site on `redirectTo` — don't
+resurrect suspend-flag History choreography.)
+
+Two consequences of the round trip that bite if forgotten:
+
+- **Route handlers must be idempotent.** A UI selection that syncs state to the URL
+  triggers the route handler *again* on the resulting hashchange — the handler re-runs
+  its full choreography over already-correct state. Design handlers so that re-entry
+  converges (and see testing.md gotcha 2 for the race this creates for automation).
+- **Sync-back needs a gate, not a History hack.** When a route handler choreographs
+  several state changes that would each try to sync the URL, use a controller-local
+  suspend counter with a pending flush — not flags on the History singleton:
+
+  ```js
+  stateSyncSuspended: 0,
+
+  suspendStateSync: function() {
+      this.stateSyncSuspended++;
+  },
+
+  resumeStateSync: function() {
+      if (this.stateSyncSuspended && !--this.stateSyncSuspended && this.stateSyncPending) {
+          this.syncState();
+      }
+  },
+
+  syncState: function() {
+      // bail-and-mark while suspended; otherwise derive path + title from
+      // view state and redirectTo(path) + PageTitle.setTitle(title)
+  }
+  ```
+
+  `syncState` is the single place a module's URL and document title are derived from
+  view state (titles are **plain text** through a shared PageTitle util — never
+  markup into `document.title` or a title element).
 
 **4. Controllers react to the semantic event** and push state outward:
 
@@ -274,7 +307,11 @@ without controllers touching each other. In SlateTasksTeacher, `controller/Dashb
 owns navigation and section state; `controller/StudentTasks.js` and
 `controller/GoogleDrive.js` each `control: { dashboardCt: { selectedsectionchange: ... } }`
 and manage their own stores. When a controller grows past one responsibility, split it
-along event-subscription lines, not by moving methods.
+along event-subscription lines, not by moving methods — SlateAdmin's people module is
+the worked example: a 1,000-line god controller became `People` (routing + selection)
+plus `people.Search` (search form ↔ URL tokenizing) and `people.Export` (export menu),
+each subscribing to the manager view's events, registered in `Application.js` after
+the module's primary controller.
 
 Async interception (auth gates, unsaved-changes prompts) uses `jarvus-routing`'s
 cancellable events: return `false` from `beforeroute`/`beforerewrite`/`beforeredirect`
@@ -282,18 +319,33 @@ and call the passed `resume` function later. Don't invent suspend flags.
 
 ## SlateAdmin-specific integration points
 
-SlateAdmin is a multi-module shell with two extension protocols the CBL admin package
-demonstrates (see also packages.md → slate-cbl-admin):
+SlateAdmin is a multi-module shell (one nav-panel + manager-card pair per module) with
+extension protocols the CBL admin package demonstrates (see also packages.md →
+slate-cbl-admin):
 
 - **Nav panels by duck typing:** the Viewport controller iterates all controllers and
   calls `buildNavPanel()` on any that define it, collecting collapsed panels into the
   west nav. A module adds itself to navigation by implementing that method.
 - **Card loading:** route handlers converge on the shared preamble —
-  `Ext.suspendLayouts()` → `Ext.util.History.suspendState()` → activate/expand the nav
-  panel → `Ext.util.History.resumeState(false)` →
+  `Ext.suspendLayouts()` (plus the module's `suspendStateSync()` when the handler will
+  touch synced state) → activate/expand the nav panel →
   `me.application.getController('Viewport').loadCard(me.getManagerPanel())` →
-  `Ext.resumeLayouts(true)`. Keep to that exact shape; the audit lists the sites that
-  drifted from it.
+  resume both. **Bind the manager card's `activate` event, not `show`** — a card
+  layout's first `loadCard` fires `activate` only, so a `show` binding silently never
+  runs on cold deep links (a bug that shipped in three modules before a spec caught
+  it). The `activate` handler is where a manager syncs its canonical URL/title and
+  runs `loadIfDirty()` on its stores.
+- **Settings managers extend a base controller.** The six settings screens (groups,
+  terms, courses, departments, global recipients, locations) are slim subclasses of
+  `settings.AbstractManagerController` — which owns the route handler, URL/title sync
+  (`syncManagerState`), loading masks, inline cell-edit saves (`edit` → validate →
+  `record.save()`), and confirm-then-erase deletes — with a tree flavor
+  (`AbstractTreeManagerController`: root/child node creation via inline cell editing,
+  a `buildNodeData(parentRecord)` template hook for inherited field values, and
+  parent-leaf-flag maintenance on delete). A subclass declares only its contract
+  values (`managerRoute`, `managerTitle`, confirm copy), its own
+  routes/refs/control/listen, and any genuinely module-specific handlers. New
+  settings-like screens should extend these, not copy a sibling.
 
 ## Canonical exemplars (ranked)
 
@@ -303,4 +355,7 @@ demonstrates (see also packages.md → slate-cbl-admin):
 | slate-cbl: `sencha-workspace/SlateTasksTeacher/app/view/Dashboard.js` | Top-level view as authoritative state store; documented `@event` blocks; `selectedX` vs `loadedX` | 2020 |
 | slate-cbl: `sencha-workspace/SlateTasksManager/app/controller/Tasks.js` | The 2022-modernized layout: banner sections, named refs in `control`, autoCreate dialog factory, `^ window` selectors. (Architecture exemplar only — its archive/unarchive handlers are a known copy-paste pair; don't imitate those.) | 2022 |
 | slate-cbl: `sencha-workspace/SlateStudentCompetenciesAdmin/` | Smallest complete app (7 files) — read end-to-end in one sitting to absorb the whole architecture | 2021 |
-| slate: `sencha-workspace/SlateAdmin/app/controller/settings/Locations.js` + `app/view/settings/locations/Manager.js` | SlateAdmin's cleanest controller↔view pair; the settings-manager skeleton and the card-loading preamble | 2019–2021 |
+| slate: `sencha-workspace/SlateAdmin/app/controller/settings/AbstractManagerController.js` (+ `AbstractTreeManagerController.js` and the `Terms.js` subclass) | The settings-manager base contract: route handler, `activate`-driven state sync, cell-edit saves, `buildNodeData` inheritance hook — and what a slim subclass declares | 2026 |
+| slate: `sencha-workspace/SlateAdmin/app/controller/Courses.js` | The state-sync gate (`suspendStateSync`/`resumeStateSync`/`syncState`) and an idempotent multi-segment route handler in a large module | 2026 |
+| slate: `sencha-workspace/SlateAdmin/app/controller/People.js` (+ `people/Search.js`, `people/Export.js`) | A god controller split along event-subscription lines; selection resolution without `Ext.defer` (resolve → finish callback + `requireLoaded` barriers) | 2026 |
+| slate: `sencha-workspace/SlateAdmin/app/controller/settings/Locations.js` + `app/view/settings/locations/Manager.js` | SlateAdmin's cleanest pre-campaign controller↔view pair; still the pure-config view exemplar | 2019–2021 |
