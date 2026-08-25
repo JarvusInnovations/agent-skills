@@ -1,6 +1,6 @@
 ---
 name: jarvus-extjs
-description: Maintain, stabilize, and clean up the Jarvus/Slate ExtJS 6.2 classic-toolkit web apps — SlateAdmin, the Slate CBL apps (SlateTasksTeacher/Student/Manager, SlateDemonstrations*, SlateStudentCompetenciesAdmin), and anything else living in a sencha-workspace/. Use this whenever the task touches Ext.define, Ext.app.Controller, a Sencha workspace, app.json, an ExtJS view/store/model/proxy, jarvus-* or slate-* Sencha packages, or fixing bugs and jank in these apps — even if the user just says "the admin UI" or "the teacher dashboard". The stack is frozen on Ext 6.2.0.981: this skill encodes the house patterns to converge on and the upgrades/migrations to explicitly NOT attempt.
+description: Maintain, stabilize, and clean up the Jarvus/Slate ExtJS 6.2 classic-toolkit web apps — SlateAdmin, the Slate CBL apps (SlateTasksTeacher/Student/Manager, SlateDemonstrations*, SlateStudentCompetenciesAdmin), and anything else living in a sencha-workspace/. Use this whenever the task touches Ext.define, Ext.app.Controller, a Sencha workspace, app.json, an ExtJS view/store/model/proxy, jarvus-* or slate-* Sencha packages, writing or debugging Cypress e2e specs for these apps, or fixing bugs and jank in these apps — even if the user just says "the admin UI" or "the teacher dashboard". The stack is frozen on Ext 6.2.0.981: this skill encodes the house patterns to converge on and the upgrades/migrations to explicitly NOT attempt.
 ---
 
 # Jarvus ExtJS (Slate classic apps)
@@ -73,6 +73,11 @@ The architecture every app converges toward (details and exemplars in the refere
   top-level state-owning view, and store subclasses that pin `include`/`extraParams`/
   `pageSize`. Everything reusable — models, proxies, base stores, forms, fields,
   shared views, their `.scss` siblings — lives in a Sencha package.
+- **Repeated screen shapes are base classes.** When two modules share a screen shape
+  (settings managers, record-manager + detail tabs, report/print/email flows), the
+  behavior lives in an abstract base parameterized by contract properties, and each
+  module is a thin subclass declaring its vocabulary. SlateAdmin converged on this in
+  2026 — extend its bases rather than copying a sibling module.
 
 ## References
 
@@ -82,12 +87,13 @@ The architecture every app converges toward (details and exemplars in the refere
 | Touching models, stores, proxies, loading, saving, filtering, or error handling | [data-layer.md](references/data-layer.md) |
 | Building or cleaning up views, forms, grids, fields, dialogs, templates, or SCSS | [components.md](references/components.md) |
 | Deciding where code lives, adding a package dependency, or using a `jarvus-*`/`slate-*` package API | [packages.md](references/packages.md) |
-| Working in SlateAdmin — before ANY change there, and for the modernization campaign | [slateadmin-audit.md](references/slateadmin-audit.md) |
+| Verifying a change, writing or fixing Cypress e2e specs, touching the test harness | [testing.md](references/testing.md) |
 
 Each reference ends with its canonical exemplar files — real paths in the
-`SlateFoundation/slate` and `SlateFoundation/slate-cbl` repos, ranked. When in doubt
-about an idiom, open the exemplar and imitate it; when two eras of code disagree, the
-newer exemplar wins (the references date them).
+`SlateFoundation/slate`, `SlateFoundation/slate-cbl`, and
+`EmergencePlatform/skeleton-v3` repos, ranked. When in doubt about an idiom, open the
+exemplar and imitate it; when two eras of code disagree, the newer exemplar wins (the
+references date them).
 
 ## Working practices
 
@@ -98,12 +104,19 @@ newer exemplar wins (the references date them).
 - **Dev builds run against a live backend** via `dev-loader.js` and `?apiHost=` /
   `?apiToken=` query params — the loader grafts the remote page's chrome into the local
   document. Don't "fix" that mechanism; it's load-bearing.
-- **Test by exercising the real app.** There is no JS unit-test suite in these apps.
-  A change is verified by loading the affected screen against a dev backend and walking
-  the flow (including the URL round-trip: deep-link, back button, refresh).
-- **ESLint exists but isn't enforced** (`.eslintrc.js` at the slate repo root, tuned for
-  this codebase including XTemplate-array indent rules). Run it on files you touch;
-  don't add `eslint-disable` to dodge a fixable rule.
+- **Test end-to-end; there is no unit-test suite and none should be added.** The slate
+  repo runs a containerized Cypress suite as a required PR check; a behavior change to
+  an admin surface should ride with a spec change, and any change is verified by
+  walking the affected screens (including the URL round-trip: deep-link, back button,
+  refresh). See [testing.md](references/testing.md) for the harness and the
+  ExtJS-specific spec idioms.
+- **ESLint is enforced in CI for SlateAdmin** (required check, zero-error baseline;
+  `.eslintrc.js` at the slate repo root, tuned for this codebase including
+  XTemplate-array indent rules). Run it on files you touch; don't add `eslint-disable`
+  to dodge a fixable rule. The house idiom for the app namespace is a
+  `/* globals SlateAdmin */` directive inside the `requires` array of files that
+  reference it — and an unused globals directive is itself an error, so only declare
+  it where the bare namespace actually appears.
 - **Commit conventionally** (`feat:`/`fix:`/`refactor:` — the CBL repos adopted
   Conventional Commits in 2022) and keep refactor commits behavior-neutral: the 2022
   rework's cleanest commits changed 70+ lines with zero behavior change and said so.

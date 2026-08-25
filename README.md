@@ -36,7 +36,7 @@ npx skills add JarvusInnovations/agent-skills --skill <name>
 - [`jarvus-fastify`](skills/jarvus-fastify/README.md) — Backend development using Fastify 5 + TypeScript on Bun
 - [`jarvus-flutter`](skills/jarvus-flutter/README.md) — Mobile app development using Flutter + Riverpod + go_router
 - [`jarvus-dbt`](skills/jarvus-dbt/README.md) — Jarvus house conventions for dbt (modeling, testing, sqlfluff/CI); the opinionated layer over dbt-labs' first-party dbt skills
-- [`jarvus-extjs`](skills/jarvus-extjs/README.md) — Maintaining the legacy Slate ExtJS 6.2 classic apps (SlateAdmin, Slate CBL); frozen-stack house patterns + SlateAdmin cleanup playbook
+- [`jarvus-extjs`](skills/jarvus-extjs/README.md) — Maintaining the legacy Slate ExtJS 6.2 classic apps (SlateAdmin, Slate CBL); frozen-stack house patterns + Cypress e2e spec idioms
 
 ### Global — install once for all projects
 

@@ -116,6 +116,40 @@ no separate "empty" card. The `slate-ui-classic` components (`Slate.ui.Window`,
 `Slate.ui.form.Panel`, app Container/Header) all implement this same
 apply-coerce/`Ext.factory`/`initItems` triple; imitate them when building composites.
 
+### Record managers with detail tabs (the SlateAdmin base)
+
+The recurring SlateAdmin screen shape — a grid of records beside a tab panel of detail
+views — is a base class pair, not a copy-paste target:
+`SlateAdmin.view.AbstractRecordManager` (the split container) +
+`SlateAdmin.view.AbstractRecordDetails` (a detail tab). The contract:
+
+- The subclass declares its module's config vocabulary and points the base at it:
+
+  ```js
+  config: { selectedPerson: null },
+
+  selectedRecordGetter: 'getSelectedPerson',
+  selectedRecordEvent: 'selectedpersonchange',
+  tabRecordGetter: 'getLoadedPerson',
+  tabRecordSetter: 'setLoadedPerson',
+
+  updateSelectedPerson: function(person, oldPerson) {
+      this.syncSelectedRecord(person, oldPerson);
+  }
+  ```
+
+- **Detail tabs are declared explicitly in the manager's `items`**, in order. Never
+  have controllers inject tabs into a foreign view on `beforerender` — that makes tab
+  order an accident of controller registration order (the historic SlateAdmin defect
+  this base removed).
+- The base's `syncSelectedRecord` propagates the record into the active tab (via the
+  `tabRecordSetter`), fires the module's semantic change event, and handles **phantom
+  records by disabling the non-active tabs** — create-record flows get correct tab
+  semantics for free.
+- Other modules interact with the tab panel only through the manager's API
+  (`setActiveDetailTab(name)` / `getActiveDetailTab()`), never by reaching for
+  `manager.detailTabs` or cached `me.down('#detailCt')` handles.
+
 ## Forms
 
 Base on `Slate.ui.form.Panel` (`slate-formpanel`: `trackResetOnLoad`, sensible field
@@ -248,8 +282,8 @@ statics: {
 - `tpl` member functions and XTemplate `{% %}` blocks are fine for presentation logic,
   but **never reach into the global store registry from a template or renderer**
   (`Ext.getStore(...)` per cell is an O(rows) global lookup and couples the view to
-  boot order — the audit lists offenders). Give the view the data it needs via configs
-  or record fields.
+  boot order — some older SlateAdmin grids still do this; don't imitate them). Give
+  the view the data it needs via configs or record fields.
 - Delegated DOM events use managed listeners:
   `me.mon(me.el, 'click', 'onAddClick', me, { delegate: '[data-action="add-related-person"]' })`
   — and `data-action` attributes, mirroring the named-action convention.
@@ -286,5 +320,6 @@ statics: {
 | slate: `sencha-workspace/SlateAdmin/app/view/people/details/contacts/List.js` | The most modern file in SlateAdmin: function-body define, config handlers with `Ext.factory`, delegated DOM events, template literals | 2022 |
 | slate: `sencha-workspace/SlateAdmin/app/widget/field/contact/Relationship.js` | Composite ContainerField with polymorphic sub-component configs and correct listener rebinding | 2022 |
 | slate-cbl: `sencha-workspace/packages/slate-cbl/src/view/CompetenciesGrid.js` | Filters-as-configs (`applyQueryFilter` returning `Ext.util.Filter`), semantic `competencyselect` event | 2018 |
+| slate: `sencha-workspace/SlateAdmin/app/view/AbstractRecordManager.js` + `app/view/people/Manager.js` | The record-manager base contract: getter/event indirection, explicit tab declaration, phantom tab-disabling — and a minimal subclass | 2026 |
 | slate: `sencha-workspace/SlateAdmin/app/view/settings/locations/Manager.js` | The pure-config view: zero logic, chained store, inline editors, action columns | 2019 |
 | slate-spark: `sencha-workspace/SparkRepositoryManager/app/column/Sparkpoint.js` and `app/field/SparkpointLookup.js` | Custom column with `defaultRenderer` + model-owned tooltip tpl; 18-line reusable lookup field | 2016 |
