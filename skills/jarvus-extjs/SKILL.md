@@ -1,6 +1,6 @@
 ---
 name: jarvus-extjs
-description: Maintain, stabilize, and clean up the Jarvus/Slate ExtJS 6.2 classic-toolkit web apps — SlateAdmin, the Slate CBL apps (SlateTasksTeacher/Student/Manager, SlateDemonstrations*, SlateStudentCompetenciesAdmin), and anything else living in a sencha-workspace/. Use this whenever the task touches Ext.define, Ext.app.Controller, a Sencha workspace, app.json, an ExtJS view/store/model/proxy, jarvus-* or slate-* Sencha packages, writing or debugging Cypress e2e specs for these apps, or fixing bugs and jank in these apps — even if the user just says "the admin UI" or "the teacher dashboard". The stack is frozen on Ext 6.2.0.981: this skill encodes the house patterns to converge on and the upgrades/migrations to explicitly NOT attempt.
+description: 'Maintain, stabilize, and clean up the Jarvus/Slate ExtJS 6.2 classic-toolkit web apps — SlateAdmin, the Slate CBL apps (SlateTasksTeacher/Student/Manager, SlateDemonstrations*, SlateStudentCompetenciesAdmin), and anything else living in a sencha-workspace/. Use this whenever the task touches Ext.define, Ext.app.Controller, a Sencha workspace, app.json, an ExtJS view/store/model/proxy, jarvus-* or slate-* Sencha packages, writing or debugging Cypress e2e specs for these apps, or fixing bugs and jank in these apps — even if the user just says "the admin UI" or "the teacher dashboard". The stack is frozen on Ext 6.2.0.981: this skill encodes the house patterns to converge on and the upgrades/migrations to explicitly NOT attempt.'
 ---
 
 # Jarvus ExtJS (Slate classic apps)
