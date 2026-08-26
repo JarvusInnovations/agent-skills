@@ -110,6 +110,22 @@ runs exactly once after the barrier clears. Give slow barriers an explicit timeo
    behavior; dismiss it, don't fix it.
 6. **Prefer `{selectall}` over `.clear()`** when replacing field text — `.clear()` has
    raced ExtJS field internals (time fields especially).
+7. **Make mutating tests retry-convergent, and never retry chain specs.** The
+   harness runs `retries: 2`, and a retry re-runs the failed TEST but not the
+   spec's `before()` reset — so a test that mutates server state and then fails
+   transiently re-runs against its own leftovers, and the reported error is
+   compounded garbage that hides the real attempt-1 failure (observed twice: a
+   merge test re-ran against its already-merged pair; a contact-point test
+   counted doubled rows). Two disciplines: a mutating test should query current
+   state and guard its mutation (`if (record.Status === 'open') { …merge… }`)
+   so retries converge on the assertions; and a spec whose tests deliberately
+   build on each other (a chain) should declare
+   `describe('…', { retries: 0 }, …)` — a chain's middle test can never be
+   safely retried, and surfacing the true first failure beats absorbing it.
+8. **A single-select combo's `select` event passes ONE record, not an array**
+   (Ext 6.2 classic) — and a spec that fires the event synthetically with an
+   array shape will happily validate a handler the real UI never reaches. Fire
+   synthetic events with the exact argument shapes the framework uses.
 
 ## Manual verification still matters
 

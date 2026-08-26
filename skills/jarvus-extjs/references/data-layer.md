@@ -60,6 +60,14 @@ Rules:
 - Remote filters serialize to the `q=` syntax (`prop:value` joined by spaces). Filters
   with an `operator` are rejected by the backend — when using grid filters, declare
   `filter: { type: 'string', operator: null }` per column.
+- **Dynamic fields serialize only when included.** A PHP model's
+  `$dynamicFields` entry (method-backed values like a computed boolean, and
+  relationship expansions alike) is absent from JSON responses unless the
+  request's `include` names it — a grid column bound to one silently renders
+  its empty state otherwise. Put every dynamic field a screen depends on in
+  the endpoint's proxy `include` alongside the relationship includes; nested
+  dotted includes (`MergeAudit.SourcePerson`) work for expanding relations of
+  relations.
 
 ## Model conventions (Emergence ActiveRecord)
 
