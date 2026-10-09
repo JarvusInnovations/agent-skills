@@ -145,6 +145,11 @@ not of the document: what produced v3 is not what produced v4. It also means the
 rewrites a tab after creating it. The header is written once; each generation is written once;
 there is no tab where a human's edits or formatting can be trampled.
 
+Behind each generation is a commit: the agent keeps the markdown it wrote as a file in the project
+and commits it with the write, tagged with the document and tab ids. That commit is what lets it
+diff the tab later and find what humans changed, which is what makes "edit what you care about"
+true. No commit, no ✅.
+
 When the author freezes a version, they update the header (Stage, the Generating end date, the
 Refining row's version and start) and the agent renames that tab `vN YYYY-MM-DD [REFINING]` and
 stops generating. Older generation tabs stay as history. If review in Refining turns up something

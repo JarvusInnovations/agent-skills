@@ -93,6 +93,8 @@ as fixed.
    after the header tab: the document's title as H1, then the stamp table (Version,
    Prompt as your paraphrase of the brief, Inputs linked, Changes omitted on v1), then the
    body. Nothing else goes between or under the tables; the protocol lives inside them.
+   **In the same step, commit the markdown you wrote** (see **Keeping sources**). A
+   written tab with no matching commit is an untracked generation.
 5. Apply the title suffix if the author has said what the document is: `[SNAPSHOT
    YYYY-MM-DD]` for a point-in-time result, `[ONGOING]` for a maintained document. Add
    `[SHARED]` the moment anyone outside the team is given access.
@@ -113,7 +115,8 @@ as fixed.
    - **Changes**: what moved this round, a line or two. Not a summary of the document.
    Last round's `NEW:` markers drop; the marker always means "since the previous
    generation."
-3. Tell the author the new version is up, which tab, and what changed in one line. Don't
+3. Commit the markdown you just wrote, with the trailers (see **Keeping sources**).
+4. Tell the author the new version is up, which tab, and what changed in one line. Don't
    summarize the document back to them. Don't touch the header.
 
 ### Freezing
@@ -134,15 +137,41 @@ When the author says it's gone out, fill the Delivered row from what they tell y
 date, to whom, via what, and a link to the delivered form. If the delivered form was a
 copy, link the copy, not the editing document.
 
+## Keeping sources
+
+The markdown you write to a generation tab is a file in the project, wherever the project
+keeps such things (no prescribed path), and **each generation is one commit of that
+file**, made in the same step as the `docs write`. The commit, not the filename, is what
+links the source to the tab, through trailers:
+
+```
+draft(<doc-slug>): v3
+
+Restructured §3 per comments; kept the reviewer's rewording of §2.
+
+Doc-Id: <documentId>
+Doc-Tab: <tabId>
+Doc-Version: v3
+Doc-Revision: <revision_id from the docs write result>
+```
+
+So the source for any tab is a query: `git log --grep='^Doc-Tab: <tabId>' --format=%H`
+finds the commit, `git show <sha> --name-only` the path, `git show <sha>:<path>` the exact
+text. `git diff <v2-sha> <v3-sha> -- <path>` is what *you* changed between generations,
+which is the evidence for the stamp's Changes row. One file, one history, same model as a
+markdown document that lives in a repo. The README tab's text isn't versioned: it's
+written once and humans own it after.
+
 ## Reading human contributions
 
 Humans are told they can edit what they care about in Generating because you will find
 it. That promise is yours to keep, every round, before you write a word.
 
-1. **Diff against your own source.** Keep the exact markdown of every generation you
-   write, durably (`<doc-slug>/v3.md` in a committed working directory, not a scratch
-   folder). Read the tab back (`docs read --tab <id> --full --out current.md`) and diff
-   locally. Every hunk is a human change: an insertion, a deletion, or a rewording.
+1. **Diff against your own source.** Get the committed text for the current tab by its
+   `Doc-Tab` trailer, read the tab back (`docs read --tab <id> --full --out current.md`),
+   and diff locally. Every hunk is a human change: an insertion, a deletion, or a
+   rewording. If the file has uncommitted changes or no commit carries the tab id, this
+   generation is untracked: the ✅ on the README tab is false until that's fixed.
    This is the only method that works. Drive's revision history is whole-document (every
    tab concatenated), its retained revisions are a sparse sample, and you write as the
    author's own account, so neither `docs revisions` nor `docs diff` can isolate what a
@@ -172,7 +201,8 @@ author names the file that's final.
 
 **Markdown in a repo.** The header table sits at the top of the file with the stamp
 directly under it. Each generation is a commit that rewrites the stamp and the body; the
-header changes only as the author directs. Use the Changes row as the commit body.
+header changes only as the author directs. Same trailers minus `Doc-Id` / `Doc-Tab`
+(`Doc-Version` still), and the Changes row as the commit body.
 Freezing is the author saying which commit is under review; from there your changes are
 the specific edits they ask for, as separate small commits.
 

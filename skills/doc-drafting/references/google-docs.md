@@ -32,9 +32,14 @@ author, not a write.
 ## Finding what humans changed
 
 ```sh
-# the tab as it is now, to diff against the markdown you wrote for it
+# the markdown you wrote for this tab, by trailer
+SHA=$(git log --grep="^Doc-Tab: <tabId>" --format=%H -n 1)
+SRC=$(git show --name-only --format= $SHA | head -1)
+git show $SHA:$SRC > ./written.md
+
+# the tab as it is now
 gws-axi docs read <docId> --tab <tabId> --full --out ./current.md
-diff ./v3.md ./current.md
+diff ./written.md ./current.md
 
 # comments, with the text they quote (not part of tab content)
 gws-axi docs comments <docId>
@@ -91,8 +96,11 @@ gws-axi docs tabs <docId>
 # README tab (header table + legend), first, with its icon (creation only)
 gws-axi docs write <docId> ./readme.md --new-tab "README" --first --emoji 📋 --account <you>
 
-# a new generation, directly after the header tab
-gws-axi docs write <docId> ./v3.md --new-tab "v3 YYYY-MM-DD" --after <headerTabId> --emoji 💬 --account <you>
+# a new generation, directly after the header tab; the result's revision_id goes in the commit trailer
+gws-axi docs write <docId> ./<doc>.md --new-tab "v3 YYYY-MM-DD" --after <headerTabId> --emoji 💬 --account <you>
+git commit -m "draft(<doc>): v3" -m "<changes>" \
+  --trailer "Doc-Id: <docId>" --trailer "Doc-Tab: <newTabId>" \
+  --trailer "Doc-Version: v3" --trailer "Doc-Revision: <revision_id>" -- ./<doc>.md
 
 # the previous generation is now superseded
 gws-axi docs tabs update <docId> <v2TabId> --emoji 🗄️ --account <you>
