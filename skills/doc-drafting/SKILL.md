@@ -23,8 +23,9 @@ humans have already put in.
 
 `README.md` next to this file is the human playbook. Read it once; it explains the
 reasoning the rules here compress. `references/header-and-stamp.md` has the two tables
-verbatim with the notation grammar. `references/google-docs.md` has the gws-axi
-mechanics and the current tool gaps.
+verbatim with the notation grammar. `references/frontmatter.md` is the schema of the
+committed draft file, which `scripts/render-draft.mjs` turns into a tab.
+`references/google-docs.md` has the gws-axi mechanics.
 
 ## The model
 
@@ -92,13 +93,12 @@ as fixed.
    (<owner>)`, the Ask verbatim from the author, the Generating row as `<today>-`. Leave
    Refining and Delivered as `due <date>` if the author gave targets, otherwise blank.
    This is the only time you write this tab.
-4. Write the first generation into a tab named `v1 YYYY-MM-DD` at position 1, directly
-   after the README tab, icon 💬: the stamp table first (Version as its header row, then Prompt as
-   your paraphrase of the brief, Inputs linked, Changes omitted on v1), then the document's
-   title as H1 and the body. The stamp is preamble; the title stays bound to its content.
-   Nothing else goes around the table; the protocol lives inside it.
-   **In the same step, commit the markdown you wrote** (see **Keeping sources**). A
-   written tab with no matching commit is an untracked generation.
+4. Write the draft file: YAML frontmatter per `references/frontmatter.md` (`version: 1`,
+   no `from`), then the document, title first. Render it with
+   `scripts/render-draft.mjs <file> --out tab.md` and write `tab.md` into a tab named
+   `v1 YYYY-MM-DD` at position 1, directly after the README tab, icon 💬. The rendered
+   stamp is preamble; the title stays bound to its content. **Then commit the file** (see
+   **Keeping sources**). A written tab with no matching commit is an untracked generation.
 5. Apply the title suffix if the author has said what the document is: `[SNAPSHOT
    YYYY-MM-DD]` for a point-in-time result, `[ONGOING]` for a maintained document. Add
    `[SHARED]` the moment anyone outside the team is given access.
@@ -109,16 +109,15 @@ as fixed.
    contributions** below for how; the short version is: diff the current generation
    against the exact markdown you wrote, and read the comments. Then read the README tab
    for a new Ask, new sign-offs, or a Stage change.
-2. Produce the new generation into a **new tab** at position 1, named `v<N+1>
-   YYYY-MM-DD`: the stamp table, then the H1 title and body. Stamp rows:
-   - **Version** (the header row): `v<N+1>, <date>, from v<N>`.
-   - **Prompt**: the cumulative paraphrase of the whole brief, rewritten tight, not
-     appended to. Prefix the clause this round introduced with `NEW:`. A reader on this
-     tab must get the full intent without reading older tabs.
-   - **Inputs**: the full linked list; new sources prefixed `NEW:`.
-   - **Changes**: what moved this round, a line or two. Not a summary of the document.
-   Last round's `NEW:` markers drop; the marker always means "since the previous
-   generation."
+2. Update the draft file: bump `version` and `date`; replace the `from` block
+   (`from.version` = the generation you're regenerating from, `from.prompt` = the
+   instruction this round added if any, `from.changes` = what moved, a line or two);
+   rewrite `prompt` to the cumulative paraphrase, tight, not appended to; clear last
+   round's `new: true` flags and set them on the inputs this round introduced; rewrite
+   the body. Render with `scripts/render-draft.mjs` and write the result into a **new
+   tab** at position 1, named `v<N+1> YYYY-MM-DD`. A reader on that tab must get the
+   full intent from the stamp without opening older tabs; the renderer composes the
+   `NEW:` markers from `from.prompt` and `new: true`, so never type them into prose.
 3. Commit the markdown you just wrote, with the trailers (see **Keeping sources**).
 4. Re-icon the previous generation's tab 🗄️ (`docs tabs update <id> --emoji 🗄️`). The
    new tab already carries 💬 from its write. The tab strip is the phase indicator; keep
@@ -150,22 +149,35 @@ copy, link the copy, not the editing document.
 
 ## Keeping sources
 
-The markdown you write to a generation tab is a file in the project, wherever the project
-keeps such things (no prescribed path), and **each generation is one commit of that
-file**. The commit, not the filename, is what links the source to the tab, through
-trailers, and the order is fixed because the trailers need values only the write
-produces:
+The draft is a file in the project, wherever the project keeps such things (no prescribed
+path): YAML frontmatter (`references/frontmatter.md`) and the document. **Each generation
+is one commit of that file.** What's written to the tab is the render of it, never the
+raw file (the YAML would land in the Doc as text). Two links tie the tab and the source
+together, in opposite directions:
 
-1. Write the file.
-2. `docs write … --new-tab "vN YYYY-MM-DD" --after <readmeTabId> --emoji 💬`. Take the
-   new tab's id and the `revision_id` from the result.
-3. Commit the file with the trailers below, immediately. Nothing else happens between
-   the write and the commit.
+- **Tab → text:** the stamp's `Source` row names the file's git *blob* hash, which is the
+  id of the exact bytes and survives rebases (the rebased commit carries the same blob).
+  Anyone with the repo resolves it with `git cat-file -p <blob>`, no branch, no grep.
+  Never a commit hash: feature branches get rebased until they merge, and a commit hash
+  written into a document is meaningless the day after.
+- **Commit → doc:** trailers on the commit, so an agent reading history can see that a
+  generation was spun out for review, when, and where.
+
+The order:
+
+1. Finalize the file. `scripts/render-draft.mjs <file> --out tab.md` validates it,
+   derives the Source row from `git hash-object` (the blob exists before any commit),
+   and writes the tab markdown.
+2. `docs write <docId> tab.md --new-tab "vN YYYY-MM-DD" --after <readmeTabId> --emoji 💬`.
+   Take the new tab's id and the `revision_id` from the result.
+3. Commit the file with the trailers below, immediately. Don't touch the file between
+   render and commit, or the blob in the tab stops matching the blob in the commit.
 
 If the write fails, there's nothing to commit; fix and retry. If you committed before
 writing, `git commit --amend --no-edit --trailer …` on that unpushed commit is the same
-thing. If you notice a tab with no matching commit later, commit the file now with the
-ids from `docs tabs`; it's untracked until you do.
+thing (an amend doesn't change the blob, so the tab's Source row stays right). If you
+notice a tab with no matching commit later, commit the file now with the ids from
+`docs tabs`; it's untracked until you do.
 
 The commit:
 
@@ -173,6 +185,7 @@ The commit:
 draft(<doc-slug>): v3
 
 Restructured §3 per comments; kept the reviewer's rewording of §2.
+Spun out to <doc URL> as tab "v3 YYYY-MM-DD".
 
 Doc-Id: <documentId>
 Doc-Tab: <tabId>
@@ -180,21 +193,27 @@ Doc-Version: v3
 Doc-Revision: <revision_id from the docs write result>
 ```
 
-So the source for any tab is a query: `git log --grep='^Doc-Tab: <tabId>' --format=%H`
-finds the commit, `git show <sha> --name-only` the path, `git show <sha>:<path>` the exact
-text. `git diff <v2-sha> <v3-sha> -- <path>` is what *you* changed between generations,
-which is the evidence for the stamp's Changes row. One file, one history, same model as a
-markdown document that lives in a repo. The README tab's text isn't versioned: it's
-written once and humans own it after.
+The stamp's Source row: `<owner>/<repo>@blob:<12-char blob>:<path>`. From a tab,
+`git cat-file -p <blob>` is the exact text; `git log --find-object=<blob> -- <path>` finds
+the commit(s) holding it, rebased or not. `git diff <v2-blob> <v3-blob>` is what *you*
+changed between generations, the evidence for the Changes row. One file, one history,
+same model as a markdown document that lives in a repo. The README tab's text isn't
+versioned: it's written once and humans own it after.
+
+The one way a blob stops resolving: a rebase whose conflict resolution changes the file
+orphans the old blob, and it's gone after reflog expiry. The Source row still names the
+path and the rebased commit still carries the trailers, so the trail survives; only
+byte-exactness is lost, and you say so instead of diffing against the wrong text.
 
 ## Reading human contributions
 
 Humans are told they can edit what they care about in Generating because you will find
 it. That promise is yours to keep, every round, before you write a word.
 
-1. **Diff against your own source.** Get the committed text for the current tab by its
-   `Doc-Tab` trailer, read the tab back (`docs read --tab <id> --full --out current.md`),
-   and diff locally. Every hunk is a human change: an insertion, a deletion, or a
+1. **Diff against your own source.** Read the tab back (`docs read --tab <id> --full
+   --out current.md`), take the blob from its Source row, `git cat-file -p <blob>` for
+   the file you wrote, and diff **body to body**: the file below its frontmatter against
+   the read-back below its stamp table (normalizer in `references/google-docs.md`). Every hunk is a human change: an insertion, a deletion, or a
    rewording. If the file has uncommitted changes or no commit carries the tab id, this
    generation is untracked: the ✅ on the README tab is false until that's fixed.
    This is the only method that works. Drive's revision history is whole-document (every
@@ -224,9 +243,10 @@ available in the installed version.
 versioned filename; the stamp is the first hidden slide of each. Freezing means the
 author names the file that's final.
 
-**Markdown in a repo.** The header table sits at the top of the file with the stamp
-directly under it. Each generation is a commit that rewrites the stamp and the body; the
-header changes only as the author directs. Same trailers minus `Doc-Id` / `Doc-Tab`
+**Markdown in a repo.** Same file, same frontmatter; GitHub renders the frontmatter as a
+table at the top, so no render step and no Source row (the file is its own source). The
+header table sits directly under the frontmatter. Each generation is a commit that
+rewrites the frontmatter and the body; the header changes only as the author directs. Same trailers minus `Doc-Id` / `Doc-Tab`
 (`Doc-Version` still), and the Changes row as the commit body.
 Freezing is the author saying which commit is under review; from there your changes are
 the specific edits they ask for, as separate small commits.

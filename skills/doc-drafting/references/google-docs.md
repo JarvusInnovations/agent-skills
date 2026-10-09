@@ -32,14 +32,13 @@ author, not a write.
 ## Finding what humans changed
 
 ```sh
-# the markdown you wrote for this tab, by trailer
-SHA=$(git log --grep="^Doc-Tab: <tabId>" --format=%H -n 1)
-SRC=$(git show --name-only --format= $SHA | head -1)
-git show $SHA:$SRC > ./written.md
-
 # the tab as it is now
 gws-axi docs read <docId> --tab <tabId> --full --out ./current.md
-diff ./written.md ./current.md
+
+# the file you rendered it from, by the blob in its Source row
+BLOB=$(grep -o 'blob:[0-9a-f]*' ./current.md | head -1 | cut -d: -f2)
+git cat-file -p $BLOB > ./written.md
+diff <(body_of_file ./written.md | norm) <(body_of_tab ./current.md | norm)   # see below
 
 # comments, with the text they quote (not part of tab content)
 gws-axi docs comments <docId>
@@ -53,17 +52,21 @@ document that tells you nothing usable about one tab (a tab-scoped diff is reque
 gws-axi#110). Keep your generation sources somewhere durable; they're what make "edit what you
 care about" true for reviewers.
 
-Normalize before you diff: the read-back pads cell delimiters (`|  |`, `| --- |`), escapes some
-punctuation, and has no trailing newline, so run both sides through the same filter first or every
-table row shows as changed:
+Compare **body to body**: the file below its frontmatter against the read-back below its stamp
+table. Then normalize, because the read-back pads cell delimiters (`|  |`, `| --- |`), escapes
+some punctuation, and has no trailing newline:
 
 ```sh
-norm(){ sed -e '/^<!-- cols:/d' -e 's/\\//g' -e 's/ *| */|/g' -e 's/-\{3,\}/---/g' -e '/^\s*$/d' "$1" | sed '$a\'; }
-diff <(norm written.md) <(norm current.md)
+body_of_file(){ awk 'f>=2{print} /^---$/{f++}' "$1"; }                             # below the frontmatter
+body_of_tab(){ awk 'done{print} /^\|/{intab=1} intab&&!/^\|/{done=1}' "$1"; }      # after the stamp table
+norm(){ sed -e '/^<!-- cols:/d' -e 's/\\//g' -e 's/ *| */|/g' -e 's/-\{3,\}/---/g' -e '/^\s*$/d' | sed '$a\'; }
+diff <(body_of_file written.md | norm) <(body_of_tab current.md | norm)
 ```
 
-An empty result means no human edits to the *content*; anything left is one. Width hints are
-dropped from the comparison because they're formatting, but read them separately and keep them. 
+An empty result means no human edits to the *content*; anything left is one. The frontmatter and
+the stamp are outside the comparison by construction. Width hints in the body are dropped as
+formatting, but read them separately and keep them; a width hint on the stamp table in the
+read-back is a human resize, so carry it into the next render.
 
 ```sh
 gws-axi docs read <docId> --tab <tabId> --full --out ./current.md
@@ -117,9 +120,10 @@ gws-axi docs tabs <docId>
 # README tab (header table + legend), first, with its icon (creation only)
 gws-axi docs write <docId> ./readme.md --new-tab "README" --first --emoji 📋 --account <you>   # H1, cols hint, table, legend
 
-# a new generation, directly after the README tab; the result's revision_id goes in the commit trailer
-gws-axi docs write <docId> ./<doc>.md --new-tab "v3 YYYY-MM-DD" --after <headerTabId> --emoji 💬 --account <you>
-git commit -m "draft(<doc>): v3" -m "<changes>" \
+# a new generation, directly after the README tab: render the draft file, write the render
+skills/doc-drafting/scripts/render-draft.mjs ./<doc>.md --out ./tab.md   # validates, derives the Source row, prints the tab name
+gws-axi docs write <docId> ./tab.md --new-tab "v3 YYYY-MM-DD" --after <readmeTabId> --emoji 💬 --account <you>
+git commit -m "draft(<doc>): v3" -m "<changes>" -m "Spun out to <doc URL> as tab \"v3 YYYY-MM-DD\"." \
   --trailer "Doc-Id: <docId>" --trailer "Doc-Tab: <newTabId>" \
   --trailer "Doc-Version: v3" --trailer "Doc-Revision: <revision_id>" -- ./<doc>.md
 
