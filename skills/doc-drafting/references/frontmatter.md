@@ -54,7 +54,7 @@ version: 3
 date: 2026-10-09
 from:
   version: 2
-  prompt: keep the header table as an appendix pointing at the playbook
+  prompt: point at the playbook instead of restating the grid in an appendix
   changes: >-
     Restructured as a one-page principles cover plus three appendices; #7 split into
     guest communities vs. repos we maintain; answered both v1 comments.
