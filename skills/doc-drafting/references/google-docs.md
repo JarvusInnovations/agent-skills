@@ -32,13 +32,12 @@ author, not a write.
 ## Finding what humans changed
 
 ```sh
-# the markdown you wrote for this tab, by trailer
-SHA=$(git log --grep="^Doc-Tab: <tabId>" --format=%H -n 1)
-SRC=$(git show --name-only --format= $SHA | head -1)
-git show $SHA:$SRC > ./written.md
-
 # the tab as it is now
 gws-axi docs read <docId> --tab <tabId> --full --out ./current.md
+
+# the markdown you wrote for it, from the blob in its Source row
+BLOB=$(grep -o 'blob:[0-9a-f]*' ./current.md | head -1 | cut -d: -f2)
+git cat-file -p $BLOB > ./written.md
 diff ./written.md ./current.md
 
 # comments, with the text they quote (not part of tab content)
@@ -58,12 +57,13 @@ punctuation, and has no trailing newline, so run both sides through the same fil
 table row shows as changed:
 
 ```sh
-norm(){ sed -e '/^<!-- cols:/d' -e 's/\\//g' -e 's/ *| */|/g' -e 's/-\{3,\}/---/g' -e '/^\s*$/d' "$1" | sed '$a\'; }
+norm(){ sed -e '/^<!-- cols:/d' -e '/^| \*\*Source\*\* |/d' -e 's/\\//g' -e 's/ *| */|/g' -e 's/-\{3,\}/---/g' -e '/^\s*$/d' "$1" | sed '$a\'; }
 diff <(norm written.md) <(norm current.md)
 ```
 
-An empty result means no human edits to the *content*; anything left is one. Width hints are
-dropped from the comparison because they're formatting, but read them separately and keep them. 
+An empty result means no human edits to the *content*; anything left is one. Width hints and
+the Source row are dropped from the comparison (formatting, and injected at write time), but read
+the width hint separately and keep it.
 
 ```sh
 gws-axi docs read <docId> --tab <tabId> --full --out ./current.md
@@ -117,9 +117,11 @@ gws-axi docs tabs <docId>
 # README tab (header table + legend), first, with its icon (creation only)
 gws-axi docs write <docId> ./readme.md --new-tab "README" --first --emoji 📋 --account <you>   # H1, cols hint, table, legend
 
-# a new generation, directly after the README tab; the result's revision_id goes in the commit trailer
-gws-axi docs write <docId> ./<doc>.md --new-tab "v3 YYYY-MM-DD" --after <headerTabId> --emoji 💬 --account <you>
-git commit -m "draft(<doc>): v3" -m "<changes>" \
+# a new generation, directly after the README tab
+BLOB=$(git hash-object ./<doc>.md | cut -c1-12)
+sed "s#^| \*\*Prompt\*\* |#| **Source** | <owner>/<repo>@blob:$BLOB:<path> |\n&#" ./<doc>.md > ./tab.md   # inject Source above Prompt
+gws-axi docs write <docId> ./tab.md --new-tab "v3 YYYY-MM-DD" --after <readmeTabId> --emoji 💬 --account <you>
+git commit -m "draft(<doc>): v3" -m "<changes>" -m "Spun out to <doc URL> as tab \"v3 YYYY-MM-DD\"." \
   --trailer "Doc-Id: <docId>" --trailer "Doc-Tab: <newTabId>" \
   --trailer "Doc-Version: v3" --trailer "Doc-Revision: <revision_id>" -- ./<doc>.md
 
