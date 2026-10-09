@@ -31,8 +31,9 @@ mechanics and the current tool gaps.
 Two stages, and the document is always in exactly one of them:
 
 - **Generating.** You rebuild whole new versions from new input and directional
-  feedback. Each version is a new tab. Humans comment and contribute sections; they
-  don't copyedit, because your next regeneration would trample it.
+  feedback. Each version is a new tab. Humans comment, insert, and rewrite what they
+  care about; before you rebuild, you find every change they made and treat it as
+  direction. Their rewording of a passage is the strongest signal you get.
 - **Refining.** One version is frozen. Humans edit it directly, line by line. You do not
   regenerate. You may answer questions about the text, keep your own notes current from
   what they change, and point out a problem, but the text is theirs now.
@@ -93,10 +94,10 @@ as fixed.
 
 ### Each regeneration round
 
-1. Read every tab that has changed since your last write: the header (for a new Ask,
-   new sign-offs, or a Stage change) and the current generation (for comments and edits).
-   Comments and contributed sections are your input for this round; treat them as the
-   author's direction.
+1. Collect the humans' contributions since your last write. See **Reading human
+   contributions** below for how; the short version is: diff the current generation
+   against the exact markdown you wrote, and read the comments. Then read the README tab
+   for a new Ask, new sign-offs, or a Stage change.
 2. Produce the new generation into a **new tab** at position 1, named `v<N+1>
    YYYY-MM-DD`: H1 title, then the stamp table, then the body. Stamp rows:
    - **Version**: `v<N+1>, <date>, from v<N>`.
@@ -127,6 +128,31 @@ When the author says the document is ready for Refining:
 When the author says it's gone out, fill the Delivered row from what they tell you:
 date, to whom, via what, and a link to the delivered form. If the delivered form was a
 copy, link the copy, not the editing document.
+
+## Reading human contributions
+
+Humans are told they can edit what they care about in Generating because you will find
+it. That promise is yours to keep, every round, before you write a word.
+
+1. **Diff against your own source.** Keep the exact markdown of every generation you
+   write (`<doc-slug>/v3.md` in your working files). Read the tab back
+   (`docs read --tab <id> --full --out current.md`) and diff locally. Every hunk is a
+   human change: an insertion, a deletion, or a rewording. This is the only exact
+   method; revision history can't do it for you, because you write as the author's own
+   account (revision `author` can't distinguish you from them) and Drive retains only a
+   sparse sample of revisions.
+2. **Cross-check with `docs diff`** when you have no source (a document you didn't
+   create, a lost working file): `docs revisions <id>` lists what Drive kept, `docs diff
+   <id> <revA> [revB]` diffs two of them as markdown. It's lossy and sampled, but it
+   shows the shape of what changed.
+3. **Read the comments.** `docs comments <id>` lists them with the quoted text; they're
+   not in the tab content.
+
+Then, in the regeneration: a passage a human reworded is carried forward in their
+wording unless the new direction contradicts it, and the stamp's Changes row says so
+("kept your rewording of §3"). An inserted section is kept and integrated. A deletion is
+honored. A comment is answered in the text, or, when you can't, in your reply to the
+author. If a human edit and a new instruction conflict, ask rather than pick.
 
 ## Working in each surface
 

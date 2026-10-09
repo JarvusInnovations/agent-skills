@@ -98,9 +98,11 @@ Because the README tab sits outside the content being worked on, it carries a st
 the table. That text describes the protocol, never the current state, so it can't go stale.
 Generation tabs carry nothing outside the stamp and the document. The legend:
 
-> The newest draft is the tab right after this one. While Stage says Generating, comment on it and
-> contribute sections; don't copyedit, the next generation won't carry it. When Stage says
-> Refining, edit the marked tab directly.
+> The newest draft is the tab right after this one. While Stage says Generating, give broad-strokes
+> feedback: comments, insertions, rewrites of anything you feel strongly about. The agent diffs what
+> you changed against what it wrote and treats your rewording as the strongest signal it has, so
+> edit what you care about; the job just isn't "make this whole thing ready to ship." When Stage
+> says Refining, that is the job: edit the marked tab directly, line by line.
 >
 > Reviewers: add your sign-off to the open phase row above. Name plus version in Generating
 > (`Ben v3`), name plus date in Refining (`Ben 10/10`). A name with a word (`pending`, `reviewing`)
@@ -109,7 +111,7 @@ Generation tabs carry nothing outside the stamp and the document. The legend:
 > Tab icons:
 >
 > - 📋 this README
-> - 💬 the newest draft, open for comments
+> - 💬 the newest draft, open for comments and edits
 > - ✏️ the frozen draft being refined, edit it directly
 > - 🗄️ superseded drafts, kept for history
 > - 📤 delivered

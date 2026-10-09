@@ -29,9 +29,25 @@ up a table will not get it back after a whole-tab rewrite. If you find yourself 
 `--tab <id>` on a tab a human has touched, stop; that's a new generation or a prompt to the
 author, not a write.
 
-**Reading.** `docs write` to an existing tab is refused if the Doc changed since you last read
-it; that guard matters less now that you don't rewrite tabs, but reading is still how you pick
-up what changed: comments, contributed sections, header updates.
+## Finding what humans changed
+
+```sh
+# the tab as it is now, to diff against the markdown you wrote for it
+gws-axi docs read <docId> --tab <tabId> --full --out ./current.md
+diff ./v3.md ./current.md
+
+# comments, with the text they quote (not part of tab content)
+gws-axi docs comments <docId>
+
+# fallback when you have no source: Drive's retained revisions, diffed as markdown
+gws-axi docs revisions <docId>
+gws-axi docs diff <docId> <revA> [revB] --out ./change.diff
+```
+
+The local diff is exact; `docs diff` is a diff of two lossy markdown exports over a sparse
+revision sample, and revision `author` is the same account for you and the author, so it can
+show you the shape of a change but not attribute it. Keep your generation sources; they're what
+make "edit what you care about" true for reviewers.
 
 ```sh
 gws-axi docs read <docId> --tab <tabId> --full --out ./current.md

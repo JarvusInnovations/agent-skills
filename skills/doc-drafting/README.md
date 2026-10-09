@@ -34,8 +34,8 @@ AI makes producing cheap and reviewing expensive. Every unreviewed artifact you 
 you onto whoever has to read it, and it spends down their trust in everything you send after. The
 specific failures this workflow prevents:
 
-- A reviewer copyedits a draft the author was about to regenerate, and the next version tramples
-  their work.
+- A reviewer spends an hour polishing a draft the author was about to regenerate, and the next
+  version is rebuilt without anyone having looked at what they changed.
 - A reviewer gets a fifty-page document with same-day turnaround and no idea whether it has been
   read by the person who sent it.
 - Something arrives clearly generated, and the expectation turns out to be that it goes to a client
@@ -51,8 +51,11 @@ the right kind of attention lands on it at the right time.
 **Generating.** The author keeps having the agent rebuild whole new versions: new input goes in,
 broad directional feedback goes in, a tighter version comes out. Each version lands in its own tab.
 If the author needs other people's input during this stage, the shared document is a *collection
-box*, not a draft: comment, or add or rewrite a section if you have specific phrasing to contribute,
-but don't proofread or copyedit line by line. The next regeneration will not carry that work forward.
+box*: comment, insert, and rewrite anything you feel strongly about, including key wording. Before
+each regeneration the agent diffs the tab against what it wrote and treats what humans reworded as
+the strongest signal it has, so edits made here do carry forward. What this stage is *not* is a
+pass to make the whole thing ready to ship; line-by-line polish on text that's about to be rebuilt
+is wasted.
 
 **Refining.** Once the document is mostly there, one version is frozen. From here humans do the
 proofreading and word-level editing directly in that tab, and the agent backs off regenerating
@@ -61,6 +64,9 @@ about the text, but it does not rewrite.
 
 The move from Generating to Refining is the moment the author has read every line and will stand
 behind it. It is the author's call and nobody else's.
+
+The division of labor: in Generating, humans say what matters and the agent does the rebuilding;
+in Refining, humans do the finishing and the agent stays out of the way.
 
 Two rules fall out of this:
 
@@ -160,8 +166,9 @@ header's Stage row says so; the frozen tab keeps its name so the story stays leg
 
 ## As a reviewer
 
-- Read Stage and Ask first. In Generating, give direction and content, add or rewrite a section if
-  you have the phrasing; don't copyedit. In Refining, copyedit freely.
+- Read Stage and Ask first. In Generating, give direction and content; rewrite anything you feel
+  strongly about and it will survive the next generation. Don't spend effort making the whole thing
+  ship-ready. In Refining, that *is* the job: edit line by line.
 - When you've done your pass, add your sign-off to the open phase's row: your name and the version
   (Generating) or the date (Refining). That's how the author knows you're done, and how later
   reviewers know who has looked.
