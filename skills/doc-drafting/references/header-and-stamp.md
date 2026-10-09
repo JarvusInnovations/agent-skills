@@ -106,8 +106,13 @@ Generation tabs carry nothing outside the stamp and the document. The legend:
 > (`Ben v3`), name plus date in Refining (`Ben 10/10`). A name with a word (`pending`, `reviewing`)
 > is a status, not a sign-off.
 >
-> Tab icons: 📋 this README. 💬 the newest draft, open for comments. ✏️ the frozen draft being
-> refined, edit it directly. 🗄️ superseded drafts, kept for history. 📤 delivered.
+> Tab icons:
+>
+> - 📋 this README
+> - 💬 the newest draft, open for comments
+> - ✏️ the frozen draft being refined, edit it directly
+> - 🗄️ superseded drafts, kept for history
+> - 📤 delivered
 >
 > This document follows the `doc-drafting` workflow; the playbook for authors and reviewers is
 > [here](https://github.com/JarvusInnovations/agent-skills/blob/main/skills/doc-drafting/README.md).
