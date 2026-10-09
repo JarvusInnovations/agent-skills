@@ -47,32 +47,56 @@ Headings, emphasis, code, links, lists, task lists, quotes, tables, rules, image
 footnotes. Anything else is written as text and listed under `lossy[]` in the result; check that
 field after every write.
 
-Known defect at 0.32: **every cell in a written table comes out bold**, including cells with no
-emphasis in the source. The header and stamp tables are affected. Until it's fixed, mention it to
-the author once (one select-all on the table and Ctrl+B clears it) and don't try to work around it
-in the markdown; adding or removing `**` changes nothing.
+Three gotchas in 0.33 that hit this workflow's tables directly:
 
-## Tab operations
+- **A file whose last block is a table fails** (`Insert text requests must specify text to
+  insert`), and with `--new-tab` the empty tab is left behind. Always put a paragraph after a
+  table. For the header tab, end with a one-line note to reviewers; it's useful anyway.
+  (gws-axi#104)
+- **Table cells inherit the text style of the paragraph that follows the table.** A heading or a
+  bold-leading paragraph after a table bolds every cell. Put a plain sentence directly after the
+  stamp before the document's first heading. (gws-axi#105)
+- **No multi-line cells.** `<br>` is written as literal text. Write the Inputs row as one line,
+  semicolon-separated, `NEW:` still in front of new items. (gws-axi#106)
 
-At 0.32, `--new-tab` **appends** the new tab last and there is no way to reorder, rename, delete,
-or set an icon on a tab from the CLI. So, at this version:
+Column widths can't be set from markdown (gws-axi#107); the author sets them by hand on the
+header tab once, which is safe because that tab is never rewritten.
 
-- The newest generation lands at the bottom. Tell the author which tab to read; the
-  "highest version number is current" rule covers the gap until they reorder by hand.
-- Renaming to `[REFINING]` at freeze is a manual step for the author; ask them to do it.
-- Superseded tabs stay; deleting is manual.
+## Tab operations (0.33+)
 
-A gws-axi release with full tab management is in progress (reorder, insert at a position, rename,
-delete, icons; tracked in JarvusInnovations/gws-axi#101). When the installed version has `docs tabs`
-subcommands, the procedure becomes:
+```sh
+# list tabs: id, title, index, parent, emoji
+gws-axi docs tabs <docId>
 
-- insert each generation at **position 1**, directly after the header tab;
-- rename the frozen tab to `vN YYYY-MM-DD [REFINING]` yourself;
-- set icons per `references/header-and-stamp.md` (📋 header, 💬 current draft, ✏️ refining,
-  🗄️ superseded, 📤 delivered);
-- delete superseded generations only when the author asks.
+# header tab, first, with its icon (creation only)
+gws-axi docs write <docId> ./header.md --new-tab "Header" --first --emoji 📋 --account <you>
 
-Confirm the exact flags from `gws-axi docs tabs --help` rather than from this file.
+# a new generation, directly after the header tab
+gws-axi docs write <docId> ./v3.md --new-tab "v3 YYYY-MM-DD" --after <headerTabId> --emoji 💬 --account <you>
+
+# the previous generation is now superseded
+gws-axi docs tabs update <docId> <v2TabId> --emoji 🗄️ --account <you>
+
+# freeze: rename and re-icon the current generation
+gws-axi docs tabs update <docId> <v3TabId> --title "v3 YYYY-MM-DD [REFINING]" --emoji ✏️ --account <you>
+
+# delivered
+gws-axi docs tabs update <docId> <v3TabId> --emoji 📤 --account <you>
+
+# remove a tab (only when the author asks; never one with comments)
+gws-axi docs tabs delete <docId> <tabId> --account <you>
+
+# title suffix
+gws-axi drive rename <docId> --name "<Title> [ONGOING]" --account <you>
+```
+
+`tabs update` takes `--title`, `--emoji` / `--no-emoji`, and one placement flag (`--first`,
+`--last`, `--before`, `--after`, `--under`, `--top-level`) in a single idempotent call; the
+response lists the new tab order and an undo line. Every write is refused if the Doc changed since
+you last read it, so list tabs (or read) right before you act.
+
+Surgical edits (`edit-cell`, `replace-text`) are not implemented yet (gws-axi#108). Until they
+are, a sign-off or a Delivered line is the human's edit; give them the exact text to paste.
 
 ## Verifying a write
 
