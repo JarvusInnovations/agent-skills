@@ -9,12 +9,12 @@ generation and never again. No tab is ever rewritten.
 
 The README tab opens with an H1, `Generated Document Status: <document title>`, then the table.
 `Stage` is the table's header row (the mandatory header row carrying real content), and the
-`<!-- cols: 1 4 -->` hint before the table sets the label/value proportions so nobody has to drag
-column borders.
+`<!-- cols: fit 1 -->` hint before the table sizes the label column to its widest label and gives
+the value column the rest, so nobody has to drag column borders. Use the same hint on the stamp.
 
 Blank template:
 
-<!-- cols: 1 4 -->
+<!-- cols: fit 1 -->
 | Stage | Generating (owner) |
 |---|---|
 | **Ask** | |
@@ -24,7 +24,7 @@ Blank template:
 
 Filled example, mid-Refining:
 
-<!-- cols: 1 4 -->
+<!-- cols: fit 1 -->
 | Stage | Refining (Ana) |
 |---|---|
 | **Ask** | Line edits through Fri 10/10. Flag anything you'd refuse to follow. |
@@ -34,7 +34,7 @@ Filled example, mid-Refining:
 
 Filled example, delivered:
 
-<!-- cols: 1 4 -->
+<!-- cols: fit 1 -->
 | Stage | Refining (Ana) |
 |---|---|
 | **Ask** | None; delivered. |
@@ -76,7 +76,7 @@ Reviewers update their own entry; to re-review in Generating, bump the version.
 
 ## The stamp (first thing on every generation tab, above the document's title)
 
-<!-- cols: 1 4 -->
+<!-- cols: fit 1 -->
 | Version | v4, 2026-10-09, from v3 |
 |---|---|
 | **Prompt** | Draft a short policy from my notes; fold in the channel history; restructure as one-page principles with appendices. NEW: keep the header as an appendix. |

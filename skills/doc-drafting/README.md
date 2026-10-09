@@ -83,7 +83,7 @@ tabs can never overwrite it; a short standing legend under the table says where 
 is, how to sign off, what the tab icons mean, and links back to this playbook. In a deck it is a hidden first slide. In a
 markdown file it is the first thing in the file.
 
-<!-- cols: 1 4 -->
+<!-- cols: fit 1 -->
 | Stage | Refining (Ana) |
 |---|---|
 | **Ask** | Line edits through Fri 10/10. Flag anything you'd refuse to follow. |
@@ -126,7 +126,7 @@ after the README tab, so the newest generation is always the first thing after t
 generation tab opens with a stamp table that says how *that generation* was made, and then the
 document itself, title first:
 
-<!-- cols: 1 4 -->
+<!-- cols: fit 1 -->
 | Version | v4, 2026-10-09, from v3 |
 |---|---|
 | **Prompt** | Draft a short policy from my notes; fold in the channel history; restructure as one-page principles with appendices. NEW: keep the header as an appendix. |
