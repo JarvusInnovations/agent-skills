@@ -50,10 +50,9 @@ field after every write.
 Three gotchas in 0.33 that hit this workflow's tables directly:
 
 - **A file whose last block is a table fails** (`Insert text requests must specify text to
-  insert`), and with `--new-tab` the empty tab is left behind. The header tab is exactly that
-  shape, so end it with a paragraph containing a single non-breaking space (`\xc2\xa0`): invisible,
-  nothing to go stale. Don't add visible text under the table; everything that's part of the
-  protocol belongs inside it. (gws-axi#104)
+  insert`), and with `--new-tab` the empty tab is left behind. The README tab's legend under
+  the header table keeps it from being that shape; if you ever write a table-only tab, end it
+  with a paragraph holding a single non-breaking space. (gws-axi#104)
 - **Table cells inherit the text style of the paragraph that follows the table.** A heading or a
   bold-leading paragraph after a table bolds every cell. On a generation tab, put the document's
   H1 *above* the stamp and start the body with a plain paragraph (no bold lead-in, no heading
@@ -70,8 +69,8 @@ header tab once, which is safe because that tab is never rewritten.
 # list tabs: id, title, index, parent, emoji
 gws-axi docs tabs <docId>
 
-# header tab, first, with its icon (creation only)
-gws-axi docs write <docId> ./header.md --new-tab "Header" --first --emoji 📋 --account <you>
+# README tab (header table + legend), first, with its icon (creation only)
+gws-axi docs write <docId> ./readme.md --new-tab "README" --first --emoji 📋 --account <you>
 
 # a new generation, directly after the header tab
 gws-axi docs write <docId> ./v3.md --new-tab "v3 YYYY-MM-DD" --after <headerTabId> --emoji 💬 --account <you>

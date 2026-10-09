@@ -71,8 +71,10 @@ Two rules fall out of this:
 
 ## The header
 
-Every document in the flow opens with this table. In Google Docs it lives on its own **front tab**,
-so regenerating the other tabs can never overwrite it. In a deck it is a hidden first slide. In a
+Every document in the flow opens with this table. In Google Docs it lives on its own **front tab,
+named `README`**, so regenerating the other tabs can never overwrite it; a short standing legend
+under the table says where the newest draft is, how to sign off, what the tab icons mean, and links
+back to this playbook. In a deck it is a hidden first slide. In a
 markdown file it is the first thing in the file.
 
 | | |

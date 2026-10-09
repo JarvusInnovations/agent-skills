@@ -75,8 +75,11 @@ as fixed.
    not; use the appropriate skill for those.
 2. Ask the author for the **Ask** (what they want from readers, by when) if they haven't
    said. Ask who the **owner** is only if it isn't obviously the requester.
-3. Create the document with the **header on its own front tab** (Google Docs), hidden
-   first slide (decks), or at the top of the file (markdown). Fill Stage as `Generating
+3. Create the document with the **header on its own front tab named `README`** (Google
+   Docs), hidden first slide (decks), or at the top of the file (markdown). Under the table
+   on that tab, add the standing legend from `references/header-and-stamp.md` verbatim
+   (where the newest draft is, how to sign off, the icon key, the playbook link); it
+   describes the protocol, not the current state, so it never goes stale. Fill Stage as `Generating
    (<owner>)`, the Ask verbatim from the author, the Generating row as `<today>-`. Leave
    Refining and Delivered as `due <date>` if the author gave targets, otherwise blank.
    This is the only time you write this tab.

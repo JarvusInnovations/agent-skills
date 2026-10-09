@@ -91,15 +91,33 @@ Reviewers update their own entry; to re-review in Generating, bump the version.
 ## Tab names and icons
 
 Generation tabs: `v3 2026-10-09`. On freeze: `v4 2026-10-09 [REFINING]`. The header tab is named
-`Header` or the document's short name; it is always first, and generation tabs are inserted at
-position 1 so the newest is directly after it.
+`README`; it is always first, and generation tabs are inserted at position 1 so the newest is
+directly after it.
+
+Because the README tab sits outside the content being worked on, it carries a standing legend under
+the table. That text describes the protocol, never the current state, so it can't go stale.
+Generation tabs carry nothing outside the stamp and the document. The legend:
+
+> The newest draft is the tab right after this one. While Stage says Generating, comment on it and
+> contribute sections; don't copyedit, the next generation won't carry it. When Stage says
+> Refining, edit the marked tab directly.
+>
+> Reviewers: add your sign-off to the open phase row above. Name plus version in Generating
+> (`Ben v3`), name plus date in Refining (`Ben 10/10`). A name with a word (`pending`, `reviewing`)
+> is a status, not a sign-off.
+>
+> Tab icons: 📋 this README. 💬 the newest draft, open for comments. ✏️ the frozen draft being
+> refined, edit it directly. 🗄️ superseded drafts, kept for history. 📤 delivered.
+>
+> This document follows the `doc-drafting` workflow; the playbook for authors and reviewers is
+> [here](https://github.com/JarvusInnovations/agent-skills/blob/main/skills/doc-drafting/README.md).
 
 Where the tooling can set tab icons, use one per state so the tab strip reads as a phase
 indicator without opening anything:
 
 | Icon | Tab |
 |---|---|
-| 📋 | the header tab |
+| 📋 | the README tab (header table plus legend) |
 | 💬 | the current Generating draft: comments and contributed sections invited |
 | ✏️ | the Refining tab: edit it directly |
 | 🗄️ | superseded generations |
