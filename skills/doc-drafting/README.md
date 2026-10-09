@@ -78,14 +78,14 @@ Two rules fall out of this:
 ## The header
 
 Every document in the flow opens with this table. In Google Docs it lives on its own **front tab,
-named `README`**, so regenerating the other tabs can never overwrite it; a short standing legend
-under the table says where the newest draft is, how to sign off, what the tab icons mean, and links
-back to this playbook. In a deck it is a hidden first slide. In a
+named `README`**, under an H1 of `Generated Document Status: <title>`, so regenerating the other
+tabs can never overwrite it; a short standing legend under the table says where the newest draft
+is, how to sign off, what the tab icons mean, and links back to this playbook. In a deck it is a hidden first slide. In a
 markdown file it is the first thing in the file.
 
-| | |
+<!-- cols: 1 4 -->
+| Stage | Refining (Ana) |
 |---|---|
-| **Stage** | Refining (Ana) |
 | **Ask** | Line edits through Fri 10/10. Flag anything you'd refuse to follow. |
 | **Generating** | 10/6-10/9; Ben v3, Cy v2 |
 | **Refining** | v4, 10/9-, due 10/13; Ben 10/10, Cy pending |
@@ -122,13 +122,13 @@ A reader who only has ten seconds reads Stage and Ask and knows what to do.
 ## Generations
 
 Each regeneration goes in a **new tab**, named `vN YYYY-MM-DD`, inserted at position 1, directly
-after the header tab, so the newest generation is always the first thing after the header. Every
-generation tab opens with the document's title and then a stamp table that says how *that
-generation* was made:
+after the README tab, so the newest generation is always the first thing after the header. Every
+generation tab opens with a stamp table that says how *that generation* was made, and then the
+document itself, title first:
 
-| | |
+<!-- cols: 1 4 -->
+| Version | v4, 2026-10-09, from v3 |
 |---|---|
-| **Version** | v4, 2026-10-09, from v3 |
 | **Prompt** | Draft a short policy from my notes; fold in the channel history; restructure as one-page principles with appendices. NEW: keep the header as an appendix. |
 | **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
 | **Changes** | #7 split; title-suffix convention under #2; header moved to its own tab |

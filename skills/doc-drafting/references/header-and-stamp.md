@@ -5,13 +5,18 @@ humans can edit them without reaching for characters they can't type. The header
 the agent once, at creation, and by humans thereafter. The stamp is written by the agent once per
 generation and never again. No tab is ever rewritten.
 
-## The header (front tab, hidden first slide, or top of file)
+## The header (README tab, hidden first slide, or top of file)
+
+The README tab opens with an H1, `Generated Document Status: <document title>`, then the table.
+`Stage` is the table's header row (the mandatory header row carrying real content), and the
+`<!-- cols: 1 4 -->` hint before the table sets the label/value proportions so nobody has to drag
+column borders.
 
 Blank template:
 
-| | |
+<!-- cols: 1 4 -->
+| Stage | Generating (owner) |
 |---|---|
-| **Stage** | Generating (owner) |
 | **Ask** | |
 | **Generating** | MM/DD- |
 | **Refining** | |
@@ -19,9 +24,9 @@ Blank template:
 
 Filled example, mid-Refining:
 
-| | |
+<!-- cols: 1 4 -->
+| Stage | Refining (Ana) |
 |---|---|
-| **Stage** | Refining (Ana) |
 | **Ask** | Line edits through Fri 10/10. Flag anything you'd refuse to follow. |
 | **Generating** | 10/6-10/9; Ben v3, Cy v2 |
 | **Refining** | v4, 10/9-, due 10/13; Ben 10/10, Cy pending |
@@ -29,9 +34,9 @@ Filled example, mid-Refining:
 
 Filled example, delivered:
 
-| | |
+<!-- cols: 1 4 -->
+| Stage | Refining (Ana) |
 |---|---|
-| **Stage** | Refining (Ana) |
 | **Ask** | None; delivered. |
 | **Generating** | 10/6-10/9; Ben v3, Cy v3 |
 | **Refining** | v4, 10/9-10/13; Ben 10/10, Cy 10/12 |
@@ -69,16 +74,17 @@ Everything is typeable on any keyboard: digits, slash, hyphen, semicolon, comma,
 A sign-off is a name with a version or a date. A name with a word is a status, not a sign-off.
 Reviewers update their own entry; to re-review in Generating, bump the version.
 
-## The stamp (under the title on every generation tab)
+## The stamp (first thing on every generation tab, above the document's title)
 
-| | |
+<!-- cols: 1 4 -->
+| Version | v4, 2026-10-09, from v3 |
 |---|---|
-| **Version** | v4, 2026-10-09, from v3 |
 | **Prompt** | Draft a short policy from my notes; fold in the channel history; restructure as one-page principles with appendices. NEW: keep the header as an appendix. |
 | **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
 | **Changes** | #7 split guest-community vs. repos we maintain; title-suffix convention under #2; header moved to its own front tab |
 
-- `Version` is always present. `v1` has no `from`.
+- `Version` is the table's header row, so the mandatory header row carries real content instead
+  of a caption or a blank line. Always present; `v1` has no `from`.
 - `Prompt` is the agent's paraphrase of the **whole brief** that produced this generation,
   rewritten each round into the tightest accurate version. Not a log of instructions; a reader on
   this tab gets the full intent without opening older tabs.
@@ -90,7 +96,7 @@ Reviewers update their own entry; to re-review in Generating, bump the version.
 
 ## Tab names and icons
 
-Generation tabs: `v3 2026-10-09`. On freeze: `v4 2026-10-09 [REFINING]`. The header tab is named
+Generation tabs: `v3 2026-10-09`. On freeze: `v4 2026-10-09 [REFINING]`. The README tab is named
 `README`; it is always first, and generation tabs are inserted at position 1 so the newest is
 directly after it.
 

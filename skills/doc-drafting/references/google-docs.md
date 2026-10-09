@@ -1,6 +1,6 @@
 # Google Docs mechanics (gws-axi)
 
-The workflow maps onto Google Docs tabs: one header tab, one tab per generation. This file is
+The workflow maps onto Google Docs tabs: one README tab (the status header), one tab per generation. This file is
 what you need to know about driving that with `gws-axi` and where the tool currently falls short.
 Check the installed version first; the gaps below are being closed.
 
@@ -53,9 +53,17 @@ document that tells you nothing usable about one tab (a tab-scoped diff is reque
 gws-axi#110). Keep your generation sources somewhere durable; they're what make "edit what you
 care about" true for reviewers.
 
-Expect a little noise in the read-back: table cells that picked up bold from the following
-paragraph (gws-axi#105) come back with `**`, and the converter's empty paragraph before each
-table (gws-axi#109) can show as an extra blank line. Neither is a human edit.
+Normalize before you diff: the read-back pads cell delimiters (`|  |`, `| --- |`), escapes some
+punctuation, and has no trailing newline, so run both sides through the same filter first or every
+table row shows as changed:
+
+```sh
+norm(){ sed -e '/^<!-- cols:/d' -e 's/\\//g' -e 's/ *| */|/g' -e 's/-\{3,\}/---/g' -e '/^\s*$/d' "$1" | sed '$a\'; }
+diff <(norm written.md) <(norm current.md)
+```
+
+An empty result means no human edits to the *content*; anything left is one. Width hints are
+dropped from the comparison because they're formatting, but read them separately and keep them. 
 
 ```sh
 gws-axi docs read <docId> --tab <tabId> --full --out ./current.md
@@ -71,32 +79,38 @@ Headings, emphasis, code, links, lists, task lists, quotes, tables, rules, image
 footnotes. Anything else is written as text and listed under `lossy[]` in the result; check that
 field after every write.
 
-Three gotchas in 0.33 that hit this workflow's tables directly:
+Tables, as of 0.34:
 
-- **A file whose last block is a table fails** (`Insert text requests must specify text to
-  insert`), and with `--new-tab` the empty tab is left behind. The README tab's legend under
-  the header table keeps it from being that shape; if you ever write a table-only tab, end it
-  with a paragraph holding a single non-breaking space. (gws-axi#104)
-- **Table cells inherit the text style of the paragraph that follows the table.** A heading or a
-  bold-leading paragraph after a table bolds every cell. On a generation tab, put the document's
-  H1 *above* the stamp and start the body with a plain paragraph (no bold lead-in, no heading
-  directly under the stamp). (gws-axi#105)
-- **No multi-line cells.** `<br>` is written as literal text. Write the Inputs row as one line,
-  semicolon-separated, `NEW:` still in front of new items. (gws-axi#106)
+- `<!-- cols: 1 4 -->` (weights) or `<!-- cols: 20% 80% -->` on the line before a table sets
+  column proportions, and `docs read` emits the hint back for any table whose columns are fixed
+  and unequal. That includes columns a human dragged by hand, so a hint in the read-back is a
+  human preference: carry it into the next generation's stamp instead of your default.
+- `<br>` inside a cell starts a new paragraph in it; `- ` items after a `<br>` make a list. The
+  Inputs row is a bulleted list.
+- No stray paragraph before a table, no inherited styles in cells, and a table may be the last
+  block in a file. The workarounds earlier versions needed (a trailing paragraph, a plain
+  sentence after the stamp) are gone; don't add them.
 
-Column widths can't be set from markdown (gws-axi#107); the author sets them by hand on the
-header tab once, which is safe because that tab is never rewritten.
+Surgical edits, for the README tab only:
 
-## Tab operations (0.33+)
+- `docs edit-cell <docId> --tab <id> --row "<label>" --text "<markdown>"` replaces one value
+  cell by its row label, leaving widths and every other cell alone. Rows are matched with
+  emphasis ignored. The response echoes the previous content.
+- `docs replace-text <docId> --tab <id> --find "<text>" --replace "<text>"` changes one literal
+  match in one tab, keeping surrounding styles; refuses on 2+ matches unless `--all`.
+
+Both are refused if the Doc changed since you last read it, so list tabs or read first.
+
+## Tab operations
 
 ```sh
 # list tabs: id, title, index, parent, emoji
 gws-axi docs tabs <docId>
 
 # README tab (header table + legend), first, with its icon (creation only)
-gws-axi docs write <docId> ./readme.md --new-tab "README" --first --emoji 📋 --account <you>
+gws-axi docs write <docId> ./readme.md --new-tab "README" --first --emoji 📋 --account <you>   # H1, cols hint, table, legend
 
-# a new generation, directly after the header tab; the result's revision_id goes in the commit trailer
+# a new generation, directly after the README tab; the result's revision_id goes in the commit trailer
 gws-axi docs write <docId> ./<doc>.md --new-tab "v3 YYYY-MM-DD" --after <headerTabId> --emoji 💬 --account <you>
 git commit -m "draft(<doc>): v3" -m "<changes>" \
   --trailer "Doc-Id: <docId>" --trailer "Doc-Tab: <newTabId>" \
@@ -122,9 +136,6 @@ gws-axi drive rename <docId> --name "<Title> [ONGOING]" --account <you>
 `--last`, `--before`, `--after`, `--under`, `--top-level`) in a single idempotent call; the
 response lists the new tab order and an undo line. Every write is refused if the Doc changed since
 you last read it, so list tabs (or read) right before you act.
-
-Surgical edits (`edit-cell`, `replace-text`) are not implemented yet (gws-axi#108). Until they
-are, a sign-off or a Delivered line is the human's edit; give them the exact text to paste.
 
 ## Verifying a write
 
