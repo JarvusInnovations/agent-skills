@@ -166,9 +166,11 @@ header's Stage row says so; the frozen tab keeps its name so the story stays leg
 
 ## As a reviewer
 
-- Read Stage and Ask first. In Generating, give direction and content; rewrite anything you feel
-  strongly about and it will survive the next generation. Don't spend effort making the whole thing
-  ship-ready. In Refining, that *is* the job: edit line by line.
+- Read Stage and Ask first, then the bold line at the top of the legend. **✅ Edits are tracked**
+  means the agent diffs the draft before regenerating: in Generating, give direction and content,
+  and rewrite anything you feel strongly about; it will survive. **⚠️ Edits are not tracked** means
+  put everything in comments, including wording you want kept. Either way, don't spend Generating
+  effort making the whole thing ship-ready. In Refining, that *is* the job: edit line by line.
 - When you've done your pass, add your sign-off to the open phase's row: your name and the version
   (Generating) or the date (Refining). That's how the author knows you're done, and how later
   reviewers know who has looked.

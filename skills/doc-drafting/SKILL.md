@@ -80,7 +80,12 @@ as fixed.
    Docs), hidden first slide (decks), or at the top of the file (markdown). Under the table
    on that tab, add the standing legend from `references/header-and-stamp.md` verbatim
    (where the newest draft is, how to sign off, the icon key, the playbook link); it
-   describes the protocol, not the current state, so it never goes stale. Fill Stage as `Generating
+   describes the protocol, not the current state, so it never goes stale. Pick the
+   legend's first paragraph by whether you can keep generation sources durably and
+   diff (see **Reading human contributions**): **✅ Edits are tracked** if yes, **⚠️
+   Edits are not tracked** if no. Reviewers rely on that line to know whether a direct
+   edit will survive; getting it wrong wastes their work in one direction or the other.
+   If you can't track, tell the author so too; they may want to fix that before sharing. Fill Stage as `Generating
    (<owner>)`, the Ask verbatim from the author, the Generating row as `<today>-`. Leave
    Refining and Delivered as `due <date>` if the author gave targets, otherwise blank.
    This is the only time you write this tab.
@@ -141,8 +146,10 @@ it. That promise is yours to keep, every round, before you write a word.
    This is the only method that works. Drive's revision history is whole-document (every
    tab concatenated), its retained revisions are a sparse sample, and you write as the
    author's own account, so neither `docs revisions` nor `docs diff` can isolate what a
-   human did to one tab. If you lost the source, say so and ask the author to point at
-   what they changed; don't guess from a document-level diff.
+   human did to one tab. The README legend promises reviewers one regime or the other
+   (**✅ Edits are tracked** / **⚠️ Edits are not tracked**); keep whichever promise was
+   made. If you lost the source on a tracked document, say so and ask the author to point
+   at what they changed; don't guess from a document-level diff.
 2. **Read the comments.** `docs comments <id>` lists them with the quoted text; they're
    not in the tab content.
 

@@ -96,13 +96,30 @@ directly after it.
 
 Because the README tab sits outside the content being worked on, it carries a standing legend under
 the table. That text describes the protocol, never the current state, so it can't go stale.
-Generation tabs carry nothing outside the stamp and the document. The legend:
+Generation tabs carry nothing outside the stamp and the document.
 
-> The newest draft is the tab right after this one. While Stage says Generating, give broad-strokes
-> feedback: comments, insertions, rewrites of anything you feel strongly about. The agent diffs what
-> you changed against what it wrote and treats your rewording as the strongest signal it has, so
-> edit what you care about; the job just isn't "make this whole thing ready to ship." When Stage
-> says Refining, that is the job: edit the marked tab directly, line by line.
+The legend's first paragraph comes in **two variants**, and the agent picks one at creation based on
+whether it can keep the exact markdown of every generation somewhere durable and diff the tab
+against it before each regeneration. Reviewers move between documents that do and don't have that,
+so the variant is called out in bold at the top where it can't be missed.
+
+Variant A, edits tracked (the agent keeps its generation sources and diffs):
+
+> **✅ Edits are tracked.** The newest draft is the tab right after this one. While Stage says
+> Generating, give broad-strokes feedback: comments, insertions, rewrites of anything you feel
+> strongly about. Before each regeneration the agent diffs this tab against what it wrote and treats
+> your rewording as the strongest signal it has, so edit what you care about; the job just isn't
+> "make this whole thing ready to ship." When Stage says Refining, that is the job: edit the marked
+> tab directly, line by line.
+
+Variant B, edits not tracked (no durable source to diff against):
+
+> **⚠️ Edits are not tracked.** The newest draft is the tab right after this one. While Stage says
+> Generating, put feedback in **comments**, including any wording you'd want kept; edits made
+> directly to the draft are not diffed and will not reach the next generation. When Stage says
+> Refining, edit the marked tab directly, line by line.
+
+The rest of the legend is the same in both:
 >
 > Reviewers: add your sign-off to the open phase row above. Name plus version in Generating
 > (`Ben v3`), name plus date in Refining (`Ben 10/10`). A name with a word (`pending`, `reviewing`)
