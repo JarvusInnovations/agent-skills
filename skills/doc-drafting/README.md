@@ -126,9 +126,8 @@ after the header tab, so the newest generation is always the first thing after t
 generation tab opens with the document's title and then a stamp table that says how *that
 generation* was made:
 
-| This Generation | |
+| Version | v4, 2026-10-09, from v3 |
 |---|---|
-| **Version** | v4, 2026-10-09, from v3 |
 | **Prompt** | Draft a short policy from my notes; fold in the channel history; restructure as one-page principles with appendices. NEW: keep the header as an appendix. |
 | **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
 | **Changes** | #7 split; title-suffix convention under #2; header moved to its own tab |
