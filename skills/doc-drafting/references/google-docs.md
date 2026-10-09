@@ -81,7 +81,7 @@ field after every write.
 
 Tables, as of 0.34:
 
-- `<!-- cols: 1 4 -->` (weights) or `<!-- cols: 20% 80% -->` on the line before a table sets
+- `<!-- cols: fit 1 -->` (weights) or `<!-- cols: 20% 80% -->` on the line before a table sets
   column proportions, and `docs read` emits the hint back for any table whose columns are fixed
   and unequal. That includes columns a human dragged by hand, so a hint in the read-back is a
   human preference: carry it into the next generation's stamp instead of your default.
