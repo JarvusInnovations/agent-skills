@@ -112,6 +112,8 @@ as fixed.
 2. Produce the new generation into a **new tab** at position 1, named `v<N+1>
    YYYY-MM-DD`: the stamp table, then the H1 title and body. Stamp rows:
    - **Version** (the header row): `v<N+1>, <date>, from v<N>`.
+   - **Source**: `<owner>/<repo>@blob:<blob>:<path>`, injected at write time (see
+     **Keeping sources**); not in the committed file.
    - **Prompt**: the cumulative paraphrase of the whole brief, rewritten tight, not
      appended to. Prefix the clause this round introduced with `NEW:`. A reader on this
      tab must get the full intent without reading older tabs.
@@ -152,20 +154,32 @@ copy, link the copy, not the editing document.
 
 The markdown you write to a generation tab is a file in the project, wherever the project
 keeps such things (no prescribed path), and **each generation is one commit of that
-file**. The commit, not the filename, is what links the source to the tab, through
-trailers, and the order is fixed because the trailers need values only the write
-produces:
+file**. Two links tie the tab and the source together, in opposite directions:
 
-1. Write the file.
-2. `docs write … --new-tab "vN YYYY-MM-DD" --after <readmeTabId> --emoji 💬`. Take the
-   new tab's id and the `revision_id` from the result.
+- **Tab → text:** the stamp's `Source` row names the file's git *blob* hash, which is the
+  id of the exact bytes and survives rebases (the rebased commit carries the same blob).
+  Anyone with the repo resolves it with `git cat-file -p <blob>`, no branch, no grep.
+  Never a commit hash: feature branches get rebased until they merge, and a commit hash
+  written into a document is meaningless the day after.
+- **Commit → doc:** trailers on the commit, so an agent reading history can see that a
+  generation was spun out for review, when, and where.
+
+The order:
+
+1. Finalize the file. `git hash-object <path>` gives the blob id before anything is
+   committed.
+2. `docs write … --new-tab "vN YYYY-MM-DD" --after <readmeTabId> --emoji 💬`, with the
+   `Source` row injected into the stamp at write time (the committed file can't contain
+   its own hash, so the file on disk has no Source row and the tab does). Take the new
+   tab's id and the `revision_id` from the result.
 3. Commit the file with the trailers below, immediately. Nothing else happens between
    the write and the commit.
 
 If the write fails, there's nothing to commit; fix and retry. If you committed before
 writing, `git commit --amend --no-edit --trailer …` on that unpushed commit is the same
-thing. If you notice a tab with no matching commit later, commit the file now with the
-ids from `docs tabs`; it's untracked until you do.
+thing (an amend doesn't change the blob, so the tab's Source row stays right). If you
+notice a tab with no matching commit later, commit the file now with the ids from
+`docs tabs`; it's untracked until you do.
 
 The commit:
 
@@ -173,6 +187,7 @@ The commit:
 draft(<doc-slug>): v3
 
 Restructured §3 per comments; kept the reviewer's rewording of §2.
+Spun out to <doc URL> as tab "v3 YYYY-MM-DD".
 
 Doc-Id: <documentId>
 Doc-Tab: <tabId>
@@ -180,21 +195,27 @@ Doc-Version: v3
 Doc-Revision: <revision_id from the docs write result>
 ```
 
-So the source for any tab is a query: `git log --grep='^Doc-Tab: <tabId>' --format=%H`
-finds the commit, `git show <sha> --name-only` the path, `git show <sha>:<path>` the exact
-text. `git diff <v2-sha> <v3-sha> -- <path>` is what *you* changed between generations,
-which is the evidence for the stamp's Changes row. One file, one history, same model as a
-markdown document that lives in a repo. The README tab's text isn't versioned: it's
-written once and humans own it after.
+The stamp's Source row: `<owner>/<repo>@blob:<12-char blob>:<path>`. From a tab,
+`git cat-file -p <blob>` is the exact text; `git log --find-object=<blob> -- <path>` finds
+the commit(s) holding it, rebased or not. `git diff <v2-blob> <v3-blob>` is what *you*
+changed between generations, the evidence for the Changes row. One file, one history,
+same model as a markdown document that lives in a repo. The README tab's text isn't
+versioned: it's written once and humans own it after.
+
+The one way a blob stops resolving: a rebase whose conflict resolution changes the file
+orphans the old blob, and it's gone after reflog expiry. The Source row still names the
+path and the rebased commit still carries the trailers, so the trail survives; only
+byte-exactness is lost, and you say so instead of diffing against the wrong text.
 
 ## Reading human contributions
 
 Humans are told they can edit what they care about in Generating because you will find
 it. That promise is yours to keep, every round, before you write a word.
 
-1. **Diff against your own source.** Get the committed text for the current tab by its
-   `Doc-Tab` trailer, read the tab back (`docs read --tab <id> --full --out current.md`),
-   and diff locally. Every hunk is a human change: an insertion, a deletion, or a
+1. **Diff against your own source.** Read the tab back (`docs read --tab <id> --full
+   --out current.md`), take the blob from its Source row, `git cat-file -p <blob>` for
+   the text you wrote, and diff locally (normalizer in `references/google-docs.md`; it
+   drops the Source row and width hints, the only legitimate differences). Every hunk is a human change: an insertion, a deletion, or a
    rewording. If the file has uncommitted changes or no commit carries the tab id, this
    generation is untracked: the ✅ on the README tab is false until that's fixed.
    This is the only method that works. Drive's revision history is whole-document (every

@@ -79,12 +79,16 @@ Reviewers update their own entry; to re-review in Generating, bump the version.
 <!-- cols: fit 1 -->
 | Version | v4, 2026-10-09, from v3 |
 |---|---|
+| **Source** | themightychris/hari@blob:3f9c2a1b7d4e:drafts/ai-use-policy.md |
 | **Prompt** | Draft a short policy from my notes; fold in the channel history; restructure as one-page principles with appendices. NEW: keep the header as an appendix. |
 | **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
 | **Changes** | #7 split guest-community vs. repos we maintain; title-suffix convention under #2; header moved to its own front tab |
 
 - `Version` is the table's header row, so the mandatory header row carries real content instead
   of a caption or a blank line. Always present; `v1` has no `from`.
+- `Source` is `<owner>/<repo>@blob:<12-char git blob>:<path>`: the exact bytes this tab was
+  written from, resolvable by anyone with the repo (`git cat-file -p <blob>`) and unaffected by
+  rebases. The agent injects it at write time; the committed file doesn't carry it.
 - `Prompt` is the agent's paraphrase of the **whole brief** that produced this generation,
   rewritten each round into the tightest accurate version. Not a log of instructions; a reader on
   this tab gets the full intent without opening older tabs.

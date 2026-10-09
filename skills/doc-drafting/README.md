@@ -129,6 +129,7 @@ document itself, title first:
 <!-- cols: fit 1 -->
 | Version | v4, 2026-10-09, from v3 |
 |---|---|
+| **Source** | themightychris/hari@blob:3f9c2a1b7d4e:drafts/ai-use-policy.md |
 | **Prompt** | Draft a short policy from my notes; fold in the channel history; restructure as one-page principles with appendices. NEW: keep the header as an appendix. |
 | **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
 | **Changes** | #7 split; title-suffix convention under #2; header moved to its own tab |
@@ -146,9 +147,11 @@ rewrites a tab after creating it. The header is written once; each generation is
 there is no tab where a human's edits or formatting can be trampled.
 
 Behind each generation is a commit: the agent keeps the markdown it wrote as a file in the project
-and commits it with the write, tagged with the document and tab ids. That commit is what lets it
-diff the tab later and find what humans changed, which is what makes "edit what you care about"
-true. No commit, no ✅.
+and commits it with the write, tagged with the document and tab ids, so the repo's history shows
+when a draft was spun out and where. The stamp's **Source** row points the other way, from the tab
+to the exact text it was written from, by git blob hash rather than commit hash so a rebase can't
+break it. That's what lets the agent diff the tab later and find what humans changed, which is
+what makes "edit what you care about" true. No commit, no ✅.
 
 When the author freezes a version, they update the header (Stage, the Generating end date, the
 Refining row's version and start) and the agent renames that tab `vN YYYY-MM-DD [REFINING]` and
