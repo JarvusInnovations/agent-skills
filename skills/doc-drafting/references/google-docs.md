@@ -1,6 +1,6 @@
 # Google Docs mechanics (gws-axi)
 
-The workflow maps onto Google Docs tabs: one header tab, one tab per generation. This file is
+The workflow maps onto Google Docs tabs: one README tab (the status header), one tab per generation. This file is
 what you need to know about driving that with `gws-axi` and where the tool currently falls short.
 Check the installed version first; the gaps below are being closed.
 
@@ -110,7 +110,7 @@ gws-axi docs tabs <docId>
 # README tab (header table + legend), first, with its icon (creation only)
 gws-axi docs write <docId> ./readme.md --new-tab "README" --first --emoji 📋 --account <you>   # H1, cols hint, table, legend
 
-# a new generation, directly after the header tab; the result's revision_id goes in the commit trailer
+# a new generation, directly after the README tab; the result's revision_id goes in the commit trailer
 gws-axi docs write <docId> ./<doc>.md --new-tab "v3 YYYY-MM-DD" --after <headerTabId> --emoji 💬 --account <you>
 git commit -m "draft(<doc>): v3" -m "<changes>" \
   --trailer "Doc-Id: <docId>" --trailer "Doc-Tab: <newTabId>" \

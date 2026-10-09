@@ -96,7 +96,7 @@ Reviewers update their own entry; to re-review in Generating, bump the version.
 
 ## Tab names and icons
 
-Generation tabs: `v3 2026-10-09`. On freeze: `v4 2026-10-09 [REFINING]`. The header tab is named
+Generation tabs: `v3 2026-10-09`. On freeze: `v4 2026-10-09 [REFINING]`. The README tab is named
 `README`; it is always first, and generation tabs are inserted at position 1 so the newest is
 directly after it.
 

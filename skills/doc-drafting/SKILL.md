@@ -93,7 +93,7 @@ as fixed.
    Refining and Delivered as `due <date>` if the author gave targets, otherwise blank.
    This is the only time you write this tab.
 4. Write the first generation into a tab named `v1 YYYY-MM-DD` at position 1, directly
-   after the header tab: the document's title as H1, then the stamp table (Version as its
+   after the README tab: the document's title as H1, then the stamp table (Version as its
    header row, then Prompt as your paraphrase of the brief, Inputs linked, Changes omitted on
    v1), then the body. Nothing else goes between or under the tables; the protocol lives inside them.
    **In the same step, commit the markdown you wrote** (see **Keeping sources**). A
