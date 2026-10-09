@@ -53,9 +53,16 @@ document that tells you nothing usable about one tab (a tab-scoped diff is reque
 gws-axi#110). Keep your generation sources somewhere durable; they're what make "edit what you
 care about" true for reviewers.
 
-Normalize before you diff: the read-back pads cell delimiters (`|  |`, `| --- |`) and escapes
-some punctuation, so strip spaces around pipes, collapse dash runs, drop backslash escapes and
-blank lines on both sides first, or every table row shows as changed. Expect a little further
+Normalize before you diff: the read-back pads cell delimiters (`|  |`, `| --- |`), escapes some
+punctuation, and has no trailing newline, so run both sides through the same filter first or every
+table row shows as changed:
+
+```sh
+norm(){ sed -e 's/\\//g' -e 's/ *| */|/g' -e 's/-\{3,\}/---/g' -e '/^\s*$/d' "$1" | sed '$a\'; }
+diff <(norm written.md) <(norm current.md)
+```
+
+An empty result means no human edits; anything left is one. Expect a little further
 noise in the read-back: table cells that picked up bold from the following
 paragraph (gws-axi#105) come back with `**`, and the converter's empty paragraph before each
 table (gws-axi#109) can show as an extra blank line. Neither is a human edit.
