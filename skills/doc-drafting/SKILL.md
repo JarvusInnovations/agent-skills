@@ -93,9 +93,10 @@ as fixed.
    Refining and Delivered as `due <date>` if the author gave targets, otherwise blank.
    This is the only time you write this tab.
 4. Write the first generation into a tab named `v1 YYYY-MM-DD` at position 1, directly
-   after the README tab: the document's title as H1, then the stamp table (Version as its
-   header row, then Prompt as your paraphrase of the brief, Inputs linked, Changes omitted on
-   v1), then the body. Nothing else goes between or under the tables; the protocol lives inside them.
+   after the README tab: the stamp table first (Version as its header row, then Prompt as
+   your paraphrase of the brief, Inputs linked, Changes omitted on v1), then the document's
+   title as H1 and the body. The stamp is preamble; the title stays bound to its content.
+   Nothing else goes around the table; the protocol lives inside it.
    **In the same step, commit the markdown you wrote** (see **Keeping sources**). A
    written tab with no matching commit is an untracked generation.
 5. Apply the title suffix if the author has said what the document is: `[SNAPSHOT
@@ -109,7 +110,7 @@ as fixed.
    against the exact markdown you wrote, and read the comments. Then read the README tab
    for a new Ask, new sign-offs, or a Stage change.
 2. Produce the new generation into a **new tab** at position 1, named `v<N+1>
-   YYYY-MM-DD`: H1 title, then the stamp table, then the body. Stamp rows:
+   YYYY-MM-DD`: the stamp table, then the H1 title and body. Stamp rows:
    - **Version** (the header row): `v<N+1>, <date>, from v<N>`.
    - **Prompt**: the cumulative paraphrase of the whole brief, rewritten tight, not
      appended to. Prefix the clause this round introduced with `NEW:`. A reader on this
@@ -228,8 +229,8 @@ the specific edits they ask for, as separate small commits.
 ## What a good round looks like
 
 The author says "fold in the comments on v3 and the transcript I just shared." You read
-v3's comments, read the transcript, write v4 into a new tab at position 1 with a stamp
-that says `from v3`, the full Prompt with the new clause marked `NEW:`, the full Inputs
+v3's comments, read the transcript, write v4 into a new tab at position 1, stamp first,
+saying `from v3`, the full Prompt with the new clause marked `NEW:`, the full Inputs
 with `NEW: [transcript]`, and `Changes: ...`, and reply: "v4 is up, tab 'v4 2026-10-09'.
 Restructured section 3 per the comments; the transcript added two rules under section
 7." Five lines, no recap of the document, the header untouched.

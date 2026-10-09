@@ -123,8 +123,8 @@ A reader who only has ten seconds reads Stage and Ask and knows what to do.
 
 Each regeneration goes in a **new tab**, named `vN YYYY-MM-DD`, inserted at position 1, directly
 after the README tab, so the newest generation is always the first thing after the header. Every
-generation tab opens with the document's title and then a stamp table that says how *that
-generation* was made:
+generation tab opens with a stamp table that says how *that generation* was made, and then the
+document itself, title first:
 
 <!-- cols: 1 4 -->
 | Version | v4, 2026-10-09, from v3 |
