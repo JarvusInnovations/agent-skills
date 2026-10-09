@@ -2,7 +2,10 @@
 // render-draft: turn a draft markdown file (YAML frontmatter + body) into the markdown
 // written to a generation tab: one grid (status rows, then generation rows), then the body.
 //
-//   render-draft <file> [--out <tab.md>] [--repo <owner/repo>] [--check]
+//   render-draft <file> [--out <tab.md>] [--repo <owner/repo>] [--cols "<hint>"] [--check]
+//
+// --cols sets the grid's column hint (default "fit 1"; use "14% 86%" or "1 4" on a gws-axi
+// without `fit`, or to carry forward widths a human set by hand).
 //
 // The Source row is derived here, not stored in the file: blob = `git hash-object <file>`,
 // path = the file's path from the repo root, repo = origin's owner/repo unless --repo.
@@ -11,8 +14,8 @@
 const args = process.argv.slice(2);
 const opt = (name) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
 const flag = (name) => args.includes(name);
-const file = args.find((a, i) => !a.startsWith("--") && !["--out", "--repo"].includes(args[i - 1]));
-if (!file) fail("usage: render-draft <file> [--out <tab.md>] [--repo <owner/repo>] [--check]");
+const file = args.find((a, i) => !a.startsWith("--") && !["--out", "--repo", "--cols"].includes(args[i - 1]));
+if (!file) fail("usage: render-draft <file> [--out <tab.md>] [--repo <owner/repo>] [--cols \"<hint>\"] [--check]");
 
 const text = await Bun.file(file).text();
 const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
@@ -87,7 +90,7 @@ const link = (inp) => {
 const inputs = fm.inputs.map((inp) => `- ${inp.new ? "NEW: " : ""}${link(inp)}`).join("<br>");
 const playbook = "https://github.com/JarvusInnovations/agent-skills/blob/main/skills/doc-drafting/README.md";
 const rows = [
-  `<!-- cols: fit 1 -->`,
+  `<!-- cols: ${opt("--cols") ?? "fit 1"} -->`,
   `| Stage | ${cap(st.stage)} (${cell(st.owner)}) |`,
   `|---|---|`,
   `| **Ask** | ${st.ask ? cell(st.ask) : "(owner to fill)"} |`,
