@@ -5,13 +5,18 @@ humans can edit them without reaching for characters they can't type. The header
 the agent once, at creation, and by humans thereafter. The stamp is written by the agent once per
 generation and never again. No tab is ever rewritten.
 
-## The header (front tab, hidden first slide, or top of file)
+## The header (README tab, hidden first slide, or top of file)
+
+The README tab opens with an H1, `Generated Document Status: <document title>`, then the table.
+`Stage` is the table's header row (the mandatory header row carrying real content), and the
+`<!-- cols: 1 4 -->` hint before the table sets the label/value proportions so nobody has to drag
+column borders.
 
 Blank template:
 
-| Generated Document Status | |
+<!-- cols: 1 4 -->
+| Stage | Generating (owner) |
 |---|---|
-| **Stage** | Generating (owner) |
 | **Ask** | |
 | **Generating** | MM/DD- |
 | **Refining** | |
@@ -19,9 +24,9 @@ Blank template:
 
 Filled example, mid-Refining:
 
-| Generated Document Status | |
+<!-- cols: 1 4 -->
+| Stage | Refining (Ana) |
 |---|---|
-| **Stage** | Refining (Ana) |
 | **Ask** | Line edits through Fri 10/10. Flag anything you'd refuse to follow. |
 | **Generating** | 10/6-10/9; Ben v3, Cy v2 |
 | **Refining** | v4, 10/9-, due 10/13; Ben 10/10, Cy pending |
@@ -29,9 +34,9 @@ Filled example, mid-Refining:
 
 Filled example, delivered:
 
-| Generated Document Status | |
+<!-- cols: 1 4 -->
+| Stage | Refining (Ana) |
 |---|---|
-| **Stage** | Refining (Ana) |
 | **Ask** | None; delivered. |
 | **Generating** | 10/6-10/9; Ben v3, Cy v3 |
 | **Refining** | v4, 10/9-10/13; Ben 10/10, Cy 10/12 |
@@ -71,6 +76,7 @@ Reviewers update their own entry; to re-review in Generating, bump the version.
 
 ## The stamp (under the title on every generation tab)
 
+<!-- cols: 1 4 -->
 | Version | v4, 2026-10-09, from v3 |
 |---|---|
 | **Prompt** | Draft a short policy from my notes; fold in the channel history; restructure as one-page principles with appendices. NEW: keep the header as an appendix. |
