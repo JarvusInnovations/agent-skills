@@ -39,15 +39,18 @@ diff ./v3.md ./current.md
 # comments, with the text they quote (not part of tab content)
 gws-axi docs comments <docId>
 
-# fallback when you have no source: Drive's retained revisions, diffed as markdown
-gws-axi docs revisions <docId>
-gws-axi docs diff <docId> <revA> [revB] --out ./change.diff
 ```
 
-The local diff is exact; `docs diff` is a diff of two lossy markdown exports over a sparse
-revision sample, and revision `author` is the same account for you and the author, so it can
-show you the shape of a change but not attribute it. Keep your generation sources; they're what
-make "edit what you care about" true for reviewers.
+The local diff is the only per-tab method. `docs revisions` / `docs diff` operate on Drive
+revisions, which export the **whole document with every tab concatenated**, from a sparse
+retained sample, with `author` being the same account for you and the author. On a tabbed
+document that tells you nothing usable about one tab (a tab-scoped diff is requested in
+gws-axi#110). Keep your generation sources somewhere durable; they're what make "edit what you
+care about" true for reviewers.
+
+Expect a little noise in the read-back: table cells that picked up bold from the following
+paragraph (gws-axi#105) come back with `**`, and the converter's empty paragraph before each
+table (gws-axi#109) can show as an extra blank line. Neither is a human edit.
 
 ```sh
 gws-axi docs read <docId> --tab <tabId> --full --out ./current.md

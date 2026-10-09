@@ -135,17 +135,15 @@ Humans are told they can edit what they care about in Generating because you wil
 it. That promise is yours to keep, every round, before you write a word.
 
 1. **Diff against your own source.** Keep the exact markdown of every generation you
-   write (`<doc-slug>/v3.md` in your working files). Read the tab back
-   (`docs read --tab <id> --full --out current.md`) and diff locally. Every hunk is a
-   human change: an insertion, a deletion, or a rewording. This is the only exact
-   method; revision history can't do it for you, because you write as the author's own
-   account (revision `author` can't distinguish you from them) and Drive retains only a
-   sparse sample of revisions.
-2. **Cross-check with `docs diff`** when you have no source (a document you didn't
-   create, a lost working file): `docs revisions <id>` lists what Drive kept, `docs diff
-   <id> <revA> [revB]` diffs two of them as markdown. It's lossy and sampled, but it
-   shows the shape of what changed.
-3. **Read the comments.** `docs comments <id>` lists them with the quoted text; they're
+   write, durably (`<doc-slug>/v3.md` in a committed working directory, not a scratch
+   folder). Read the tab back (`docs read --tab <id> --full --out current.md`) and diff
+   locally. Every hunk is a human change: an insertion, a deletion, or a rewording.
+   This is the only method that works. Drive's revision history is whole-document (every
+   tab concatenated), its retained revisions are a sparse sample, and you write as the
+   author's own account, so neither `docs revisions` nor `docs diff` can isolate what a
+   human did to one tab. If you lost the source, say so and ask the author to point at
+   what they changed; don't guess from a document-level diff.
+2. **Read the comments.** `docs comments <id>` lists them with the quoted text; they're
    not in the tab content.
 
 Then, in the regeneration: a passage a human reworded is carried forward in their
