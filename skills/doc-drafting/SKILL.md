@@ -79,8 +79,8 @@ as fixed.
 2. Ask the author for the **Ask** (what they want from readers, by when) if they haven't
    said. Ask who the **owner** is only if it isn't obviously the requester.
 3. Create the document with the **header on its own front tab named `README`** (Google
-   Docs; H1 `Generated Document Status: <title>`, then the table), hidden first slide
-   (decks), or at the top of the file (markdown). Under the table
+   Docs; H1 `Generated Document Status: <title>`, then the table; icon 📋), hidden first
+   slide (decks), or at the top of the file (markdown). Under the table
    on that tab, add the standing legend from `references/header-and-stamp.md` verbatim
    (where the newest draft is, how to sign off, the icon key, the playbook link); it
    describes the protocol, not the current state, so it never goes stale. Pick the
@@ -93,7 +93,7 @@ as fixed.
    Refining and Delivered as `due <date>` if the author gave targets, otherwise blank.
    This is the only time you write this tab.
 4. Write the first generation into a tab named `v1 YYYY-MM-DD` at position 1, directly
-   after the README tab: the stamp table first (Version as its header row, then Prompt as
+   after the README tab, icon 💬: the stamp table first (Version as its header row, then Prompt as
    your paraphrase of the brief, Inputs linked, Changes omitted on v1), then the document's
    title as H1 and the body. The stamp is preamble; the title stays bound to its content.
    Nothing else goes around the table; the protocol lives inside it.
@@ -120,14 +120,18 @@ as fixed.
    Last round's `NEW:` markers drop; the marker always means "since the previous
    generation."
 3. Commit the markdown you just wrote, with the trailers (see **Keeping sources**).
-4. Tell the author the new version is up, which tab, and what changed in one line. Don't
+4. Re-icon the previous generation's tab 🗄️ (`docs tabs update <id> --emoji 🗄️`). The
+   new tab already carries 💬 from its write. The tab strip is the phase indicator; keep
+   it true.
+5. Tell the author the new version is up, which tab, and what changed in one line. Don't
    summarize the document back to them. Don't touch the header.
 
 ### Freezing
 
 When the author says the document is ready for Refining:
 
-1. Rename the current generation tab to `vN YYYY-MM-DD [REFINING]`.
+1. Rename the current generation tab to `vN YYYY-MM-DD [REFINING]` and set its icon to ✏️
+   (one `docs tabs update` call with `--title` and `--emoji`).
 2. Apply the transition the author just dictated to the README tab with single-cell
    edits: `replace-text` `Generating` → `Refining` in the Stage header row; `edit-cell
    --row Generating` to close its dates; `edit-cell --row Refining` to `vN, <today>-` plus
@@ -139,8 +143,9 @@ When the author says the document is ready for Refining:
 
 ### Delivering
 
-When the author says it's gone out, fill the Delivered row from what they tell you:
-date, to whom, via what, and a link to the delivered form. If the delivered form was a
+When the author says it's gone out, fill the Delivered row from what they tell you
+(`edit-cell --row Delivered`): date, to whom, via what, and a link to the delivered form.
+Set the frozen tab's icon to 📤. If the delivered form was a
 copy, link the copy, not the editing document.
 
 ## Keeping sources
