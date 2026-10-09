@@ -81,10 +81,17 @@ field after every write.
 
 Tables, as of 0.34:
 
-- `<!-- cols: fit 1 -->` (weights) or `<!-- cols: 20% 80% -->` on the line before a table sets
-  column proportions, and `docs read` emits the hint back for any table whose columns are fixed
-  and unequal. That includes columns a human dragged by hand, so a hint in the read-back is a
-  human preference: carry it into the next generation's stamp instead of your default.
+- A `cols` hint on the line before a table sets its column widths. `<!-- cols: fit 1 -->` is
+  the one to use on the status table and the stamp: `fit` sizes the label column to its widest
+  label (measured as Arial, the Docs default; a tab in another font gets a `help[]` note), and
+  the `1` gives the value column everything else. Weights (`1 4`) and percentages (`20% 80%`)
+  also work. `docs read` emits the hint back as percentages for any table whose columns are
+  fixed and unequal, including columns a human dragged by hand, so a hint in the read-back is a
+  human preference: carry it into the next generation's stamp instead of your default. (`fit`
+  needs gws-axi ≥ 0.35; on 0.34 use `1 4`.)
+- `docs write --help` documents the table dialect under its `markdown:` block, and the write
+  response adds a `help[]` line whenever a table went in without a hint; treat that line as a
+  reminder you forgot the hint, not as noise.
 - `<br>` inside a cell starts a new paragraph in it; `- ` items after a `<br>` make a list. The
   Inputs row is a bulleted list.
 - No stray paragraph before a table, no inherited styles in cells, and a table may be the last
