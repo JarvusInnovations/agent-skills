@@ -81,8 +81,9 @@ as fixed.
    Refining and Delivered as `due <date>` if the author gave targets, otherwise blank.
    This is the only time you write this tab.
 4. Write the first generation into a tab named `v1 YYYY-MM-DD` at position 1, directly
-   after the header tab, with the stamp table at the top: Version, Prompt (your paraphrase
-   of the brief), Inputs (linked), Changes (omit on v1).
+   after the header tab: the document's title as H1, then the stamp table (Version,
+   Prompt as your paraphrase of the brief, Inputs linked, Changes omitted on v1), then the
+   body. Nothing else goes between or under the tables; the protocol lives inside them.
 5. Apply the title suffix if the author has said what the document is: `[SNAPSHOT
    YYYY-MM-DD]` for a point-in-time result, `[ONGOING]` for a maintained document. Add
    `[SHARED]` the moment anyone outside the team is given access.
@@ -94,7 +95,7 @@ as fixed.
    Comments and contributed sections are your input for this round; treat them as the
    author's direction.
 2. Produce the new generation into a **new tab** at position 1, named `v<N+1>
-   YYYY-MM-DD`. Stamp table first:
+   YYYY-MM-DD`: H1 title, then the stamp table, then the body. Stamp rows:
    - **Version**: `v<N+1>, <date>, from v<N>`.
    - **Prompt**: the cumulative paraphrase of the whole brief, rewritten tight, not
      appended to. Prefix the clause this round introduced with `NEW:`. A reader on this

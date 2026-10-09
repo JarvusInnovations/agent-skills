@@ -69,7 +69,7 @@ Everything is typeable on any keyboard: digits, slash, hyphen, semicolon, comma,
 A sign-off is a name with a version or a date. A name with a word is a status, not a sign-off.
 Reviewers update their own entry; to re-review in Generating, bump the version.
 
-## The stamp (top of every generation tab)
+## The stamp (under the title on every generation tab)
 
 | | |
 |---|---|

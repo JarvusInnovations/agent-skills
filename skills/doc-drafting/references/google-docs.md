@@ -50,12 +50,14 @@ field after every write.
 Three gotchas in 0.33 that hit this workflow's tables directly:
 
 - **A file whose last block is a table fails** (`Insert text requests must specify text to
-  insert`), and with `--new-tab` the empty tab is left behind. Always put a paragraph after a
-  table. For the header tab, end with a one-line note to reviewers; it's useful anyway.
-  (gws-axi#104)
+  insert`), and with `--new-tab` the empty tab is left behind. The header tab is exactly that
+  shape, so end it with a paragraph containing a single non-breaking space (`\xc2\xa0`): invisible,
+  nothing to go stale. Don't add visible text under the table; everything that's part of the
+  protocol belongs inside it. (gws-axi#104)
 - **Table cells inherit the text style of the paragraph that follows the table.** A heading or a
-  bold-leading paragraph after a table bolds every cell. Put a plain sentence directly after the
-  stamp before the document's first heading. (gws-axi#105)
+  bold-leading paragraph after a table bolds every cell. On a generation tab, put the document's
+  H1 *above* the stamp and start the body with a plain paragraph (no bold lead-in, no heading
+  directly under the stamp). (gws-axi#105)
 - **No multi-line cells.** `<br>` is written as literal text. Write the Inputs row as one line,
   semicolon-separated, `NEW:` still in front of new items. (gws-axi#106)
 
