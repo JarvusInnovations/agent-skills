@@ -1,6 +1,6 @@
 # Google Docs mechanics (gws-axi)
 
-The workflow maps onto Google Docs tabs: one README tab (the status header), one tab per generation. This file is
+The workflow maps onto Google Docs tabs: one tab per generation, newest first. This file is
 what you need to know about driving that with `gws-axi` and where the tool currently falls short.
 Check the installed version first; the gaps below are being closed.
 
@@ -58,14 +58,14 @@ some punctuation, and has no trailing newline:
 
 ```sh
 body_of_file(){ awk 'f>=2{print} /^---$/{f++}' "$1"; }                             # below the frontmatter
-body_of_tab(){ awk 'done{print} /^\|/{intab=1} intab&&!/^\|/{done=1}' "$1"; }      # after the stamp table
+body_of_tab(){ awk 'done{print} /^\|/{intab=1} intab&&!/^\|/{done=1}' "$1"; }      # after the grid
 norm(){ sed -e '/^<!-- cols:/d' -e 's/\\//g' -e 's/ *| */|/g' -e 's/-\{3,\}/---/g' -e '/^\s*$/d' | sed '$a\'; }
 diff <(body_of_file written.md | norm) <(body_of_tab current.md | norm)
 ```
 
 An empty result means no human edits to the *content*; anything left is one. The frontmatter and
 the stamp are outside the comparison by construction. Width hints in the body are dropped as
-formatting, but read them separately and keep them; a width hint on the stamp table in the
+formatting, but read them separately and keep them; a width hint on the grid in the
 read-back is a human resize, so carry it into the next render.
 
 ```sh
@@ -101,7 +101,7 @@ Tables, as of 0.34:
   block in a file. The workarounds earlier versions needed (a trailing paragraph, a plain
   sentence after the stamp) are gone; don't add them.
 
-Surgical edits, for the README tab only:
+Surgical edits, for the grid's status rows only, on dictation:
 
 - `docs edit-cell <docId> --tab <id> --row "<label>" --text "<markdown>"` replaces one value
   cell by its row label, leaving widths and every other cell alone. Rows are matched with
@@ -117,12 +117,9 @@ Both are refused if the Doc changed since you last read it, so list tabs or read
 # list tabs: id, title, index, parent, emoji
 gws-axi docs tabs <docId>
 
-# README tab (header table + legend), first, with its icon (creation only)
-gws-axi docs write <docId> ./readme.md --new-tab "README" --first --emoji 📋 --account <you>   # H1, cols hint, table, legend
-
-# a new generation, directly after the README tab: render the draft file, write the render
+# a new generation: render the draft file, write the render as the first tab
 skills/doc-drafting/scripts/render-draft.mjs ./<doc>.md --out ./tab.md   # validates, derives the Source row, prints the tab name
-gws-axi docs write <docId> ./tab.md --new-tab "v3 YYYY-MM-DD" --after <readmeTabId> --emoji 💬 --account <you>
+gws-axi docs write <docId> ./tab.md --new-tab "v3 YYYY-MM-DD" --first --emoji 💬 --account <you>
 git commit -m "draft(<doc>): v3" -m "<changes>" -m "Spun out to <doc URL> as tab \"v3 YYYY-MM-DD\"." \
   --trailer "Doc-Id: <docId>" --trailer "Doc-Tab: <newTabId>" \
   --trailer "Doc-Version: v3" --trailer "Doc-Revision: <revision_id>" -- ./<doc>.md
@@ -130,13 +127,16 @@ git commit -m "draft(<doc>): v3" -m "<changes>" -m "Spun out to <doc URL> as tab
 # the previous generation is now superseded
 gws-axi docs tabs update <docId> <v2TabId> --emoji 🗄️ --account <you>
 
-# freeze: rename and re-icon the current generation
+# freeze, when the owner tells you (otherwise they edit the grid themselves)
+gws-axi docs replace-text <docId> --tab <v3TabId> --find "Generating (" --replace "Refining (" --account <you>
+gws-axi docs edit-cell <docId> --tab <v3TabId> --row Timeline --text "- Generating since 10/6; reviewed: Ben 10/8<br>- **Refining** since 10/9; due 10/13<br>- Delivered due 10/17" --account <you>
 gws-axi docs tabs update <docId> <v3TabId> --title "v3 YYYY-MM-DD [REFINING]" --emoji ✏️ --account <you>
 
 # delivered
+gws-axi docs edit-cell <docId> --tab <v3TabId> --row Timeline --text "…<br>- **Delivered** 10/17; to the team; via Slack; [link](…)" --account <you>
 gws-axi docs tabs update <docId> <v3TabId> --emoji 📤 --account <you>
 
-# remove a tab (only when the author asks; never one with comments)
+# remove a tab (only when the owner asks; never one with comments)
 gws-axi docs tabs delete <docId> <tabId> --account <you>
 
 # title suffix
@@ -147,6 +147,9 @@ gws-axi drive rename <docId> --name "<Title> [ONGOING]" --account <you>
 `--last`, `--before`, `--after`, `--under`, `--top-level`) in a single idempotent call; the
 response lists the new tab order and an undo line. Every write is refused if the Doc changed since
 you last read it, so list tabs (or read) right before you act.
+
+`edit-cell --row Timeline` replaces the whole cell, so read the current Timeline from the tab
+first and rewrite it with only the dictated change; the response echoes the previous content.
 
 ## Verifying a write
 

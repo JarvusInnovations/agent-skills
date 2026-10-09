@@ -3,8 +3,8 @@
 Two-stage drafting for AI-generated documents that people will review: **Generating**, where the
 agent rebuilds whole new versions into fresh tabs, then **Refining**, where one version is frozen and
 humans edit it line by line while the agent only observes. Every document in the flow opens with a
-small **header table** that tells a reader what state it's in, what's wanted from them, and who has
-signed off; every generation opens with a **stamp** that says how it was made.
+**grid** that tells a reader what state it's in, what's wanted from them, who has signed off, and
+how it was made.
 
 This README is the playbook for the humans on both sides of a draft. `SKILL.md` teaches an agent to
 run the same workflow and to insist on it being run correctly.
@@ -75,116 +75,89 @@ Two rules fall out of this:
 - **Never regenerate on top of a tab people have commented on or edited.** That destroys their work
   and the history of the round. A new generation always gets a new tab.
 
-## The header
+## The grid
 
-Every document in the flow opens with this table. In Google Docs it lives on its own **front tab,
-named `README`**, under an H1 of `Generated Document Status: <title>`, so regenerating the other
-tabs can never overwrite it; a short standing legend under the table says where the newest draft
-is, how to sign off, what the tab icons mean, and links back to this playbook. In a deck it is a hidden first slide. In a
-markdown file it is the first thing in the file.
+Every generation tab opens with one table, the grid: the rows humans own on top, the rows the
+agent generates below. It's rendered from the draft file (see *Behind each generation* below), and
+humans edit the top rows directly on the current tab.
 
-<!-- cols: fit 1 -->
-| Stage | Refining (Ana) |
+| | |
 |---|---|
-| **Ask** | Line edits through Fri 10/10. Flag anything you'd refuse to follow. |
-| **Generating** | 10/6-10/9; Ben v3, Cy v2 |
-| **Refining** | v4, 10/9-, due 10/13; Ben 10/10, Cy pending |
-| **Delivered** | due 10/14 |
+| **Stage** | Generating (Ana) |
+| **Ask** | Direction on the restructure; don't polish yet. By Tue 10/14. |
+| **Timeline** | - **Generating** since 10/6; reviewed: Ben 10/8, Cy 10/8<br>- Refining due 10/13<br>- Delivered due 10/17 |
+| **Version** | v3, 2026-10-09, from v2 |
+| **Source** | acme/strategy@blob:3f9c2a1b7d4e:drafts/ai-use-policy.md |
+| **Prompt** | Draft a short policy from the brainstorm and the notes; fold in the channel history. NEW: restructure as principles plus appendices. |
+| **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
+| **Changes** | Restructured as principles plus appendices; #7 split; answered both v2 comments. |
+| **Workflow** | ✅ Edits are tracked: rewrite what you care about and the next generation keeps it; sign off on the Timeline line with your name and the date. [doc-drafting playbook](#) |
 
-Every row is written by a human. The agent writes this table once, when it creates the document,
-and never again; where the document came from lives in the stamp on each generation (below), so
-nothing the agent does later can disturb the formatting or the sign-offs here.
+**The human rows.** `Stage`, with the owner in parentheses: the person staking their reputation on
+the document, who moves it between stages. `Ask`: what *this version* wants from readers and by
+when; it evolves with the draft instead of being worded once for all time. `Timeline`: one line per
+phase, the current one bold, each carrying its dates (`since 10/6`, `due 10/13`) and its sign-offs
+(`reviewed: Ben 10/8`), all in characters anyone can type. A sign-off is a name and the date you
+finished a pass **on this tab**; when the agent regenerates it carries Stage, Ask and the dates
+forward and clears the sign-offs, and the old tab keeps its grid as the record of who reviewed
+that version. In Refining there's one tab, so sign-offs accumulate on it.
 
-Row by row:
-
-- **Stage.** One word, `Generating` or `Refining`, followed by the owner in parentheses. The owner is
-  the person staking their reputation on the document: they move it between stages, and they are
-  who a bounced document goes back to.
-- **Ask.** What you want from the reader and by when, in one or two lines. Written by the author,
-  never generated. Whether a reader does the review themselves or runs it through their own agent
-  is their call; say so only when a human read specifically matters.
-- **Generating / Refining / Delivered.** The timeline, one row per phase, each carrying its own
-  sign-offs. Written entirely in characters anyone can type:
-  - `10/6-10/9` happened, both ends. `10/9-` open-ended. `due 10/13` a target, wherever it appears.
-  - Semicolon separates dates from people; commas separate people.
-  - In Generating, a sign-off names the **version** reviewed (`Ben v3`), because dates are
-    ambiguous when several generations land in a day. A reviewer re-reviews by bumping their
-    version number.
-  - In Refining there is one frozen version, so sign-offs go back to **dates** (`Ben 10/10`):
-    the question is no longer "which version did you see" but "have you done your pass".
-  - The Refining row starts with the version that was frozen (`v4`), the durable record of which
-    generation became the document.
-  - Delivered, once it ships: `10/14; to the team via #channel; [link](#)`. We rarely deliver the
-    document the editing happened in, so this is the record of what actually went where.
+**The generated rows.** `Version`, `Source` (the exact file this tab was rendered from, by git
+blob hash, so anyone with the repo can pull the text and nothing a rebase does can break the
+link), `Prompt` (the agent's paraphrase of the *whole* brief so far, with `NEW:` on what this
+round added), `Inputs` (everything that went in, linked, `NEW:` on what's new), `Changes` (what
+moved this round). `NEW:` always means "since the previous generation." The `Workflow` line is
+the one piece of protocol text on the tab, and it's always the same.
 
 A reader who only has ten seconds reads Stage and Ask and knows what to do.
 
 ## Generations
 
-Each regeneration goes in a **new tab**, named `vN YYYY-MM-DD`, inserted at position 1, directly
-after the README tab, so the newest generation is always the first thing after the header. Every
-generation tab opens with a stamp table that says how *that generation* was made, and then the
-document itself, title first:
+Each regeneration goes in a **new tab**, named `vN YYYY-MM-DD`, inserted first, so the newest
+generation is always the first tab and its grid is the cover. The agent never writes to a tab
+twice: humans edit the grid's status rows and the document on the current tab, and the next
+generation is a new tab, so there is no tab where a human's edits or formatting can be trampled.
+Older tabs stay as history, re-iconed 🗄️.
 
-<!-- cols: fit 1 -->
-| Version | v4, 2026-10-09, from v3 |
-|---|---|
-| **Source** | themightychris/hari@blob:3f9c2a1b7d4e:drafts/ai-use-policy.md |
-| **Prompt** | Draft a short policy from my notes; fold in the channel history; restructure as one-page principles with appendices. NEW: keep the header as an appendix. |
-| **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
-| **Changes** | #7 split; title-suffix convention under #2; header moved to its own tab |
+Behind each generation is a commit: the draft lives as a markdown file in the project, with the
+grid's data as YAML frontmatter at the top (plus fields the grid never shows, like which Doc it's
+reviewed in), and the agent commits it with each write, tagged with the document and tab ids, so
+the repo's history shows when a draft was spun out and where. The grid's **Source** row points
+the other way, from the tab to the exact text it was rendered from, by git blob hash rather than
+commit hash so a rebase can't break it. That's what lets the agent diff the tab later and find
+what humans changed, which is what makes "edit what you care about" true. No commit, no ✅.
 
-**Prompt** is the agent's paraphrase of the *whole* brief that produced this generation, rewritten
-each round into the tightest accurate version rather than appended to, so a reader on any tab gets
-the full intent without walking back through older tabs. **Inputs** is the full list of sources,
-linked. Whatever the latest round introduced is prefixed `NEW:` in both rows, and the marker drops
-on the next round, so `NEW:` always means "since the previous generation." **Changes** is the
-per-round delta, the one thing you can't reconstruct by reading the tab.
-
-Prompt and Inputs live here rather than in the header because they're a property of a generation,
-not of the document: what produced v3 is not what produced v4. It also means the agent never
-rewrites a tab after creating it. The header is written once; each generation is written once;
-there is no tab where a human's edits or formatting can be trampled.
-
-Behind each generation is a commit: the agent keeps the markdown it wrote as a file in the project
-and commits it with the write, tagged with the document and tab ids, so the repo's history shows
-when a draft was spun out and where. The stamp's **Source** row points the other way, from the tab
-to the exact text it was written from, by git blob hash rather than commit hash so a rebase can't
-break it. That's what lets the agent diff the tab later and find what humans changed, which is
-what makes "edit what you care about" true. No commit, no ✅.
-
-When the author freezes a version, they update the header (Stage, the Generating end date, the
-Refining row's version and start) and the agent renames that tab `vN YYYY-MM-DD [REFINING]` and
-stops generating. Older generation tabs stay as history. If review in Refining turns up something
-structural and the document drops back to Generating, the next generation is a new tab and the
-header's Stage row says so; the frozen tab keeps its name so the story stays legible.
+When the author freezes a version, they change Stage to Refining on that tab's grid (or tell the
+agent to), and the agent renames the tab `vN YYYY-MM-DD [REFINING]`, sets its icon ✏️, and stops
+generating. If review in Refining turns up something structural and the document drops back to
+Generating, the next generation is a new tab and its grid says so; the frozen tab keeps its name
+so the story stays legible.
 
 ## As an author
 
-1. Say which stage you're in, in the header, before you share. If you haven't read the document
+1. Say which stage you're in, in the grid, before you share. If you haven't read the document
    yourself, say so in the Ask and ask for nothing.
 2. Write the Ask yourself. Match it to what you've put in: don't ask for more review time than you
    spent reviewing. For anything large, ask what format and timeline work *before* sending.
 3. In Generating, tell reviewers it's a collection box. In Refining, tell them line edits are
    welcome.
-4. Move to Refining only when you've read every line: set Stage to Refining, close the Generating
-   row's dates, start the Refining row with the version you froze. The agent renames the tab and
-   stops regenerating.
+4. Move to Refining only when you've read every line: change Stage to Refining on the current
+   tab's grid. The agent renames the tab and stops regenerating.
 5. Fill in Delivered when it ships, with where it went and a link to the delivered form.
 
 ## As a reviewer
 
-- Read Stage and Ask first, then the bold line at the top of the legend. **✅ Edits are tracked**
+- Read Stage and Ask first, then the Workflow line. **✅ Edits are tracked**
   means the agent diffs the draft before regenerating: in Generating, give direction and content,
   and rewrite anything you feel strongly about; it will survive. **⚠️ Edits are not tracked** means
   put everything in comments, including wording you want kept. Either way, don't spend Generating
   effort making the whole thing ship-ready. In Refining, that *is* the job: edit line by line.
-- When you've done your pass, add your sign-off to the open phase's row: your name and the version
-  (Generating) or the date (Refining). That's how the author knows you're done, and how later
-  reviewers know who has looked.
-- If an AI-generated document reaches you **without a header**, don't review it. Send it back with
-  "add the header and I'll look." That is the whole enforcement mechanism, and it only works if
-  everyone does it.
+- When you've done your pass, add your sign-off to the bold Timeline line on that tab: your name
+  and the date. That's how the author knows you're done, and how later reviewers know who has
+  looked at this version.
+- If an AI-generated document reaches you **without the grid**, don't review it. Send it back with
+  "set it up and I'll look." That is the whole enforcement mechanism, and it only works if everyone
+  does it.
 
 ## Title suffixes
 
@@ -203,11 +176,9 @@ belongs in the header.
 
 ## Decks and repo documents
 
-**Slide decks** follow the same two stages. The header is a hidden first slide; generations are
-separate files or a versioned filename rather than tabs, and the stamp is the first hidden slide of
-each generation.
+**Slide decks** follow the same two stages. The grid is a hidden first slide; generations are
+separate files or a versioned filename rather than tabs.
 
-**Markdown in a repo** keeps the header at the top of the file and the stamp directly under it;
-both are rewritten by the agent on each generation commit (the header only as the author directs),
-and the Changes row doubles as the commit body. The frozen version is the commit the branch is
+**Markdown in a repo** is the same file with the same frontmatter, which GitHub renders as a table
+at the top; the status rows change only as the author directs. The frozen version is the commit the branch is
 reviewed at; from there the agent makes only the specific edits asked for.
