@@ -53,7 +53,10 @@ document that tells you nothing usable about one tab (a tab-scoped diff is reque
 gws-axi#110). Keep your generation sources somewhere durable; they're what make "edit what you
 care about" true for reviewers.
 
-Expect a little noise in the read-back: table cells that picked up bold from the following
+Normalize before you diff: the read-back pads cell delimiters (`|  |`, `| --- |`) and escapes
+some punctuation, so strip spaces around pipes, collapse dash runs, drop backslash escapes and
+blank lines on both sides first, or every table row shows as changed. Expect a little further
+noise in the read-back: table cells that picked up bold from the following
 paragraph (gws-axi#105) come back with `**`, and the converter's empty paragraph before each
 table (gws-axi#109) can show as an extra blank line. Neither is a human edit.
 

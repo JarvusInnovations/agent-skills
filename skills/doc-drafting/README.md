@@ -83,7 +83,7 @@ under the table says where the newest draft is, how to sign off, what the tab ic
 back to this playbook. In a deck it is a hidden first slide. In a
 markdown file it is the first thing in the file.
 
-| | |
+| Generated Document Status | |
 |---|---|
 | **Stage** | Refining (Ana) |
 | **Ask** | Line edits through Fri 10/10. Flag anything you'd refuse to follow. |

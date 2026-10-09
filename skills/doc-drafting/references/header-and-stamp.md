@@ -9,7 +9,7 @@ generation and never again. No tab is ever rewritten.
 
 Blank template:
 
-| | |
+| Generated Document Status | |
 |---|---|
 | **Stage** | Generating (owner) |
 | **Ask** | |
@@ -19,7 +19,7 @@ Blank template:
 
 Filled example, mid-Refining:
 
-| | |
+| Generated Document Status | |
 |---|---|
 | **Stage** | Refining (Ana) |
 | **Ask** | Line edits through Fri 10/10. Flag anything you'd refuse to follow. |
@@ -29,7 +29,7 @@ Filled example, mid-Refining:
 
 Filled example, delivered:
 
-| | |
+| Generated Document Status | |
 |---|---|
 | **Stage** | Refining (Ana) |
 | **Ask** | None; delivered. |
