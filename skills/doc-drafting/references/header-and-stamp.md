@@ -1,7 +1,9 @@
 # Header and stamp tables
 
 Copy these verbatim. Both are plain two-column tables so they survive every renderer and so
-humans can edit them without reaching for characters they can't type.
+humans can edit them without reaching for characters they can't type. The header is written by
+the agent once, at creation, and by humans thereafter. The stamp is written by the agent once per
+generation and never again. No tab is ever rewritten.
 
 ## The header (front tab, hidden first slide, or top of file)
 
@@ -14,8 +16,6 @@ Blank template:
 | **Generating** | MM/DD- |
 | **Refining** | |
 | **Delivered** | |
-| **Prompt** | |
-| **Inputs** | - |
 
 Filled example, mid-Refining:
 
@@ -26,8 +26,6 @@ Filled example, mid-Refining:
 | **Generating** | 10/6-10/9; Ben v3, Cy v2 |
 | **Refining** | v4, 10/9-, due 10/13; Ben 10/10, Cy pending |
 | **Delivered** | due 10/14 |
-| **Prompt** | Draft a short policy from my notes; fold in the channel history; restructure as principles plus appendices after the call. |
-| **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- [Call transcript](#) |
 
 Filled example, delivered:
 
@@ -38,18 +36,17 @@ Filled example, delivered:
 | **Generating** | 10/6-10/9; Ben v3, Cy v3 |
 | **Refining** | v4, 10/9-10/13; Ben 10/10, Cy 10/12 |
 | **Delivered** | 10/14; to the team via #general; [delivered copy](#) |
-| **Prompt** | ... |
-| **Inputs** | ... |
 
 ## Who writes which row
 
 | Row | Written by | Notes |
 |---|---|---|
-| Stage | human (owner) | One word plus owner in parentheses. The agent updates it only when the owner says to freeze or to reopen. |
-| Ask | human (owner) | Never composed by the agent. The agent may ask for it and insert it verbatim. |
-| Generating / Refining / Delivered | human, with agent assistance on dates | Sign-offs are written by the reviewers themselves. The agent fills the start date when it creates the document, the end date and the frozen version when told to freeze, and the Delivered line from what the author reports. |
-| Prompt | agent | Cumulative paraphrase of the instructions so far. Rewritten every round. |
-| Inputs | agent | Cumulative, linked, bulleted. Appended every round. |
+| Stage | human (owner) | One word plus owner in parentheses. The owner changes it at freeze or reopen; the agent prompts for it and supplies the text to paste. |
+| Ask | human (owner) | Never composed by the agent. At creation the agent asks for it and inserts it verbatim. |
+| Generating / Refining / Delivered | humans | Sign-offs by the reviewers themselves; dates and the frozen version by the owner. The agent fills only the Generating start date, at creation. |
+
+At creation the agent writes the whole table from what the author gives it. After that the agent
+does not write this tab. Where the document came from is in the stamp, below.
 
 ## Notation
 
@@ -76,18 +73,20 @@ Reviewers update their own entry; to re-review in Generating, bump the version.
 
 | | |
 |---|---|
-| **Version** | v3, 2026-10-09, from v2 |
-| **Prompt** | added "restructure as one-page principles with appendices; keep the header as an appendix" |
-| **Added inputs** | [Call transcript](#) |
+| **Version** | v4, 2026-10-09, from v3 |
+| **Prompt** | Draft a short policy from my notes; fold in the channel history; restructure as one-page principles with appendices. NEW: keep the header as an appendix. |
+| **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
 | **Changes** | #7 split guest-community vs. repos we maintain; title-suffix convention under #2; header moved to its own front tab |
 
 - `Version` is always present. `v1` has no `from`.
-- `Prompt` is the **delta** for this round, quoted or paraphrased. The header's Prompt row is the
-  cumulative paraphrase; the two are not the same text.
-- `Added inputs` lists only sources new this round, linked. The same links get appended to the
-  header's Inputs row.
-- `Changes` is what moved, in a line or two. Not a summary of the document.
-- Omit any of the last three rows when empty. A pure tightening round is `Version` alone.
+- `Prompt` is the agent's paraphrase of the **whole brief** that produced this generation,
+  rewritten each round into the tightest accurate version. Not a log of instructions; a reader on
+  this tab gets the full intent without opening older tabs.
+- `Inputs` is the **full** list of sources, linked wherever a link exists.
+- `NEW:` prefixes whatever this round introduced, in either row. It drops on the next round, so it
+  always means "since the previous generation."
+- `Changes` is what moved this round, in a line or two. Not a summary of the document. Omit on v1.
+- A pure tightening round has no `NEW:` markers and a one-line Changes.
 
 ## Tab names and icons
 

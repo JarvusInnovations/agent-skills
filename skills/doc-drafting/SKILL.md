@@ -52,10 +52,12 @@ as fixed.
    while the Stage row says Refining, point at the row and ask whether they want to move
    it back to Generating (a new generation, a new tab, Stage row updated). Do not quietly
    do it.
-3. **Never write the Stage, Ask, or sign-off cells.** Those are the human's statement of
-   intent and the reviewers' statements of completion. You may *prompt* the author for
-   them ("what's the Ask for this round?") and you may insert what they say verbatim, but
-   you don't compose them. Prompt and Inputs are yours to write.
+3. **Never rewrite the header tab after creating it.** Every row on it is a human's
+   statement: intent (Stage, Ask), completion (sign-offs), fact (dates, Delivered). You
+   write it once, at creation, with what the author gives you, and from then on you only
+   *prompt* for changes ("Stage still says Generating; update it and the dates when you
+   freeze"). Humans also fix its formatting, and a whole-tab rewrite would undo that.
+   Everything you own about provenance lives in the stamp on each generation.
 4. **Never deliver from Generating.** If asked to send a document to a client or outside
    party and the Stage row is not Refining with the author's sign-off, say that it hasn't
    been through Refining and ask whether to freeze it first.
@@ -75,11 +77,12 @@ as fixed.
    said. Ask who the **owner** is only if it isn't obviously the requester.
 3. Create the document with the **header on its own front tab** (Google Docs), hidden
    first slide (decks), or at the top of the file (markdown). Fill Stage as `Generating
-   (<owner>)`, the Ask verbatim from the author, the Generating row as `<today>-`, and
-   write Prompt and Inputs yourself. Leave Refining and Delivered as `due <date>` if the
-   author gave targets, otherwise blank.
+   (<owner>)`, the Ask verbatim from the author, the Generating row as `<today>-`. Leave
+   Refining and Delivered as `due <date>` if the author gave targets, otherwise blank.
+   This is the only time you write this tab.
 4. Write the first generation into a tab named `v1 YYYY-MM-DD` at position 1, directly
-   after the header tab, with the stamp table at the top (`Version` only, on v1).
+   after the header tab, with the stamp table at the top: Version, Prompt (your paraphrase
+   of the brief), Inputs (linked), Changes (omit on v1).
 5. Apply the title suffix if the author has said what the document is: `[SNAPSHOT
    YYYY-MM-DD]` for a point-in-time result, `[ONGOING]` for a maintained document. Add
    `[SHARED]` the moment anyone outside the team is given access.
@@ -91,23 +94,26 @@ as fixed.
    Comments and contributed sections are your input for this round; treat them as the
    author's direction.
 2. Produce the new generation into a **new tab** at position 1, named `v<N+1>
-   YYYY-MM-DD`. Stamp table first: Version, the Prompt delta (what new instruction this
-   round added, quoted or paraphrased), Added inputs (linked), Changes (what moved).
-   Omit a row that's empty.
-3. Rewrite the header's **Prompt** row to the new cumulative paraphrase and append any
-   new sources to **Inputs**. Touch nothing else in the header.
-4. Tell the author the new version is up, which tab, and what changed in one line. Don't
-   summarize the document back to them.
+   YYYY-MM-DD`. Stamp table first:
+   - **Version**: `v<N+1>, <date>, from v<N>`.
+   - **Prompt**: the cumulative paraphrase of the whole brief, rewritten tight, not
+     appended to. Prefix the clause this round introduced with `NEW:`. A reader on this
+     tab must get the full intent without reading older tabs.
+   - **Inputs**: the full linked list; new sources prefixed `NEW:`.
+   - **Changes**: what moved this round, a line or two. Not a summary of the document.
+   Last round's `NEW:` markers drop; the marker always means "since the previous
+   generation."
+3. Tell the author the new version is up, which tab, and what changed in one line. Don't
+   summarize the document back to them. Don't touch the header.
 
 ### Freezing
 
 When the author says the document is ready for Refining:
 
 1. Rename the current generation tab to `vN YYYY-MM-DD [REFINING]`.
-2. Update the header: Generating row gets its end date (`10/6-10/9`); Refining row
-   starts `vN, <today>-` plus any due date they give. Stage becomes `Refining (<owner>)`.
-   (These are header edits the author has explicitly asked for, which is the one case
-   you write to those rows.)
+2. Ask the author to update the header: Stage to `Refining (<owner>)`, the Generating
+   row's end date, the Refining row starting `vN, <today>-` plus any due date. Give them
+   the exact text to paste. You don't write it.
 3. From here, no regeneration. If asked to "clean up" or "tighten" the frozen text,
    propose edits as comments or suggestions, or make the specific small change they
    named; do not rewrite passages.
@@ -129,17 +135,17 @@ available in the installed version.
 versioned filename; the stamp is the first hidden slide of each. Freezing means the
 author names the file that's final.
 
-**Markdown in a repo.** The header table sits at the top of the file. Generations are
-commits on the branch, so the per-generation stamp is the commit message (Version line
-as the subject; Prompt delta, Added inputs, Changes as the body). Freezing is the author
-saying which commit is under review; from there your changes are the specific edits they
-ask for, as separate small commits.
+**Markdown in a repo.** The header table sits at the top of the file with the stamp
+directly under it. Each generation is a commit that rewrites the stamp and the body; the
+header changes only as the author directs. Use the Changes row as the commit body.
+Freezing is the author saying which commit is under review; from there your changes are
+the specific edits they ask for, as separate small commits.
 
 ## What a good round looks like
 
 The author says "fold in the comments on v3 and the transcript I just shared." You read
 v3's comments, read the transcript, write v4 into a new tab at position 1 with a stamp
-that says `from v3`, `Added inputs: [transcript]`, `Changes: ...`, update Prompt and
-Inputs on the header tab, and reply: "v4 is up, tab 'v4 2026-10-09'. Restructured
-section 3 per the comments; the transcript added two rules under section 7." Five
-lines, no recap of the document, nothing on the header touched that wasn't yours.
+that says `from v3`, the full Prompt with the new clause marked `NEW:`, the full Inputs
+with `NEW: [transcript]`, and `Changes: ...`, and reply: "v4 is up, tab 'v4 2026-10-09'.
+Restructured section 3 per the comments; the transcript added two rules under section
+7." Five lines, no recap of the document, the header untouched.

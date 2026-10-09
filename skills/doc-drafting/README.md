@@ -3,8 +3,8 @@
 Two-stage drafting for AI-generated documents that people will review: **Generating**, where the
 agent rebuilds whole new versions into fresh tabs, then **Refining**, where one version is frozen and
 humans edit it line by line while the agent only observes. Every document in the flow opens with a
-small **header table** that tells a reader what state it's in, what's wanted from them, who has
-signed off, and how it was made.
+small **header table** that tells a reader what state it's in, what's wanted from them, and who has
+signed off; every generation opens with a **stamp** that says how it was made.
 
 This README is the playbook for the humans on both sides of a draft. `SKILL.md` teaches an agent to
 run the same workflow and to insist on it being run correctly.
@@ -82,8 +82,10 @@ markdown file it is the first thing in the file.
 | **Generating** | 10/6-10/9; Ben v3, Cy v2 |
 | **Refining** | v4, 10/9-, due 10/13; Ben 10/10, Cy pending |
 | **Delivered** | due 10/14 |
-| **Prompt** | Draft a short policy from my notes; fold in the channel history; restructure after the call. |
-| **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- [Call transcript](#) |
+
+Every row is written by a human. The agent writes this table once, when it creates the document,
+and never again; where the document came from lives in the stamp on each generation (below), so
+nothing the agent does later can disturb the formatting or the sign-offs here.
 
 Row by row:
 
@@ -106,34 +108,37 @@ Row by row:
     generation became the document.
   - Delivered, once it ships: `10/14; to the team via #channel; [link](#)`. We rarely deliver the
     document the editing happened in, so this is the record of what actually went where.
-- **Prompt.** The agent's own paraphrase of what it was asked to do, cumulative across rounds. The
-  one row that is supposed to be generated.
-- **Inputs.** A bulleted list of the sources the agent consumed, linked wherever a link exists.
-  Also generated, also cumulative.
 
-The ordering is deliberate: the top rows are the human talking to the reader, the bottom two are
-where the document came from. A reader who only has ten seconds reads Stage and Ask and knows what
-to do.
+A reader who only has ten seconds reads Stage and Ask and knows what to do.
 
 ## Generations
 
 Each regeneration goes in a **new tab**, named `vN YYYY-MM-DD`, inserted at position 1, directly
 after the header tab, so the newest generation is always the first thing after the header. Every
-generation tab opens with a short stamp table describing that round:
+generation tab opens with a stamp table that says how *that generation* was made:
 
 | | |
 |---|---|
-| **Version** | v3, 2026-10-09, from v2 |
-| **Prompt** | added "restructure as one-page principles with appendices" |
-| **Added inputs** | [Call transcript](#) |
+| **Version** | v4, 2026-10-09, from v3 |
+| **Prompt** | Draft a short policy from my notes; fold in the channel history; restructure as one-page principles with appendices. NEW: keep the header as an appendix. |
+| **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
 | **Changes** | #7 split; title-suffix convention under #2; header moved to its own tab |
 
-The stamp carries the **delta** for that round; the front-tab Prompt and Inputs rows carry the
-cumulative state. Nobody has to derive one from the other, and the agent updates both in the same
-regeneration.
+**Prompt** is the agent's paraphrase of the *whole* brief that produced this generation, rewritten
+each round into the tightest accurate version rather than appended to, so a reader on any tab gets
+the full intent without walking back through older tabs. **Inputs** is the full list of sources,
+linked. Whatever the latest round introduced is prefixed `NEW:` in both rows, and the marker drops
+on the next round, so `NEW:` always means "since the previous generation." **Changes** is the
+per-round delta, the one thing you can't reconstruct by reading the tab.
 
-When the author freezes a version, the agent renames that tab `vN YYYY-MM-DD [REFINING]` and stops
-generating. Older generation tabs stay as history. If review in Refining turns up something
+Prompt and Inputs live here rather than in the header because they're a property of a generation,
+not of the document: what produced v3 is not what produced v4. It also means the agent never
+rewrites a tab after creating it. The header is written once; each generation is written once;
+there is no tab where a human's edits or formatting can be trampled.
+
+When the author freezes a version, they update the header (Stage, the Generating end date, the
+Refining row's version and start) and the agent renames that tab `vN YYYY-MM-DD [REFINING]` and
+stops generating. Older generation tabs stay as history. If review in Refining turns up something
 structural and the document drops back to Generating, the next generation is a new tab and the
 header's Stage row says so; the frozen tab keeps its name so the story stays legible.
 
@@ -145,7 +150,9 @@ header's Stage row says so; the frozen tab keeps its name so the story stays leg
    spent reviewing. For anything large, ask what format and timeline work *before* sending.
 3. In Generating, tell reviewers it's a collection box. In Refining, tell them line edits are
    welcome.
-4. Move to Refining only when you've read every line. Then stop regenerating.
+4. Move to Refining only when you've read every line: set Stage to Refining, close the Generating
+   row's dates, start the Refining row with the version you froze. The agent renames the tab and
+   stops regenerating.
 5. Fill in Delivered when it ships, with where it went and a link to the delivered form.
 
 ## As a reviewer
@@ -180,6 +187,7 @@ belongs in the header.
 separate files or a versioned filename rather than tabs, and the stamp is the first hidden slide of
 each generation.
 
-**Markdown in a repo** keeps the header at the top of the file. Generations are commits on a branch,
-so the per-generation stamp becomes the commit message, and the frozen version is the one the
-branch is reviewed at. The header table still gets maintained by hand, same rows, same notation.
+**Markdown in a repo** keeps the header at the top of the file and the stamp directly under it;
+both are rewritten by the agent on each generation commit (the header only as the author directs),
+and the Changes row doubles as the commit body. The frozen version is the commit the branch is
+reviewed at; from there the agent makes only the specific edits asked for.

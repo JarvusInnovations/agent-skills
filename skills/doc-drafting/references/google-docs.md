@@ -16,18 +16,22 @@ gws-axi docs --help
 gws-axi docs create --title "<Title> [SNAPSHOT YYYY-MM-DD]" ./header.md --account <you>
 
 # a new generation, into a new tab
-gws-axi docs write <docId> ./v1.md --new-tab "v1 YYYY-MM-DD" --account <you>
-
-# rewrite one tab in place (header updates only; never a generation someone has touched)
-gws-axi docs write <docId> ./header.md --tab <tabId> --account <you>
+gws-axi docs write <docId> ./v2.md --new-tab "v2 YYYY-MM-DD" --account <you>
 ```
 
 Writes require `--account` whenever more than one Google account is authenticated. `docs write`
 replaces the content of exactly one tab; other tabs are untouched.
 
-**Read before you write.** `docs write` to an existing tab is refused if the Doc changed since you
-last read it. That guard is your friend: it means you can't clobber a comment or edit you haven't
-seen. Read the tab, diff against what you last wrote, then write.
+In this workflow you only ever write **new** tabs: the header at creation, then one tab per
+generation. There is no in-place rewrite of an existing tab. gws-axi's markdown round-trip is
+lossy on tables (column widths, cell formatting), which is exactly why: a human who has cleaned
+up a table will not get it back after a whole-tab rewrite. If you find yourself wanting
+`--tab <id>` on a tab a human has touched, stop; that's a new generation or a prompt to the
+author, not a write.
+
+**Reading.** `docs write` to an existing tab is refused if the Doc changed since you last read
+it; that guard matters less now that you don't rewrite tabs, but reading is still how you pick
+up what changed: comments, contributed sections, header updates.
 
 ```sh
 gws-axi docs read <docId> --tab <tabId> --full --out ./current.md
