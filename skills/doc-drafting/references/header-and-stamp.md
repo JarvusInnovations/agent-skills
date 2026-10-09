@@ -71,13 +71,15 @@ Reviewers update their own entry; to re-review in Generating, bump the version.
 
 ## The stamp (under the title on every generation tab)
 
-| | |
+| This Generation | |
 |---|---|
 | **Version** | v4, 2026-10-09, from v3 |
 | **Prompt** | Draft a short policy from my notes; fold in the channel history; restructure as one-page principles with appendices. NEW: keep the header as an appendix. |
 | **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
 | **Changes** | #7 split guest-community vs. repos we maintain; title-suffix convention under #2; header moved to its own front tab |
 
+- The header row reads `This Generation`; markdown tables can't omit the header row, and a
+  blank one renders as an empty first row. Same reason the status table carries its caption.
 - `Version` is always present. `v1` has no `from`.
 - `Prompt` is the agent's paraphrase of the **whole brief** that produced this generation,
   rewritten each round into the tightest accurate version. Not a log of instructions; a reader on
