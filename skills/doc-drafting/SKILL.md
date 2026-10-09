@@ -141,8 +141,21 @@ copy, link the copy, not the editing document.
 
 The markdown you write to a generation tab is a file in the project, wherever the project
 keeps such things (no prescribed path), and **each generation is one commit of that
-file**, made in the same step as the `docs write`. The commit, not the filename, is what
-links the source to the tab, through trailers:
+file**. The commit, not the filename, is what links the source to the tab, through
+trailers, and the order is fixed because the trailers need values only the write
+produces:
+
+1. Write the file.
+2. `docs write … --new-tab "vN YYYY-MM-DD" --after <readmeTabId> --emoji 💬`. Take the
+   new tab's id and the `revision_id` from the result.
+3. Commit the file with the trailers below, immediately. Nothing else happens between
+   the write and the commit.
+
+If the write fails, there's nothing to commit; fix and retry. If you notice a tab with no
+matching commit later, commit the file now with the ids from `docs tabs`; it's untracked
+until you do.
+
+The commit:
 
 ```
 draft(<doc-slug>): v3
