@@ -151,9 +151,10 @@ produces:
 3. Commit the file with the trailers below, immediately. Nothing else happens between
    the write and the commit.
 
-If the write fails, there's nothing to commit; fix and retry. If you notice a tab with no
-matching commit later, commit the file now with the ids from `docs tabs`; it's untracked
-until you do.
+If the write fails, there's nothing to commit; fix and retry. If you committed before
+writing, `git commit --amend --no-edit --trailer …` on that unpushed commit is the same
+thing. If you notice a tab with no matching commit later, commit the file now with the
+ids from `docs tabs`; it's untracked until you do.
 
 The commit:
 
