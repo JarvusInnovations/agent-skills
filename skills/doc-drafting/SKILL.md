@@ -63,7 +63,7 @@ as fixed.
    been through Refining and ask whether to freeze it first.
 5. **Don't review a headerless AI document.** If you're handed an AI-generated document
    to review and it has no header, tell the user it needs one before you'll engage, and
-   offer to generate the Prompt and Inputs rows if they can supply the rest. This is the
+   offer to draft the stamp (Prompt, Inputs) if they can supply the header. This is the
    enforcement mechanism for the whole workflow; it only works if every agent holds the
    line.
 
