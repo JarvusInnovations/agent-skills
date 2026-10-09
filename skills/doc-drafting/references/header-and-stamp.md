@@ -1,170 +1,88 @@
-# Header and stamp tables
+# The grid
 
-Copy these verbatim. Both are plain two-column tables so they survive every renderer and so
-humans can edit them without reaching for characters they can't type. The header is written by
-the agent once, at creation, and by humans thereafter. The stamp is written by the agent once per
-generation and never again. No tab is ever rewritten.
+Every generation tab opens with one table, **the grid**: the human-owned status rows on top, the
+generated provenance rows below. It is rendered from the draft file's frontmatter by
+`scripts/render-draft.mjs` (schema in `references/frontmatter.md`); nobody writes it by hand, and
+humans edit it in place on the current tab.
 
-## The header (README tab, hidden first slide, or top of file)
-
-The README tab opens with an H1, `Generated Document Status: <document title>`, then the table.
-`Stage` is the table's header row (the mandatory header row carrying real content), and the
-`<!-- cols: fit 1 -->` hint before the table sizes the label column to its widest label and gives
-the value column the rest, so nobody has to drag column borders. Use the same hint on the stamp.
-
-Blank template:
-
-<!-- cols: fit 1 -->
-| Stage | Generating (owner) |
+| | |
 |---|---|
-| **Ask** | |
-| **Generating** | MM/DD- |
-| **Refining** | |
-| **Delivered** | |
+| **Stage** | Generating (Ana) |
+| **Ask** | Direction on the restructure; don't polish yet. By Tue 10/14. |
+| **Timeline** | - **Generating** since 10/6; reviewed: Ben 10/8, Cy 10/8<br>- Refining due 10/13<br>- Delivered due 10/17 |
+| **Version** | v3, 2026-10-09, from v2 |
+| **Source** | acme/strategy@blob:3f9c2a1b7d4e:drafts/ai-use-policy.md |
+| **Prompt** | Draft a short policy from the brainstorm and the notes; fold in the channel history. NEW: restructure as principles plus appendices. |
+| **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
+| **Changes** | Restructured as principles plus appendices; #7 split; answered both v2 comments. |
+| **Workflow** | ✅ Edits are tracked: rewrite what you care about and the next generation keeps it; sign off on the Timeline line with your name and the date. [doc-drafting playbook](…) |
 
-Filled example, mid-Refining:
+## The human rows
 
-<!-- cols: fit 1 -->
-| Stage | Refining (Ana) |
-|---|---|
-| **Ask** | Line edits through Fri 10/10. Flag anything you'd refuse to follow. |
-| **Generating** | 10/6-10/9; Ben v3, Cy v2 |
-| **Refining** | v4, 10/9-, due 10/13; Ben 10/10, Cy pending |
-| **Delivered** | due 10/14 |
+`Stage` (the header row, with the owner in parentheses), `Ask`, and `Timeline`. The owner is the
+person staking their reputation on the document; they move it between stages. The Ask is
+per-generation: what this version wants from readers and by when. It evolves with the draft
+rather than being worded once for all time.
 
-Filled example, delivered:
-
-<!-- cols: fit 1 -->
-| Stage | Refining (Ana) |
-|---|---|
-| **Ask** | None; delivered. |
-| **Generating** | 10/6-10/9; Ben v3, Cy v3 |
-| **Refining** | v4, 10/9-10/13; Ben 10/10, Cy 10/12 |
-| **Delivered** | 10/14; to the team via #general; [delivered copy](#) |
-
-## Who writes which row
-
-| Row | Written by | Notes |
-|---|---|---|
-| Stage | human (owner) | One word plus owner in parentheses. The owner changes it at freeze or reopen; the agent prompts for it and supplies the text to paste. |
-| Ask | human (owner) | Never composed by the agent. At creation the agent asks for it and inserts it verbatim. |
-| Generating / Refining / Delivered | humans | Sign-offs by the reviewers themselves; dates and the frozen version by the owner. The agent fills only the Generating start date, at creation. |
-
-At creation the agent writes the whole table from what the author gives it. After that the agent
-does not write this tab. Where the document came from is in the stamp, below.
-
-## Notation
-
-Everything is typeable on any keyboard: digits, slash, hyphen, semicolon, comma, the word
-`due`, and words for statuses.
+`Timeline` is one line per phase: `Generating`, `Refining`, `Delivered`. The current phase is
+bold. Each line carries its dates and its sign-offs, in characters anyone can type:
 
 | Written | Means |
 |---|---|
-| `10/6-10/9` | Phase ran from 10/6 to 10/9, both happened. |
-| `10/9-` | Phase started 10/9, still open. |
-| `due 10/13` | A target, wherever it appears: end of the open phase, or start of a phase not yet begun. |
-| `10/9-, due 10/13` | Open since 10/9, targeted to end 10/13. |
-| `v4, 10/9-` | Refining only: the version that was frozen, then the dates. |
-| `;` | Separates the dates from the people. |
-| `,` | Separates people. |
-| `Ben v3` | Generating only: Ben signed off on version 3. Stale if a later version exists. |
-| `Ben 10/10` | Refining only: Ben finished a pass on 10/10. |
-| `Ben reviewing` / `Ben pending` | Status words instead of a date or version: in progress, or asked and not started. |
+| `since 10/6` | Phase entered on 10/6, still open. |
+| `due 10/13` | A target: end of the open phase, or start of one not yet begun. |
+| `10/14` alone on Delivered, with `to …; via …; [link]` | It went out, where, and the delivered copy. |
+| `reviewed: Ben 10/8, Cy 10/8` | Sign-offs: a name and the date they finished a pass **on this tab**. |
+| `not yet` | Phase not entered, no target. |
 
-A sign-off is a name with a version or a date. A name with a word is a status, not a sign-off.
-Reviewers update their own entry; to re-review in Generating, bump the version.
+A sign-off belongs to the tab it was written on. When the agent regenerates, it carries Stage,
+Ask and the dates forward into the new tab's grid and **clears the sign-offs**; the old tab keeps
+its grid untouched, so "who reviewed v3" is answered by opening v3. In Refining there is one tab,
+so sign-offs accumulate on it. No version numbers in sign-offs, ever.
 
-## The stamp (first thing on every generation tab, above the document's title)
+Humans edit these rows directly on the current tab: a sign-off, a new Ask, `Generating` →
+`Refining` at freeze. The agent reads them back before every regeneration and never composes
+them; it may change a single cell with `docs edit-cell` only as the direct execution of what the
+owner just said.
 
-The stamp is **rendered** from the draft file's frontmatter by `scripts/render-draft.mjs`
-(schema in `references/frontmatter.md`); nobody writes this table by hand. What it looks like:
+## The generated rows
 
-<!-- cols: fit 1 -->
-| Version | v4, 2026-10-09, from v3 |
-|---|---|
-| **Source** | themightychris/hari@blob:3f9c2a1b7d4e:drafts/ai-use-policy.md |
-| **Prompt** | Draft a short policy from my notes; fold in the channel history; restructure as one-page principles with appendices. NEW: keep the header as an appendix. |
-| **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
-| **Changes** | #7 split guest-community vs. repos we maintain; title-suffix convention under #2; header moved to its own front tab |
+`Version`, `Source`, `Prompt`, `Inputs`, `Changes`, rendered from the frontmatter:
 
-- `Version` is the table's header row, so the mandatory header row carries real content instead
-  of a caption or a blank line. From `version`, `date`, `from.version`; `v1` has no `from`.
-- `Source` is `<owner>/<repo>@blob:<12-char git blob>:<path>`: the exact file this tab was
-  rendered from, resolvable by anyone with the repo (`git cat-file -p <blob>`) and unaffected by
-  rebases. Derived at render time; the file can't contain its own hash.
-- `Prompt` is `prompt` (the cumulative paraphrase of the whole brief, rewritten tight each
-  round) followed by `NEW:` and `from.prompt` when that round added an instruction. A reader on
-  this tab gets the full intent without opening older tabs.
-- `Inputs` is the full `inputs` list, linked; `NEW:` where `new: true`.
-- `NEW:` always means "since the previous generation": the renderer composes it from `from.prompt`
-  and `new: true`, which the agent resets every round. Nobody types `NEW:` into prose.
-- `Changes` is `from.changes`. Omitted on v1. A pure tightening round has no `NEW:` markers and
-  a one-line Changes.
+- `Version`: `vN, YYYY-MM-DD, from vM` from `version`, `date`, `from.version`. `v1` has no `from`.
+- `Source`: `<owner>/<repo>@blob:<12-char git blob>:<path>`, the exact file this tab was rendered
+  from. Resolvable by anyone with the repo (`git cat-file -p <blob>`); unaffected by rebases.
+  Derived at render time; the file can't contain its own hash.
+- `Prompt`: `prompt` (the cumulative paraphrase of the whole brief, rewritten tight each round),
+  then `NEW:` and `from.prompt` when that round added an instruction.
+- `Inputs`: the full `inputs` list, linked; `NEW:` where `new: true`.
+- `Changes`: `from.changes`. Omitted on v1.
+
+`NEW:` always means "since the previous generation." The renderer composes it from `from.prompt`
+and `new: true`, which the agent resets every round. Nobody types `NEW:` into prose.
+
+## The Workflow row
+
+One line of protocol, always the same: the ✅ promise (edits are diffed and carried forward), how
+to sign off, and the link to the playbook. It's the only text on a tab that isn't the document or
+its data, and it's rendered, so it can't drift between documents. An agent writing a tab without
+the renderer (no git, no blob) must replace it with ⚠️ *Edits are not tracked: put feedback in
+comments* and say so to the owner.
 
 ## Tab names and icons
 
-Generation tabs: `v3 2026-10-09`. On freeze: `v4 2026-10-09 [REFINING]`. The README tab is named
-`README`; it is always first, and generation tabs are inserted at position 1 so the newest is
-directly after it.
-
-Because the README tab sits outside the content being worked on, it carries a standing legend under
-the table. That text describes the protocol, never the current state, so it can't go stale.
-Generation tabs carry nothing outside the stamp and the document.
-
-The legend's first paragraph comes in **two variants**, and the agent picks one at creation based on
-whether it can keep the exact markdown of every generation somewhere durable and diff the tab
-against it before each regeneration. Reviewers move between documents that do and don't have that,
-so the variant is called out in bold at the top where it can't be missed.
-
-Variant A, edits tracked (the agent keeps its generation sources and diffs):
-
-> **✅ Edits are tracked.** The newest draft is the tab right after this one. While Stage says
-> Generating, give broad-strokes feedback: comments, insertions, rewrites of anything you feel
-> strongly about. Before each regeneration the agent diffs this tab against what it wrote and treats
-> your rewording as the strongest signal it has, so edit what you care about; the job just isn't
-> "make this whole thing ready to ship." When Stage says Refining, that is the job: edit the marked
-> tab directly, line by line.
-
-Variant B, edits not tracked (no durable source to diff against):
-
-> **⚠️ Edits are not tracked.** The newest draft is the tab right after this one. While Stage says
-> Generating, put feedback in **comments**, including any wording you'd want kept; edits made
-> directly to the draft are not diffed and will not reach the next generation. When Stage says
-> Refining, edit the marked tab directly, line by line.
-
-The rest of the legend is the same in both:
->
-> Reviewers: add your sign-off to the open phase row above. Name plus version in Generating
-> (`Ben v3`), name plus date in Refining (`Ben 10/10`). A name with a word (`pending`, `reviewing`)
-> is a status, not a sign-off.
->
-> Tab icons:
->
-> - 📋 this README
-> - 💬 the newest draft, open for comments and edits
-> - ✏️ the frozen draft being refined, edit it directly
-> - 🗄️ superseded drafts, kept for history
-> - 📤 delivered
->
-> This document follows the `doc-drafting` workflow; the playbook for authors and reviewers is
-> [here](https://github.com/JarvusInnovations/agent-skills/blob/main/skills/doc-drafting/README.md).
-
-Where the tooling can set tab icons, use one per state so the tab strip reads as a phase
-indicator without opening anything:
+Generation tabs: `v3 2026-10-09`. On freeze: `v4 2026-10-09 [REFINING]`. The newest generation is
+always first (`--first`); there is no cover tab.
 
 | Icon | Tab |
 |---|---|
-| 📋 | the README tab (header table plus legend) |
-| 💬 | the current Generating draft: comments and contributed sections invited |
-| ✏️ | the Refining tab: edit it directly |
-| 🗄️ | superseded generations |
-| 📤 | the Refining tab once the Delivered row is filled |
-
-The pencil goes on Refining, not Generating, on purpose: that is the tab we want humans typing
-in. The speech bubble on the current draft says "talk to it, don't edit it."
+| 💬 | the newest draft: comments and edits invited |
+| ✏️ | the frozen draft being refined: edit it directly |
+| 🗄️ | superseded drafts, kept for history |
+| 📤 | the refined draft once Delivered is filled |
 
 Icons are set by the agent, never typed by a human, which is why they're allowed here and not in
-the table cells.
+the grid's cells.
 
 ## Title suffixes
 
