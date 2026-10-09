@@ -53,12 +53,14 @@ as fixed.
    while the Stage row says Refining, point at the row and ask whether they want to move
    it back to Generating (a new generation, a new tab, Stage row updated). Do not quietly
    do it.
-3. **Never rewrite the header tab after creating it.** Every row on it is a human's
-   statement: intent (Stage, Ask), completion (sign-offs), fact (dates, Delivered). You
-   write it once, at creation, with what the author gives you, and from then on you only
-   *prompt* for changes ("Stage still says Generating; update it and the dates when you
-   freeze"). Humans also fix its formatting, and a whole-tab rewrite would undo that.
-   Everything you own about provenance lives in the stamp on each generation.
+3. **Never rewrite the README tab after creating it, and never compose its rows.** Every
+   row is a human's statement: intent (Stage, Ask), completion (sign-offs), fact (dates,
+   Delivered). You write the tab once, at creation, with what the author gives you.
+   After that, the only writes you make to it are single cells, with `docs edit-cell` or
+   `docs replace-text`, as the direct execution of something the owner just told you
+   ("mark it Refining", "due 10/13", "it went out to the team via Slack"). Never on your
+   own judgment, never a whole-tab `docs write`, and never a sign-off on someone else's
+   behalf. Everything you own about provenance lives in the stamp on each generation.
 4. **Never deliver from Generating.** If asked to send a document to a client or outside
    party and the Stage row is not Refining with the author's sign-off, say that it hasn't
    been through Refining and ask whether to freeze it first.
@@ -77,7 +79,8 @@ as fixed.
 2. Ask the author for the **Ask** (what they want from readers, by when) if they haven't
    said. Ask who the **owner** is only if it isn't obviously the requester.
 3. Create the document with the **header on its own front tab named `README`** (Google
-   Docs), hidden first slide (decks), or at the top of the file (markdown). Under the table
+   Docs; H1 `Generated Document Status: <title>`, then the table), hidden first slide
+   (decks), or at the top of the file (markdown). Under the table
    on that tab, add the standing legend from `references/header-and-stamp.md` verbatim
    (where the newest draft is, how to sign off, the icon key, the playbook link); it
    describes the protocol, not the current state, so it never goes stale. Pick the
@@ -124,9 +127,11 @@ as fixed.
 When the author says the document is ready for Refining:
 
 1. Rename the current generation tab to `vN YYYY-MM-DD [REFINING]`.
-2. Ask the author to update the header: Stage to `Refining (<owner>)`, the Generating
-   row's end date, the Refining row starting `vN, <today>-` plus any due date. Give them
-   the exact text to paste. You don't write it.
+2. Apply the transition the author just dictated to the README tab with single-cell
+   edits: `replace-text` `Generating` → `Refining` in the Stage header row; `edit-cell
+   --row Generating` to close its dates; `edit-cell --row Refining` to `vN, <today>-` plus
+   any due date they gave. Read the previous content the response echoes back and tell
+   the author what changed. Don't touch Ask or anyone's sign-offs.
 3. From here, no regeneration. If asked to "clean up" or "tighten" the frozen text,
    propose edits as comments or suggestions, or make the specific small change they
    named; do not rewrite passages.
