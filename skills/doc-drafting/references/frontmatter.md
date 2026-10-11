@@ -38,6 +38,11 @@ what gets written to a generation tab. The frontmatter is the record; the grid i
 | `review.url` | string | no | Its edit link. |
 | `published` | object | no | A public copy, if one exists: `date`, `url`. |
 
+Quote any string value that contains ` #` (space then hash): unquoted, YAML treats everything
+from there on as a comment and silently drops it (`title: Toomey #resources playbook` parses as
+`Toomey`). Same for values starting with `#`, `*`, `&`, `!`, `|`, `>`, `@`, or containing `: `. When
+in doubt, quote; `--check` can't see text YAML already threw away.
+
 Keys are snake_case; dates are ISO in the file and render as `M/D` in the grid so humans can edit
 them. `status` is the one block the agent doesn't author: before each regeneration it reads the
 current tab's grid and copies the human rows into `status` (clearing `reviewed`), then regenerates.

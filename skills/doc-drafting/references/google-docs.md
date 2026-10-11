@@ -54,12 +54,13 @@ care about" true for reviewers.
 
 Compare **body to body**: the file below its frontmatter against the read-back below its stamp
 table. Then normalize, because the read-back pads cell delimiters (`|  |`, `| --- |`), escapes
-some punctuation, and has no trailing newline:
+some punctuation, has no trailing newline, and numbers every ordered-list item `1.` (Docs
+renumbers lists itself), so both sides get list numbers flattened too:
 
 ```sh
 body_of_file(){ awk 'f>=2{print} /^---$/{f++}' "$1"; }                             # below the frontmatter
 body_of_tab(){ awk 'done{print} /^\|/{intab=1} intab&&!/^\|/{done=1}' "$1"; }      # after the grid
-norm(){ sed -e '/^<!-- cols:/d' -e 's/\\//g' -e 's/ *| */|/g' -e 's/-\{3,\}/---/g' -e '/^\s*$/d' | sed '$a\'; }
+norm(){ sed -e '/^<!-- cols:/d' -e 's/^\( *\)[0-9]\+\. /\11. /' -e 's/\\//g' -e 's/ *| */|/g' -e 's/-\{3,\}/---/g' -e '/^\s*$/d' | sed '$a\'; }
 diff <(body_of_file written.md | norm) <(body_of_tab current.md | norm)
 ```
 
