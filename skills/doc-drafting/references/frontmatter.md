@@ -17,7 +17,7 @@ what gets written to a generation tab. The frontmatter is the record; the grid i
 | `from` | object | if `version` > 1 | What this generation is relative to. Absent on v1. |
 | `from.version` | integer | yes | The generation it was regenerated from. |
 | `from.prompt` | string | no | The instruction this round added. Absent on a pure tightening round. |
-| `from.changes` | string | yes | What moved this round, a line or two. Not a summary of the document. |
+| `from.changes` | string | yes | What moved this round, **one sentence**. Not a summary of the document. |
 | `prompt` | string | yes | The cumulative paraphrase of the whole brief, rewritten tight each round. No markers in it. |
 | `inputs` | list | yes | Everything fed to the model: sources, feedback, prior material. |
 | `inputs[].title` | string | one of title/url/path | Display text. |
@@ -102,16 +102,23 @@ review:
 
 ## What renders where
 
-| Grid row | From |
+Two tables. The human one:
+
+| Row | From |
 |---|---|
 | `Stage` (header row) | `status.stage`, `status.owner` → `Generating (Ana)` |
 | `Ask` | `status.ask`, or `(owner to fill)` |
 | `Timeline` | one list line per phase from `status.timeline`; the current phase bold; dates as `M/D`; `reviewed:` names |
-| `Version` | `version`, `date`, `from.version` → `v3, 2026-10-09, from v2` |
-| `Source` | derived at render: `owner/repo@blob:<12-char git blob of this file>:<path>` |
-| `Prompt` | `prompt`, then `NEW: ` + `from.prompt` when present |
+
+The generated one:
+
+| Row | From |
+|---|---|
+| `Generated` (header row) | `version`, `date`, `from.version` → `v3, 2026-10-09, from v2` |
 | `Inputs` | each item as a `<br>`-separated list entry, linked; `NEW: ` where `new: true` |
-| `Changes` | `from.changes`; row omitted on v1 |
+| `Changes` | `from.changes`, one sentence (the renderer refuses more); row omitted on v1 |
+| `Prompt` | `prompt`, then `NEW: ` + `from.prompt` when present |
+| `Source` | derived at render: `owner/repo@blob:<12-char git blob of this file>:<path>` |
 | `Workflow` | fixed protocol line (✅ edits tracked, how to sign off, playbook link) |
 
 `type`, `title`, `source_type`, `author`, `review`, `published` stay in the file. On

@@ -44,6 +44,11 @@ need(st.owner, "status.owner is required");
 const tl = st.timeline ?? {};
 need(tl.generating?.since, "status.timeline.generating.since is required");
 for (const ph of ["generating", "refining", "delivered"]) if (tl[ph]?.reviewed != null) need(Array.isArray(tl[ph].reviewed), `status.timeline.${ph}.reviewed must be a list`);
+if (fm.from?.changes) {
+  const c = String(fm.from.changes).replace(/\s+/g, " ").trim();
+  const sentences = (c.match(/[.!?](\s|$)/g) ?? []).length;
+  if (c.length > 240 || sentences > 1) problems.push(`from.changes should be one sentence (~240 chars max); got ${c.length} chars, ${sentences || 1} sentence(s). What moved, not a summary.`);
+}
 if (problems.length) fail(`${file}:\n  - ${problems.join("\n  - ")}`);
 if (flag("--check")) { console.error(`ok: v${fm.version} ${iso(fm.date)}, ${st.stage} (${st.owner}), ${fm.inputs.length} inputs${fm.from ? `, from v${fm.from.version}` : ""}`); process.exit(0); }
 
@@ -89,20 +94,25 @@ const link = (inp) => {
 };
 const inputs = fm.inputs.map((inp) => `- ${inp.new ? "NEW: " : ""}${link(inp)}`).join("<br>");
 const playbook = "https://github.com/JarvusInnovations/agent-skills/blob/main/skills/doc-drafting/README.md";
-const rows = [
-  `<!-- cols: ${opt("--cols") ?? "fit 1"} -->`,
+const cols = `<!-- cols: ${opt("--cols") ?? "fit 1"} -->`;
+const human = [
+  cols,
   `| Stage | ${cap(st.stage)} (${cell(st.owner)}) |`,
   `|---|---|`,
   `| **Ask** | ${st.ask ? cell(st.ask) : "(owner to fill)"} |`,
   `| **Timeline** | ${timeline} |`,
-  `| **Version** | ${version} |`,
-  `| **Source** | ${source} |`,
-  `| **Prompt** | ${prompt} |`,
+];
+const generated = [
+  cols,
+  `| Generated | ${version} |`,
+  `|---|---|`,
   `| **Inputs** | ${inputs} |`,
   ...(fm.from ? [`| **Changes** | ${cell(fm.from.changes)} |`] : []),
-  `| **Workflow** | ✅ Edits are tracked: rewrite what you care about and the next generation keeps it; sign off on the Timeline line with your name and the date. [doc-drafting playbook](${playbook}) |`,
+  `| **Prompt** | ${prompt} |`,
+  `| **Source** | ${source} |`,
+  `| **Workflow** | ✅ Edits are tracked: rewrite what you care about and the next generation keeps it; sign off on the Timeline line above with your name and the date. [doc-drafting playbook](${playbook}) |`,
 ];
-const out = `${rows.join("\n")}\n\n${body}`;
+const out = `${human.join("\n")}\n\n${generated.join("\n")}\n\n${body}`;
 const outPath = opt("--out");
 if (outPath) await Bun.write(outPath, out); else process.stdout.write(out);
 console.error(`rendered v${fm.version} ${iso(fm.date)} → ${outPath ?? "stdout"}; source ${source}; tab name "v${fm.version} ${iso(fm.date)}"`);

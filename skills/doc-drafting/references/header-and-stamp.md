@@ -1,7 +1,7 @@
 # The grid
 
-Every generation tab opens with one table, **the grid**: the human-owned status rows on top, the
-generated provenance rows below. It is rendered from the draft file's frontmatter by
+Every generation tab opens with **the grid**: two stacked tables, the human-owned status table on
+top and the generated provenance table below, each titled by its header row. It is rendered from the draft file's frontmatter by
 `scripts/render-draft.mjs` (schema in `references/frontmatter.md`); nobody writes it by hand, and
 humans edit it in place on the current tab.
 
@@ -10,12 +10,15 @@ humans edit it in place on the current tab.
 | **Stage** | Generating (Ana) |
 | **Ask** | Direction on the restructure; don't polish yet. By Tue 10/14. |
 | **Timeline** | - **Generating** since 10/6; reviewed: Ben 10/8, Cy 10/8<br>- Refining due 10/13<br>- Delivered due 10/17 |
-| **Version** | v3, 2026-10-09, from v2 |
-| **Source** | acme/strategy@blob:3f9c2a1b7d4e:drafts/ai-use-policy.md |
-| **Prompt** | Draft a short policy from the brainstorm and the notes; fold in the channel history. NEW: restructure as principles plus appendices. |
+
+| | |
+|---|---|
+| **Generated** | v3, 2026-10-09, from v2 |
 | **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
 | **Changes** | Restructured as principles plus appendices; #7 split; answered both v2 comments. |
-| **Workflow** | ✅ Edits are tracked: rewrite what you care about and the next generation keeps it; sign off on the Timeline line with your name and the date. [doc-drafting playbook](…) |
+| **Prompt** | Draft a short policy from the brainstorm and the notes; fold in the channel history. NEW: restructure as principles plus appendices. |
+| **Source** | acme/strategy@blob:3f9c2a1b7d4e:drafts/ai-use-policy.md |
+| **Workflow** | ✅ Edits are tracked: rewrite what you care about and the next generation keeps it; sign off on the Timeline line above with your name and the date. [doc-drafting playbook](…) |
 
 ## The human rows
 
@@ -47,25 +50,27 @@ owner just said.
 
 ## The generated rows
 
-`Version`, `Source`, `Prompt`, `Inputs`, `Changes`, rendered from the frontmatter:
+The second table, header row `Generated | vN, YYYY-MM-DD, from vM`, then `Inputs`, `Changes`,
+`Prompt`, `Source`, `Workflow`, rendered from the frontmatter. Inputs first because a reviewer
+skims them; Prompt and Source last because they're read only when something looks wrong.
 
-- `Version`: `vN, YYYY-MM-DD, from vM` from `version`, `date`, `from.version`. `v1` has no `from`.
+- `Generated` (the header row): from `version`, `date`, `from.version`. `v1` has no `from`.
 - `Source`: `<owner>/<repo>@blob:<12-char git blob>:<path>`, the exact file this tab was rendered
   from. Resolvable by anyone with the repo (`git cat-file -p <blob>`); unaffected by rebases.
   Derived at render time; the file can't contain its own hash.
 - `Prompt`: `prompt` (the cumulative paraphrase of the whole brief, rewritten tight each round),
   then `NEW:` and `from.prompt` when that round added an instruction.
 - `Inputs`: the full `inputs` list, linked; `NEW:` where `new: true`.
-- `Changes`: `from.changes`. Omitted on v1.
+- `Changes`: `from.changes`, **one sentence** (the renderer refuses more): what moved, not a summary. Omitted on v1.
 
 `NEW:` always means "since the previous generation." The renderer composes it from `from.prompt`
 and `new: true`, which the agent resets every round. Nobody types `NEW:` into prose.
 
 ## The Workflow row
 
-One line of protocol, always the same: the ✅ promise (edits are diffed and carried forward), how
-to sign off, and the link to the playbook. It's the only text on a tab that isn't the document or
-its data, and it's rendered, so it can't drift between documents. An agent writing a tab without
+The last row of the generated table, always the same: the ✅ promise (edits are diffed and carried
+forward), how to sign off, and the link to the playbook. It's the only text on a tab that isn't
+the document or its data, and it's rendered, so it can't drift between documents. An agent writing a tab without
 the renderer (no git, no blob) must replace it with ⚠️ *Edits are not tracked: put feedback in
 comments* and say so to the owner.
 

@@ -77,21 +77,24 @@ Two rules fall out of this:
 
 ## The grid
 
-Every generation tab opens with one table, the grid: the rows humans own on top, the rows the
-agent generates below. It's rendered from the draft file (see *Behind each generation* below), and
-humans edit the top rows directly on the current tab.
+Every generation tab opens with the grid: two small tables, the one humans own on top and the one
+the agent generates below, each titled by its header row. Both are rendered from the draft file
+(see *Behind each generation* below); humans edit the top table directly on the current tab.
 
 | | |
 |---|---|
 | **Stage** | Generating (Ana) |
 | **Ask** | Direction on the restructure; don't polish yet. By Tue 10/14. |
 | **Timeline** | - **Generating** since 10/6; reviewed: Ben 10/8, Cy 10/8<br>- Refining due 10/13<br>- Delivered due 10/17 |
-| **Version** | v3, 2026-10-09, from v2 |
-| **Source** | acme/strategy@blob:3f9c2a1b7d4e:drafts/ai-use-policy.md |
-| **Prompt** | Draft a short policy from the brainstorm and the notes; fold in the channel history. NEW: restructure as principles plus appendices. |
+
+| | |
+|---|---|
+| **Generated** | v3, 2026-10-09, from v2 |
 | **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
 | **Changes** | Restructured as principles plus appendices; #7 split; answered both v2 comments. |
-| **Workflow** | ✅ Edits are tracked: rewrite what you care about and the next generation keeps it; sign off on the Timeline line with your name and the date. [doc-drafting playbook](#) |
+| **Prompt** | Draft a short policy from the brainstorm and the notes; fold in the channel history. NEW: restructure as principles plus appendices. |
+| **Source** | acme/strategy@blob:3f9c2a1b7d4e:drafts/ai-use-policy.md |
+| **Workflow** | ✅ Edits are tracked: rewrite what you care about and the next generation keeps it; sign off on the Timeline line above with your name and the date. [doc-drafting playbook](…) |
 
 **The human rows.** `Stage`, with the owner in parentheses: the person staking their reputation on
 the document, who moves it between stages. `Ask`: what *this version* wants from readers and by
@@ -102,12 +105,10 @@ finished a pass **on this tab**; when the agent regenerates it carries Stage, As
 forward and clears the sign-offs, and the old tab keeps its grid as the record of who reviewed
 that version. In Refining there's one tab, so sign-offs accumulate on it.
 
-**The generated rows.** `Version`, `Source` (the exact file this tab was rendered from, by git
+**The generated table.** `Generated` (the version and what it came from), `Inputs` (everything that went in, linked, `NEW:` on what's new), `Changes` (what moved this round, one sentence), `Prompt` (the agent's paraphrase of the *whole* brief so far, with `NEW:` on what this round added), `Source` (the exact file this tab was rendered from, by git
 blob hash, so anyone with the repo can pull the text and nothing a rebase does can break the
-link), `Prompt` (the agent's paraphrase of the *whole* brief so far, with `NEW:` on what this
-round added), `Inputs` (everything that went in, linked, `NEW:` on what's new), `Changes` (what
-moved this round). `NEW:` always means "since the previous generation." The `Workflow` line is
-the one piece of protocol text on the tab, and it's always the same.
+link). `NEW:` always means "since the previous generation." The `Workflow` row is the one piece of
+protocol text on the tab, and it's always the same.
 
 A reader who only has ten seconds reads Stage and Ask and knows what to do.
 

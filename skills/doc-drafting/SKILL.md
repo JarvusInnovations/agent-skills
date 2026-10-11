@@ -48,8 +48,9 @@ Three artifacts, one source of truth:
 - **The draft file**: markdown with YAML frontmatter, committed in the project. The
   frontmatter holds the generation's data (version, prompt, inputs, what changed) and a
   snapshot of the status rows. This is what you write.
-- **The generation tab**: the render of that file. One **grid** at the top (status rows
-  humans own, provenance rows you generate), then the document. Humans edit the grid's
+- **The generation tab**: the render of that file. The **grid** at the top (two small
+  tables: the status table humans own, the provenance table you generate), then the
+  document. Humans edit the grid's
   status rows and the document on the current tab; you never write to a tab twice.
 - **The commit**: one per generation, trailers naming the Doc and tab, so history shows
   when a draft was spun out and where.
@@ -109,7 +110,7 @@ as fixed.
    from the live grid; clear every `reviewed` list; adjust the Ask only per rule 3.
    Then the generation's data: bump `version` and `date`; replace the `from` block
    (`from.version`, `from.prompt` = the instruction this round added if any,
-   `from.changes` = what moved, a line or two); rewrite `prompt` to the cumulative
+   `from.changes` = what moved, one sentence, the renderer refuses more); rewrite `prompt` to the cumulative
    paraphrase, tight, not appended to; clear last round's `new: true` and set it on the
    inputs this round introduced; rewrite the body. The renderer composes the `NEW:`
    markers from `from.prompt` and `new: true`; never type them into prose.
@@ -201,8 +202,8 @@ byte-exactness is lost, and you say so instead of diffing against the wrong text
 Humans are told they can edit what they care about in Generating because you will find
 it. That promise is yours to keep, every round, before you write a word.
 
-1. **Status rows.** The grid on the current tab is the authority for Stage, Ask, dates
-   and sign-offs. Read it; it's the first table in the read-back.
+1. **Status rows.** The grid's first table on the current tab is the authority for
+   Stage, Ask, dates and sign-offs. Read it; it's the first table in the read-back.
 2. **Diff the document against your own source.** Take the blob from the grid's Source
    row, `git cat-file -p <blob>` for the file you wrote, and diff **body to body**: the
    file below its frontmatter against the read-back below the grid (normalizer in
