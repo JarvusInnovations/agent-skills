@@ -59,7 +59,7 @@ renumbers lists itself), so both sides get list numbers flattened too:
 
 ```sh
 body_of_file(){ awk 'f>=2{print} /^---$/{f++}' "$1"; }                             # below the frontmatter
-body_of_tab(){ awk '/^\|/{intab=1;next} intab{intab=0;n++} n>=2{print}' "$1"; }   # after both grid tables
+body_of_tab(){ awk 'n<2&&/^\|/{intab=1;next} intab{intab=0;n++} n>=2{print}' "$1"; }   # after both grid tables; later tables are body
 norm(){ sed -e '/^<!-- cols:/d' -e 's/^\( *\)[0-9]\+\. /\11. /' -e 's/\\//g' -e 's/ *| */|/g' -e 's/-\{3,\}/---/g' -e '/^\s*$/d' | sed '$a\'; }
 diff <(body_of_file written.md | norm) <(body_of_tab current.md | norm)
 ```
