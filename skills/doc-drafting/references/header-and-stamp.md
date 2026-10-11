@@ -1,34 +1,41 @@
 # The grid
 
-Every generation tab opens with **the grid**: two stacked tables, the human-owned status table on
-top and the generated provenance table below, each titled by its header row. It is rendered from the draft file's frontmatter by
+Every generation tab opens with **the grid**: one table, three columns. A static title row
+(`AI draft under human review`, which never goes stale because it states nothing that changes),
+the human-owned status rows, a merged section row naming the generation, and the generated
+provenance rows. A page break follows it, so the document starts on a fresh page. It is rendered from the draft file's frontmatter by
 `scripts/render-draft.mjs` (schema in `references/frontmatter.md`); nobody writes it by hand, and
 humans edit it in place on the current tab.
 
-| | |
-|---|---|
-| **Stage** | Generating (Ana) |
-| **Ask** | Direction on the restructure; don't polish yet. By Tue 10/14. |
-| **Timeline** | - **Generating** since 10/6; reviewed: Ben 10/8, Cy 10/8<br>- Refining due 10/13<br>- Delivered due 10/17 |
+```
+| AI draft under human review                                              |||
+|---|---|---|
+| **Ask** (Ana)  | Direction on the restructure; don't polish yet. By Tue 10/14.  ||
+| **Timeline**   | ▶ **Generating** | since 10/6; reviewed: Ben 10/8, Cy 10/8 |
+| ^              | Refining         | due 10/13 |
+| ^              | Delivered        | not yet |
+| **Generated v3 on 2026-10-09 from v2**                                  |||
+| **Changes**    | Restructured as principles plus appendices; #7 split; answered both v2 comments. ||
+| **Inputs**     | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) ||
+| **Prompt**     | Draft a short policy from the brainstorm and the notes; fold in the channel history. NEW: restructure as principles plus appendices. ||
+| **Source**     | acme/strategy@blob:3f9c2a1b7d4e:drafts/ai-use-policy.md ||
+| **Workflow**   | ✅ Edits are tracked: rewrite what you care about and the next generation keeps it; sign off on your Timeline row with your name and the date. [doc-drafting playbook](…) ||
+```
 
-| | |
-|---|---|
-| **Generated** | v3, 2026-10-09, from v2 |
-| **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
-| **Changes** | Restructured as principles plus appendices; #7 split; answered both v2 comments. |
-| **Prompt** | Draft a short policy from the brainstorm and the notes; fold in the channel history. NEW: restructure as principles plus appendices. |
-| **Source** | acme/strategy@blob:3f9c2a1b7d4e:drafts/ai-use-policy.md |
-| **Workflow** | ✅ Edits are tracked: rewrite what you care about and the next generation keeps it; sign off on the Timeline line above with your name and the date. [doc-drafting playbook](…) |
+(Shown as the gws-axi table dialect: `|||` spans three columns, `||` two, `^` continues the cell
+above. Rendered, it's one table with a title row, a merged section row, and a Timeline label
+spanning three phase rows.)
 
 ## The human rows
 
-`Stage` (the header row, with the owner in parentheses), `Ask`, and `Timeline`. The owner is the
-person staking their reputation on the document; they move it between stages. The Ask is
-per-generation: what this version wants from readers and by when. It evolves with the draft
-rather than being worded once for all time.
+`Ask`, with the owner in parentheses, and `Timeline`. The owner is the person staking their
+reputation on the document; they move it between stages. The Ask is per-generation: what this
+version wants from readers and by when. It evolves with the draft rather than being worded once
+for all time. There is no Stage row: the stage is the Timeline row marked `▶` and bold.
 
-`Timeline` is one line per phase: `Generating`, `Refining`, `Delivered`. The current phase is
-bold. Each line carries its dates and its sign-offs, in characters anyone can type:
+`Timeline` is one row per phase under a label that spans all three: `Generating`, `Refining`,
+`Delivered`, each with its own detail cell. Each detail carries its dates and sign-offs, in
+characters anyone can type:
 
 | Written | Means |
 |---|---|
@@ -43,18 +50,18 @@ Ask and the dates forward into the new tab's grid and **clears the sign-offs**; 
 its grid untouched, so "who reviewed v3" is answered by opening v3. In Refining there is one tab,
 so sign-offs accumulate on it. No version numbers in sign-offs, ever.
 
-Humans edit these rows directly on the current tab: a sign-off, a new Ask, `Generating` →
-`Refining` at freeze. The agent reads them back before every regeneration and never composes
+Humans edit these cells directly on the current tab: a sign-off on a phase row, a new Ask,
+moving the `▶` from Generating to Refining at freeze (and adding `since <date>` there). The agent reads them back before every regeneration and never composes
 them; it may change a single cell with `docs edit-cell` only as the direct execution of what the
 owner just said.
 
 ## The generated rows
 
-The second table, header row `Generated | vN, YYYY-MM-DD, from vM`, then `Inputs`, `Changes`,
-`Prompt`, `Source`, `Workflow`, rendered from the frontmatter. Inputs first because a reviewer
-skims them; Prompt and Source last because they're read only when something looks wrong.
-
-- `Generated` (the header row): from `version`, `date`, `from.version`. `v1` has no `from`.
+Under the merged, bold section row `Generated vN on YYYY-MM-DD from vM` (from `version`,
+`date`, `from.version`; `v1` reads `Generated v1 on …`): `Changes`, `Inputs`, `Prompt`,
+`Source`, `Workflow`, rendered from the frontmatter. Changes first because it's the one line a
+returning reviewer needs; Prompt and Source last because they're read only when something looks
+wrong.
 - `Source`: `<owner>/<repo>@blob:<12-char git blob>:<path>`, the exact file this tab was rendered
   from. Resolvable by anyone with the repo (`git cat-file -p <blob>`); unaffected by rebases.
   Derived at render time; the file can't contain its own hash.
@@ -68,7 +75,7 @@ and `new: true`, which the agent resets every round. Nobody types `NEW:` into pr
 
 ## The Workflow row
 
-The last row of the generated table, always the same: the ✅ promise (edits are diffed and carried
+The last row, always the same: the ✅ promise (edits are diffed and carried
 forward), how to sign off, and the link to the playbook. It's the only text on a tab that isn't
 the document or its data, and it's rendered, so it can't drift between documents. An agent writing a tab without
 the renderer (no git, no blob) must replace it with ⚠️ *Edits are not tracked: put feedback in

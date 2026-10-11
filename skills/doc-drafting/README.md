@@ -77,40 +77,46 @@ Two rules fall out of this:
 
 ## The grid
 
-Every generation tab opens with the grid: two small tables, the one humans own on top and the one
-the agent generates below, each titled by its header row. Both are rendered from the draft file
-(see *Behind each generation* below); humans edit the top table directly on the current tab.
+Every generation tab opens with the grid: one table, titled *AI draft under human review*, with
+the rows humans own on top and, under a bold *Generated vN on date from vM* divider, the rows the
+agent generates. It's rendered from the draft file (see *Behind each generation* below); humans
+edit the top rows directly on the current tab. A page break follows it.
 
-| | |
-|---|---|
-| **Stage** | Generating (Ana) |
-| **Ask** | Direction on the restructure; don't polish yet. By Tue 10/14. |
-| **Timeline** | - **Generating** since 10/6; reviewed: Ben 10/8, Cy 10/8<br>- Refining due 10/13<br>- Delivered due 10/17 |
+```
+| AI draft under human review                                              |||
+|---|---|---|
+| **Ask** (Ana)  | Direction on the restructure; don't polish yet. By Tue 10/14.  ||
+| **Timeline**   | ▶ **Generating** | since 10/6; reviewed: Ben 10/8, Cy 10/8 |
+| ^              | Refining         | due 10/13 |
+| ^              | Delivered        | not yet |
+| **Generated v3 on 2026-10-09 from v2**                                  |||
+| **Changes**    | Restructured as principles plus appendices; #7 split; answered both v2 comments. ||
+| **Inputs**     | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) ||
+| **Prompt**     | Draft a short policy from the brainstorm and the notes; fold in the channel history. NEW: restructure as principles plus appendices. ||
+| **Source**     | acme/strategy@blob:3f9c2a1b7d4e:drafts/ai-use-policy.md ||
+| **Workflow**   | ✅ Edits are tracked: rewrite what you care about and the next generation keeps it; sign off on your Timeline row with your name and the date. [doc-drafting playbook](…) ||
+```
 
-| | |
-|---|---|
-| **Generated** | v3, 2026-10-09, from v2 |
-| **Inputs** | - [Brainstorm notes](#)<br>- [Channel history](#), Jun-Sep<br>- NEW: [Call transcript](#) |
-| **Changes** | Restructured as principles plus appendices; #7 split; answered both v2 comments. |
-| **Prompt** | Draft a short policy from the brainstorm and the notes; fold in the channel history. NEW: restructure as principles plus appendices. |
-| **Source** | acme/strategy@blob:3f9c2a1b7d4e:drafts/ai-use-policy.md |
-| **Workflow** | ✅ Edits are tracked: rewrite what you care about and the next generation keeps it; sign off on the Timeline line above with your name and the date. [doc-drafting playbook](…) |
+(Shown as the gws-axi table dialect: `|||` spans three columns, `||` two, `^` continues the cell
+above. Rendered, it's one table with a title row, a merged section row, and a Timeline label
+spanning three phase rows.)
 
-**The human rows.** `Stage`, with the owner in parentheses: the person staking their reputation on
-the document, who moves it between stages. `Ask`: what *this version* wants from readers and by
-when; it evolves with the draft instead of being worded once for all time. `Timeline`: one line per
-phase, the current one bold, each carrying its dates (`since 10/6`, `due 10/13`) and its sign-offs
-(`reviewed: Ben 10/8`), all in characters anyone can type. A sign-off is a name and the date you
+**The human rows.** `Ask`, with the owner in parentheses: the person staking their reputation on the
+document, who moves it between stages. The Ask is what *this version* wants from readers and by
+when; it evolves with the draft instead of being worded once for all time. `Timeline`: one row per
+phase, the current one marked `▶`, each carrying its dates (`since 10/6`, `due 10/13`) and its
+sign-offs (`reviewed: Ben 10/8`), all in characters anyone can type. There is no Stage row; the `▶`
+is the stage. A sign-off is a name and the date you
 finished a pass **on this tab**; when the agent regenerates it carries Stage, Ask and the dates
 forward and clears the sign-offs, and the old tab keeps its grid as the record of who reviewed
 that version. In Refining there's one tab, so sign-offs accumulate on it.
 
-**The generated table.** `Generated` (the version and what it came from), `Inputs` (everything that went in, linked, `NEW:` on what's new), `Changes` (what moved this round, one sentence), `Prompt` (the agent's paraphrase of the *whole* brief so far, with `NEW:` on what this round added), `Source` (the exact file this tab was rendered from, by git
+**The generated rows**, under the bold divider that names the version and what it came from: `Changes` (what moved this round, one sentence), `Inputs` (everything that went in, linked, `NEW:` on what's new), `Prompt` (the agent's paraphrase of the *whole* brief so far, with `NEW:` on what this round added), `Source` (the exact file this tab was rendered from, by git
 blob hash, so anyone with the repo can pull the text and nothing a rebase does can break the
 link). `NEW:` always means "since the previous generation." The `Workflow` row is the one piece of
 protocol text on the tab, and it's always the same.
 
-A reader who only has ten seconds reads Stage and Ask and knows what to do.
+A reader who only has ten seconds reads the `▶` row and the Ask and knows what to do.
 
 ## Generations
 
@@ -128,7 +134,7 @@ the other way, from the tab to the exact text it was rendered from, by git blob 
 commit hash so a rebase can't break it. That's what lets the agent diff the tab later and find
 what humans changed, which is what makes "edit what you care about" true. No commit, no ✅.
 
-When the author freezes a version, they change Stage to Refining on that tab's grid (or tell the
+When the author freezes a version, they move the `▶` to Refining on that tab's grid (or tell the
 agent to), and the agent renames the tab `vN YYYY-MM-DD [REFINING]`, sets its icon ✏️, and stops
 generating. If review in Refining turns up something structural and the document drops back to
 Generating, the next generation is a new tab and its grid says so; the frozen tab keeps its name
@@ -136,24 +142,24 @@ so the story stays legible.
 
 ## As an author
 
-1. Say which stage you're in, in the grid, before you share. If you haven't read the document
+1. Make sure the `▶` is on the right phase before you share. If you haven't read the document
    yourself, say so in the Ask and ask for nothing.
 2. Write the Ask yourself. Match it to what you've put in: don't ask for more review time than you
    spent reviewing. For anything large, ask what format and timeline work *before* sending.
 3. In Generating, tell reviewers it's a collection box. In Refining, tell them line edits are
    welcome.
-4. Move to Refining only when you've read every line: change Stage to Refining on the current
-   tab's grid. The agent renames the tab and stops regenerating.
+4. Move to Refining only when you've read every line: move the `▶` to the Refining row on the
+   current tab's grid and add `since <date>`. The agent renames the tab and stops regenerating.
 5. Fill in Delivered when it ships, with where it went and a link to the delivered form.
 
 ## As a reviewer
 
-- Read Stage and Ask first, then the Workflow line. **✅ Edits are tracked**
+- Read the `▶` row and the Ask first, then the Workflow line. **✅ Edits are tracked**
   means the agent diffs the draft before regenerating: in Generating, give direction and content,
   and rewrite anything you feel strongly about; it will survive. **⚠️ Edits are not tracked** means
   put everything in comments, including wording you want kept. Either way, don't spend Generating
   effort making the whole thing ship-ready. In Refining, that *is* the job: edit line by line.
-- When you've done your pass, add your sign-off to the bold Timeline line on that tab: your name
+- When you've done your pass, add your sign-off to the `▶` Timeline row on that tab: your name
   and the date. That's how the author knows you're done, and how later reviewers know who has
   looked at this version.
 - If an AI-generated document reaches you **without the grid**, don't review it. Send it back with

@@ -26,7 +26,7 @@ what gets written to a generation tab. The frontmatter is the record; the grid i
 | `inputs[].repo` | `owner/repo` | no | For `path`, when it's another repo. Defaults to this one. |
 | `inputs[].new` | boolean | no | Introduced this round. Needs a `from` block. |
 | `status` | object | yes | The human-owned rows of the grid, as they stood when this generation was written. The live grid on the current tab is the authority; this is the record. |
-| `status.stage` | `generating` \| `refining` | yes | Bold line of the Timeline; header row of the grid. |
+| `status.stage` | `generating` \| `refining` | yes | Which Timeline row gets the `▶`. |
 | `status.owner` | string | yes | Who moves it between stages. |
 | `status.ask` | string | no | What this generation wants from readers and by when. Per-generation; carried forward as the default and confirmed with the owner each round. Renders `(owner to fill)` when absent. |
 | `status.timeline.generating` | `{since, due?, reviewed?}` | yes (`since`) | Dates `YYYY-MM-DD`; `reviewed` a list of `Name M/D` strings, **cleared on every regeneration**. |
@@ -102,24 +102,21 @@ review:
 
 ## What renders where
 
-Two tables. The human one:
+One three-column table (label, phase, detail):
 
 | Row | From |
 |---|---|
-| `Stage` (header row) | `status.stage`, `status.owner` → `Generating (Ana)` |
-| `Ask` | `status.ask`, or `(owner to fill)` |
-| `Timeline` | one list line per phase from `status.timeline`; the current phase bold; dates as `M/D`; `reviewed:` names |
-
-The generated one:
-
-| Row | From |
-|---|---|
-| `Generated` (header row) | `version`, `date`, `from.version` → `v3, 2026-10-09, from v2` |
-| `Inputs` | each item as a `<br>`-separated list entry, linked; `NEW: ` where `new: true` |
+| title row | the constant `AI draft under human review`, spanning all columns |
+| `Ask (owner)` | `status.owner`, `status.ask` or `(owner to fill)`; spans the two value columns |
+| `Timeline` rows | one row per phase from `status.timeline`, label spanning them; `▶` and bold on `status.stage` (or Delivered once `delivered.date` is set); dates as `M/D`; `reviewed:` names |
+| section row | `version`, `date`, `from.version` → bold `Generated v3 on 2026-10-09 from v2`, spanning all columns |
 | `Changes` | `from.changes`, one sentence (the renderer refuses more); row omitted on v1 |
+| `Inputs` | each item as a `<br>`-separated list entry, linked; `NEW: ` where `new: true` |
 | `Prompt` | `prompt`, then `NEW: ` + `from.prompt` when present |
 | `Source` | derived at render: `owner/repo@blob:<12-char git blob of this file>:<path>` |
 | `Workflow` | fixed protocol line (✅ edits tracked, how to sign off, playbook link) |
+
+A page break (two rules) follows the grid; `--no-pagebreak` suppresses it.
 
 `type`, `title`, `source_type`, `author`, `review`, `published` stay in the file. On
 the repo surface (a draft that lives as a markdown file), GitHub renders the frontmatter as a
