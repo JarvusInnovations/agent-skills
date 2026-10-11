@@ -52,15 +52,15 @@ document that tells you nothing usable about one tab (a tab-scoped diff is reque
 gws-axi#110). Keep your generation sources somewhere durable; they're what make "edit what you
 care about" true for reviewers.
 
-Compare **body to body**: the file below its frontmatter against the read-back below its stamp
-table. Then normalize, because the read-back pads cell delimiters (`|  |`, `| --- |`), escapes
+Compare **body to body**: the file below its frontmatter against the read-back below the grid
+(the normalizer also drops the page break's two rules). Then normalize, because the read-back pads cell delimiters (`|  |`, `| --- |`), escapes
 some punctuation, has no trailing newline, and numbers every ordered-list item `1.` (Docs
 renumbers lists itself), so both sides get list numbers flattened too:
 
 ```sh
 body_of_file(){ awk 'f>=2{print} /^---$/{f++}' "$1"; }                             # below the frontmatter
-body_of_tab(){ awk 'n<2&&/^\|/{intab=1;next} intab{intab=0;n++} n>=2{print}' "$1"; }   # after both grid tables; later tables are body
-norm(){ sed -e '/^<!-- cols:/d' -e 's/^\( *\)[0-9]\+\. /\11. /' -e 's/\\//g' -e 's/ *| */|/g' -e 's/-\{3,\}/---/g' -e '/^\s*$/d' | sed '$a\'; }
+body_of_tab(){ awk 'n<1&&/^\|/{intab=1;next} intab{intab=0;n++} n>=1{print}' "$1"; }   # after the grid; later tables are body
+norm(){ sed -e '/^<!-- cols:/d' -e '/^---$/d' -e 's/^\( *\)[0-9]\+\. /\11. /' -e 's/\\//g' -e 's/ *| */|/g' -e 's/-\{3,\}/---/g' -e '/^\s*$/d' | sed '$a\'; }
 diff <(body_of_file written.md | norm) <(body_of_tab current.md | norm)
 ```
 
@@ -85,14 +85,17 @@ field after every write.
 
 Tables, as of 0.34:
 
-- A `cols` hint on the line before a table sets its column widths. `<!-- cols: fit 1 -->` is
-  the one to use on the status table and the stamp: `fit` sizes the label column to its widest
-  label (measured as Arial, the Docs default; a tab in another font gets a `help[]` note), and
-  the `1` gives the value column everything else. Weights (`1 4`) and percentages (`20% 80%`)
-  also work. `docs read` emits the hint back as percentages for any table whose columns are
-  fixed and unequal, including columns a human dragged by hand, so a hint in the read-back is a
-  human preference: carry it into the next generation's stamp instead of your default. (`fit`
-  needs gws-axi ≥ 0.35; on 0.34 use `1 4`.)
+- A `cols` hint on the line before a table sets its column widths. The grid uses
+  `<!-- cols: fit fit 1 -->`: `fit` sizes a column to its content (measured as Arial, the Docs
+  default; a tab in another font gets a `help[]` note), and the `1` gives the detail column
+  everything else. Weights and percentages also work. `docs read` emits the hint back as
+  percentages for any table whose columns are fixed and unequal, including columns a human
+  dragged by hand, so a hint in the read-back is a human preference: pass it to the next render
+  with `--cols`. (`fit` and spans need gws-axi ≥ 0.36.)
+- Spans, in marked-extended-tables syntax: `| wide |||` spans three columns, `| ^|` continues
+  the cell above. The grid's title and section rows span, and the Timeline label spans its three
+  phase rows. Two rules in a row (`---`, blank, `---`) are a page break; the renderer emits one
+  after the grid.
 - `docs write --help` documents the table dialect under its `markdown:` block, and the write
   response adds a `help[]` line whenever a table went in without a hint; treat that line as a
   reminder you forgot the hint, not as noise.
@@ -129,12 +132,13 @@ git commit -m "draft(<doc>): v3" -m "<changes>" -m "Spun out to <doc URL> as tab
 gws-axi docs tabs update <docId> <v2TabId> --emoji 🗄️ --account <you>
 
 # freeze, when the owner tells you (otherwise they edit the grid themselves)
-gws-axi docs replace-text <docId> --tab <v3TabId> --find "Generating (" --replace "Refining (" --account <you>
-gws-axi docs edit-cell <docId> --tab <v3TabId> --row Timeline --text "- Generating since 10/6; reviewed: Ben 10/8<br>- **Refining** since 10/9; due 10/13<br>- Delivered due 10/17" --account <you>
+gws-axi docs edit-cell <docId> --tab <v3TabId> --row Generating --col 2 --text "Generating" --account <you>
+gws-axi docs edit-cell <docId> --tab <v3TabId> --row Refining --col 2 --text "▶ **Refining**" --account <you>
+gws-axi docs edit-cell <docId> --tab <v3TabId> --row Refining --col 3 --text "since 10/9; due 10/13" --account <you>
 gws-axi docs tabs update <docId> <v3TabId> --title "v3 YYYY-MM-DD [REFINING]" --emoji ✏️ --account <you>
 
 # delivered
-gws-axi docs edit-cell <docId> --tab <v3TabId> --row Timeline --text "…<br>- **Delivered** 10/17; to the team; via Slack; [link](…)" --account <you>
+gws-axi docs edit-cell <docId> --tab <v3TabId> --row Delivered --col 3 --text "10/17; to the team; via Slack; [link](…)" --account <you>
 gws-axi docs tabs update <docId> <v3TabId> --emoji 📤 --account <you>
 
 # remove a tab (only when the owner asks; never one with comments)
@@ -149,8 +153,11 @@ gws-axi drive rename <docId> --name "<Title> [ONGOING]" --account <you>
 response lists the new tab order and an undo line. Every write is refused if the Doc changed since
 you last read it, so list tabs (or read) right before you act.
 
-`edit-cell --row Timeline` replaces the whole cell, so read the current Timeline from the tab
-first and rewrite it with only the dictated change; the response echoes the previous content.
+Each Timeline phase is its own row, so a freeze is `edit-cell --row "Refining" --col 3` (the
+detail cell) plus moving the `▶`: `replace-text --find "▶ **Generating**" --replace "Generating"`
+and `--find "| Refining" …` is fragile, so prefer `edit-cell --row Generating --col 2 --text
+"Generating"` and `edit-cell --row Refining --col 2 --text "▶ **Refining**"`. The response echoes
+the previous content each time.
 
 ## Verifying a write
 

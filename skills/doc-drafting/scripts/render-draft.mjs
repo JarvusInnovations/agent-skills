@@ -2,10 +2,10 @@
 // render-draft: turn a draft markdown file (YAML frontmatter + body) into the markdown
 // written to a generation tab: one grid (status rows, then generation rows), then the body.
 //
-//   render-draft <file> [--out <tab.md>] [--repo <owner/repo>] [--cols "<hint>"] [--check]
+//   render-draft <file> [--out <tab.md>] [--repo <owner/repo>] [--cols "<hint>"] [--no-pagebreak] [--check]
 //
-// --cols sets the grid's column hint (default "fit 1"; use "14% 86%" or "1 4" on a gws-axi
-// without `fit`, or to carry forward widths a human set by hand).
+// --cols sets the grid's three-column hint (default "fit fit 1"; carry forward widths a human set
+// by hand). --no-pagebreak drops the page break between the grid and the document.
 //
 // The Source row is derived here, not stored in the file: blob = `git hash-object <file>`,
 // path = the file's path from the repo root, repo = origin's owner/repo unless --repo.
@@ -21,6 +21,11 @@ const text = await Bun.file(file).text();
 const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
 if (!m) fail(`${file}: no YAML frontmatter block at the top of the file`);
 const fm = Bun.YAML.parse(m[1]) ?? {};
+// YAML trap: in an unquoted plain scalar, " #" starts a comment and silently drops the rest.
+for (const line of m[1].split("\n")) {
+  const mm = line.match(/^\s*(?:- )?[\w.]+:\s+([^"'>|\s].*?) #/);
+  if (mm) fail(`${file}: "${line.trim()}" — unquoted value contains " #", so YAML drops everything after it. Quote the value.`);
+}
 const body = m[2].replace(/^\s*\n/, "");
 
 // --- validate -------------------------------------------------------------------------
@@ -70,10 +75,12 @@ if (!repo) {
 const source = `${repo}@blob:${blob}:${path}`;
 
 // --- grid -----------------------------------------------------------------------------
+// One table, three columns: label | phase | detail. Status rows humans own on top under a
+// static title; a merged section row that names the generation; provenance rows below.
 const cell = (s) => String(s ?? "").replace(/\s*\n\s*/g, " ").replace(/\|/g, "\\|").trim();
 const md = (d) => { const s = iso(d); return s ? `${+s.slice(5, 7)}/${+s.slice(8, 10)}` : ""; };   // 2026-10-08 -> 10/8, typeable
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
-const phaseLine = (name, p, current) => {
+const phaseDetail = (p) => {
   const bits = [];
   if (p?.date) bits.push(md(p.date)); else if (p?.since) bits.push(`since ${md(p.since)}`);
   if (p?.due) bits.push(`due ${md(p.due)}`);
@@ -81,11 +88,12 @@ const phaseLine = (name, p, current) => {
   if (p?.via) bits.push(`via ${cell(p.via)}`);
   if (p?.url) bits.push(`[link](${p.url})`);
   if (p?.reviewed?.length) bits.push(`reviewed: ${p.reviewed.map(cell).join(", ")}`);
-  const label = current ? `**${cap(name)}**` : cap(name);
-  return `- ${label}${bits.length ? ` ${bits.join("; ")}` : ": not yet"}`;
+  return bits.length ? bits.join("; ") : "not yet";
 };
-const timeline = ["generating", "refining", "delivered"].map((ph) => phaseLine(ph, tl[ph], ph === st.stage || (ph === "delivered" && tl.delivered?.date))).join("<br>");
-const version = `v${fm.version}, ${iso(fm.date)}${fm.from ? `, from v${fm.from.version}` : ""}`;
+const current = tl.delivered?.date ? "delivered" : st.stage;
+const phaseRows = ["generating", "refining", "delivered"].map((ph, i) =>
+  `| ${i === 0 ? "**Timeline**" : "^"} | ${ph === current ? `▶ **${cap(ph)}**` : cap(ph)} | ${phaseDetail(tl[ph])} |`);
+const generatedHeader = `Generated v${fm.version} on ${iso(fm.date)}${fm.from ? ` from v${fm.from.version}` : ""}`;
 const prompt = cell(fm.prompt) + (fm.from?.prompt ? ` NEW: ${cell(fm.from.prompt)}` : "");
 const link = (inp) => {
   const label = cell(inp.title ?? inp.url ?? inp.path);
@@ -94,25 +102,21 @@ const link = (inp) => {
 };
 const inputs = fm.inputs.map((inp) => `- ${inp.new ? "NEW: " : ""}${link(inp)}`).join("<br>");
 const playbook = "https://github.com/JarvusInnovations/agent-skills/blob/main/skills/doc-drafting/README.md";
-const cols = `<!-- cols: ${opt("--cols") ?? "fit 1"} -->`;
-const human = [
-  cols,
-  `| Stage | ${cap(st.stage)} (${cell(st.owner)}) |`,
-  `|---|---|`,
-  `| **Ask** | ${st.ask ? cell(st.ask) : "(owner to fill)"} |`,
-  `| **Timeline** | ${timeline} |`,
+const grid = [
+  `<!-- cols: ${opt("--cols") ?? "fit fit 1"} -->`,
+  `| AI draft under human review |||`,
+  `|---|---|---|`,
+  `| **Ask** (${cell(st.owner)}) | ${st.ask ? cell(st.ask) : "(owner to fill)"} ||`,
+  ...phaseRows,
+  `| **${generatedHeader}** |||`,
+  ...(fm.from ? [`| **Changes** | ${cell(fm.from.changes)} ||`] : []),
+  `| **Inputs** | ${inputs} ||`,
+  `| **Prompt** | ${prompt} ||`,
+  `| **Source** | ${source} ||`,
+  `| **Workflow** | ✅ Edits are tracked: rewrite what you care about and the next generation keeps it; sign off on your Timeline row with your name and the date. [doc-drafting playbook](${playbook}) ||`,
 ];
-const generated = [
-  cols,
-  `| Generated | ${version} |`,
-  `|---|---|`,
-  `| **Inputs** | ${inputs} |`,
-  ...(fm.from ? [`| **Changes** | ${cell(fm.from.changes)} |`] : []),
-  `| **Prompt** | ${prompt} |`,
-  `| **Source** | ${source} |`,
-  `| **Workflow** | ✅ Edits are tracked: rewrite what you care about and the next generation keeps it; sign off on the Timeline line above with your name and the date. [doc-drafting playbook](${playbook}) |`,
-];
-const out = `${human.join("\n")}\n\n${generated.join("\n")}\n\n${body}`;
+const pagebreak = flag("--no-pagebreak") ? "" : "---\n\n---\n\n";
+const out = `${grid.join("\n")}\n\n${pagebreak}${body}`;
 const outPath = opt("--out");
 if (outPath) await Bun.write(outPath, out); else process.stdout.write(out);
 console.error(`rendered v${fm.version} ${iso(fm.date)} → ${outPath ?? "stdout"}; source ${source}; tab name "v${fm.version} ${iso(fm.date)}"`);
