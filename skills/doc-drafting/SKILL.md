@@ -192,7 +192,10 @@ generation's text.
 
 If the write fails, there's nothing to commit; fix and retry. If you committed before
 writing, `git commit --amend --no-edit --trailer …` on that unpushed commit is the same
-thing (an amend doesn't change the blob). If you notice a tab with no matching commit
+thing (an amend doesn't change the blob). If you rewrite a tab you just wrote (same
+generation, a fix minutes later) and the file changed, re-render, rewrite, and amend;
+`--trailer` *appends*, so to replace `Doc-Revision` rewrite the message (`git log -1
+--format=%B`, swap the line, `--amend -F`) rather than adding a second trailer. If you notice a tab with no matching commit
 later, commit the file now with the ids from `docs tabs`; it's untracked until you do.
 
 The one way a blob stops resolving: a rebase whose conflict resolution changes the file
