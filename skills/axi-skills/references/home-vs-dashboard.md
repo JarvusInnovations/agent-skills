@@ -11,21 +11,28 @@ split right is item #6 in [kunchenguid/axi#46](https://github.com/kunchenguid/ax
 |---|---|---|
 | Contains | identity / auth status + command reference | live situational state |
 | Cost | cheap — local reads or a single never-error identity call | real data fetch, possibly several sections |
-| Live data? | **no** | **yes** |
-| Default hook | global, every session | on-demand, or **project-scoped** hook |
+| Live data? | none, or a small bounded amount that is cheap to read | **yes** |
+| Default hook | user scope, every session | on-demand, or **project-scoped** hook |
 | Resilience | must never error (exit 0 even offline) | may error normally |
 
 The split resolves the tension in `axi` §7 (session-start context must be ruthlessly minimal): the
-*minimal* thing (home) is the always-on global default; the *comprehensive* thing (dashboard) is a
+*minimal* thing (home) is the always-on user-scope default; the *comprehensive* thing (dashboard) is a
 deliberate, on-demand or project-pinned opt-in. You don't need a `--compact` middle ground.
 
-Note the nuance: for some tools the home view **is** live content and is cheap (specops' home is
-the plans dashboard — pure local file reads). In that case home and dashboard can be the same
-thing. The split matters most when "live state" means a network call or expensive computation.
+This split is a choice per tool, not a rule. Upstream `axi` §8 wants the no-args view to show live
+content, and upstream has declined to make an identity-only home a principle. For many tools the
+home view **is** live content and is cheap (specops' home is the plans dashboard — pure local file
+reads; a time tracker's home is today's entries from one call). In that case keep it in home, and
+home and dashboard can be the same thing. Split them when "live state" means several network
+calls, work that grows with the account, or content that only matters in some repos.
+
+Whichever you choose, home has to be safe to run in every session: bounded content, a short
+timeout on anything live, and a failed read shown as unavailable instead of as an error or as
+"nothing there".
 
 ## home: identity + reference, offline-safe
 
-The home view is the global every-session payload, so:
+The home view is the user-scope every-session payload, so:
 
 - Lead with the identity header the `axi` SDK prepends (`bin:` / `description:`).
 - Show **auth/config status**, resolved from a single never-error call (or local config). If the
@@ -34,7 +41,8 @@ The home view is the global every-session payload, so:
 - Carry the command reference (from `COMMAND_GROUPS`) so the agent learns the surface once per
   session. (If you decide the reference belongs only in `--help`, then home carries just identity +
   a couple of next-step hints — that's a fine choice too, and lighter.)
-- **No live data.** Open sessions, current items, counts — those are dashboard territory.
+- **No expensive live data.** If you have split out a dashboard, open sessions, current items and
+  counts belong there. If you haven't, keep what home shows small, bounded and cheap.
 
 ## dashboard: comprehensive coverage, bounded depth
 
@@ -71,6 +79,6 @@ Two dashboard flavors, both useful as project-level hooks:
 ## How the two stack at the project level
 
 Because Claude Code runs SessionStart hooks from both user and project settings additively, a
-session in a project-hooked repo receives **home (global) + dashboard (project)** together. Design
-the dashboard payload to *omit* the command reference, since the global home already injected it
+session in a project-hooked repo receives **home (user scope) + dashboard (project)** together. Design
+the dashboard payload to *omit* the command reference, since the user-scope home already injected it
 that session. The two are complementary by construction, not duplicative.

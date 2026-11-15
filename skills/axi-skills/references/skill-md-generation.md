@@ -23,7 +23,7 @@ export const COMMAND_GROUPS: CommandGroup[] = [
     { usage: "dag [--direction TB|LR] [--fence] [--dir <path>]", summary: "Mermaid graph of the DAG…" },
   ]},
   { group: "Session", commands: [
-    { usage: "hook install [--scope project|global] | hook status | hook uninstall", summary: "Manage the SessionStart hook…" },
+    { usage: "setup hooks [status|uninstall] [--scope user|project]", summary: "Manage the SessionStart hook…" },
   ]},
 ];
 ```

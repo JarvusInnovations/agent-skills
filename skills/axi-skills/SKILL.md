@@ -7,7 +7,7 @@ description: >-
   covers what good agent-facing CLI output looks like (TOON, schemas, content-first); this
   covers how to ship that CLI *inside a skill*. Use whenever you're turning an AXI tool into
   an installable skill, or working on any of its moving parts — the esbuild → committed .mjs
-  build, the bash shim, the SessionStart hook (install/uninstall/status, project vs global
+  build, the bash shim, the SessionStart hook (`setup hooks`, user vs project
   scope), generating SKILL.md from a single-source command reference, the CI drift gate, or
   splitting a lean every-session "home" view from an on-demand live "dashboard". Triggers:
   "bundle my CLI in a skill", "AXI in a skill", "ship this CLI via npx skills", "self-contained
@@ -97,7 +97,7 @@ The recipe is identical; only paths change. Three real shapes:
     reference.ts                # SINGLE SOURCE OF TRUTH: DESCRIPTION + COMMAND_GROUPS
     invocation.ts               # cliInvocation() — resolved path for emitted examples
     skill.ts                    # spliceGeneratedRegions() — SKILL.md marker splicer
-    commands/{home,hook,...}.ts # handlers (home doubles as the hook payload)
+    commands/{home,setup,...}.ts # handlers (home doubles as the hook payload)
   scripts/
     build-cli.ts                # esbuild → committed .mjs, version-stamp, --check drift gate
     build-skill.ts              # splice generated regions into SKILL.md, --check
@@ -126,7 +126,7 @@ Work top to bottom; each step has a deep-dive reference and a template.
    `--help` text, and the generated SKILL.md region all derive from this one structure — so the
    skill doc can never drift from the implementation. See `references/skill-md-generation.md`.
 
-3. **Wire `cli.ts` with `runAxiCli()`.** Register `home`, your commands, and a `hook` command.
+3. **Wire `cli.ts` with `runAxiCli()`.** Register `home`, your commands, and a `setup` command for `setup hooks`.
    Watch the two SDK quirks that bite everyone (flags-before-command rejected; the home view is
    zero-arg) — both covered in `references/build-pipeline.md` and `references/session-hooks.md`.
 
@@ -145,14 +145,15 @@ Work top to bottom; each step has a deep-dive reference and a template.
    `COMMAND_GROUPS`. Prose outside the markers is never touched. See
    `references/skill-md-generation.md`.
 
-7. **Add the SessionStart hook command.** `hook install|uninstall|status` with project (default)
-   and global scope, built on the SDK's `computeSessionStartHookUpdate`. The project/global path
-   distinction (`${CLAUDE_PROJECT_DIR}` vs absolute) is the subtle part — see
-   `references/session-hooks.md`.
+7. **Add the SessionStart hook command.** `setup hooks` installs or repairs, matching the upstream
+   reference tools; add `--scope user|project` and `status` / `uninstall` actions as needed. Use
+   the SDK's hook helpers where they fit, and build on `computeSessionStartHookUpdate` where a
+   bundled CLI needs more. The user/project command distinction (absolute vs
+   `${CLAUDE_PROJECT_DIR}`) is the subtle part — see `references/session-hooks.md`.
 
-8. **Split home from dashboard (if you have live data).** A lean, offline-safe `home`
-   (identity + reference) for the cheap every-session global hook; a richer `dashboard` (live
-   state) for on-demand or project-scoped use. See `references/home-vs-dashboard.md`.
+8. **Split home from dashboard (if your live data is expensive).** A cheap, offline-safe `home`
+   for the every-session user-scope hook; a richer `dashboard` (live state) for on-demand or
+   project-scoped use. A tool whose live state is small and cheap can keep it in `home`. See `references/home-vs-dashboard.md`.
 
 9. **Gate drift in CI.** A `check.yml` that runs `type-check` and `bun run check` (both
    `--check` builds) with `fetch-depth: 0` so `git describe` is stable. Template:
@@ -167,7 +168,7 @@ before you start — most are invisible until they bite.
 - **A `.mjs`-named bundle never auto-installs hooks.** The SDK infers auto-install from the bin
   filename and silently no-ops on any filename containing a `.`. So you *don't* pass
   `hooks: false` (it isn't even in the published `AxiCliOptions` type in 0.1.7) — you manage hooks
-  explicitly via your `hook` command and rely on this implicit no-op.
+  explicitly via your `setup hooks` command and rely on this implicit no-op.
 - **`runAxiCli` rejects flags before the command.** `mytool --dir x` fails ("Flags must come
   after the command"). The no-args home view is therefore strictly zero-arg — it can't take a
   leading `--dir`. Lean on the SessionStart working directory instead, or register an explicit
@@ -177,9 +178,12 @@ before you start — most are invisible until they bite.
   CI may lack tags), so the embedded `git describe` version always differs. Normalize the version
   literal out of *both* sides before comparing — covered in `references/build-pipeline.md`.
 - **`Write` doesn't set +x.** The shim and `.mjs` must be committed executable (`chmod 755`).
-- **`os.homedir()` ignores `$HOME`.** Don't try to fake `$HOME` to test global hook install — it
-  writes to your real `~/.claude/settings.json`. Install-then-uninstall against the real path and
-  assert other hooks survive.
+- **Hook tests can write to your real settings.** Point `HOME` at a temp directory, and assert
+  once that the installer resolved the temp path before trusting it: if the redirect doesn't
+  apply in your runtime, the test edits your real `~/.claude/settings.json`. See
+  `references/session-hooks.md`.
+- **A hook installer that warns and exits 0 is a bug.** Treat any write error as a failure, and
+  re-read status after installing. See `references/session-hooks.md`.
 - **Mark the bundle `linguist-generated`** in `.gitattributes` so the giant generated `.mjs`
   collapses in PR diffs.
 
