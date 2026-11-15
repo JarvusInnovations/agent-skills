@@ -1,4 +1,4 @@
-# agent-dev-workflow
+# jarvus-dev-flow
 
 Scaffolds an **agent-friendly local dev workflow**: a `bin/` task-runner (modeled on GitHub's
 *scripts-to-rule-them-all*) over a shared Postgres container that gives **every git worktree its own
@@ -32,7 +32,7 @@ those updates reach the project. Each one arrives as a diff, and the agent can a
 repo's tooling.
 
 ```bash
-npx skills add JarvusInnovations/agent-skills --skill agent-dev-workflow
+npx skills add JarvusInnovations/agent-skills --skill jarvus-dev-flow
 ```
 
 Then ask your agent to set up the bin/ workflow. See `SKILL.md` for the full scaffold and

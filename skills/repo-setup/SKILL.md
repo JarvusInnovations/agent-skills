@@ -14,7 +14,7 @@ description: >-
   repo", "set up a repo", "gh repo create", "push this to GitHub", "repo settings", "branch
   protection", "rulesets", "default branch", "develop branch is gone", "set up the release
   flow", "make this repo standard". Scope is the repo shell — cutting releases belongs to
-  `release-flow`, pre-merge lint/test gates to `ci-quality-gates`.
+  `jarvus-release-flow`, pre-merge lint/test gates to `jarvus-ci`.
 ---
 
 # Repo setup (Jarvus house shape)
@@ -33,8 +33,8 @@ the other lets someone squash-merge and break `git branch --merged` forever.
 
 | In scope (the repo shell) | Out of scope (hand off) |
 | --- | --- |
-| Branches: `develop` default, `main` release target | Cutting a release, changelog, version bump → **`release-flow`** |
-| Merge policy + auto-delete + rulesets | Lint / format / type-check / test gates → **`ci-quality-gates`** |
+| Branches: `develop` default, `main` release target | Cutting a release, changelog, version bump → **`jarvus-release-flow`** |
+| Merge policy + auto-delete + rulesets | Lint / format / type-check / test gates → **`jarvus-ci`** |
 | Wiring the Release-PR workflows | Stack scaffolding → **`jarvus-react`**, **`jarvus-fastify`**, **`jarvus-flutter`**, **`jarvus-dbt`** |
 | First-publish bootstrap (npm, etc.) | Bundling an AXI CLI into a skill → **`axi-skills`** |
 
@@ -166,7 +166,7 @@ asdf install
 ```
 
 CI should pin the same versions it declares. Provisioning and caching details are
-`ci-quality-gates`' territory.
+`jarvus-ci`' territory.
 
 ### 6. Wire the release workflows
 
@@ -187,7 +187,7 @@ details:
 step fails only at the moment you most want it to work.
 
 How these behave once running — the changelog comment, the version bump, merging to
-publish — is **`release-flow`**. Don't reimplement that reasoning here.
+publish — is **`jarvus-release-flow`**. Don't reimplement that reasoning here.
 
 ### 7. Verify before declaring done
 

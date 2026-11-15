@@ -41,8 +41,8 @@ Then say "set up a new repo" or "make this repo standard" and the skill takes ov
 
 ## Related skills
 
-- **`release-flow`** — cutting releases once the repo is wired: the Release PR, changelog, version
-  bump, and merging to publish. `repo-setup` installs the plumbing; `release-flow` operates it.
-- **`ci-quality-gates`** — the lint / format / type-check / test gates that run before merge.
+- **`jarvus-release-flow`** — cutting releases once the repo is wired: the Release PR, changelog, version
+  bump, and merging to publish. `repo-setup` installs the plumbing; `jarvus-release-flow` operates it.
+- **`jarvus-ci`** — the lint / format / type-check / test gates that run before merge.
 - **`axi-skills`** — packaging an AXI CLI inside a skill, when the tool ships that way instead of to
   a registry.

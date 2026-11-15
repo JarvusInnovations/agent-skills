@@ -347,7 +347,7 @@ references are only followed in build mode. This is why the template's own `buil
 script runs `tsc -b`.
 
 The oxc commands take explicit source paths rather than a bare `.`, per the tool
-standards in the `ci-quality-gates` skill: a bare `.` lints vendored and generated
+standards in the `jarvus-ci` skill: a bare `.` lints vendored and generated
 content, and `oxfmt` formats Markdown by default, so `oxfmt .` rewrites `README.md`
 and any docs. Extend the path list if the app grows other TypeScript entry points.
 
@@ -357,7 +357,7 @@ that `oxfmt` has never touched, so a pristine scaffold fails `format:check` imme
 a red gate that reflects the template, not your work. Doing it up front keeps the first
 real `format:check` meaningful and keeps formatting churn out of your feature diffs.
 
-The `ui-checks.yml` template from `ci-quality-gates` also invokes `bun run test`. Configure
+The `ui-checks.yml` template from `jarvus-ci` also invokes `bun run test`. Configure
 the project's chosen test runner and add a real `test` script before enabling that step,
 or deliberately adapt the workflow. Never add a no-op test command.
 

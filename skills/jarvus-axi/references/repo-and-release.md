@@ -176,7 +176,7 @@ In shell steps, a bare `grep` under `set -e` aborts on no match. Use `if ! grep 
 Also run CI on the pull request `edited` event, so a stacked PR that gets retargeted is
 checked against its new base.
 
-For pre-merge gate setup generally, see the `ci-quality-gates` skill.
+For pre-merge gate setup generally, see the `jarvus-ci` skill.
 
 ## Toolchain
 
@@ -190,7 +190,7 @@ For pre-merge gate setup generally, see the `ci-quality-gates` skill.
 
 ## Versioning and publishing
 
-Releases use the develop→main Release-PR flow. Use the `release-flow` skill to cut one and
+Releases use the develop→main Release-PR flow. Use the `jarvus-release-flow` skill to cut one and
 `repo-setup` to wire a new repo. What is specific to AXI tools:
 
 - **The tag is the version.** `package.json` keeps a placeholder (`0.1.0` or `0.0.0`) in git.

@@ -114,7 +114,7 @@ empty project holding only `references`, so `--noEmit` resolves zero files and e
 no matter how broken the code is. Only build mode follows the references.
 
 Scope the oxc commands to real source paths rather than a bare `.`, per the tool
-standards in the `ci-quality-gates` skill: a bare `.` lints vendored and generated
+standards in the `jarvus-ci` skill: a bare `.` lints vendored and generated
 content, and `oxfmt` formats Markdown by default, so `oxfmt .` rewrites `README.md`
 and any docs. Extend the path list if the app grows other TypeScript entry points.
 
@@ -123,7 +123,7 @@ any code. The Vite template's files were never formatted by `oxfmt`, so a fresh 
 fails `format:check` on code you did not write. Formatting once up front means the gate
 only ever reports your own changes.
 
-Use the stricter React config and `ui-checks.yml` from the `ci-quality-gates` skill. That
+Use the stricter React config and `ui-checks.yml` from the `jarvus-ci` skill. That
 workflow also expects a `test` script: configure the repository's chosen test runner
 before enabling the test step, or deliberately adapt the workflow. Do not add a fake or
 no-op test command merely to make CI green.
