@@ -39,11 +39,12 @@ hand-rolls:
 
 ## Install
 
-**Recommended scope: global.** You reach for this while *building* tooling — often bootstrapping a
-new repo before it has any skills wired up — so it's most useful installed once for all your projects.
+**Recommended scope: per-project.** Install it in the repo that ships the bundled CLI. Building,
+rebuilding and gating that bundle is ongoing work there, so the recipe should be version-controlled
+with the code, and an update to the skill should arrive as a diff the team can read.
 
 ```bash
-npx skills add --global JarvusInnovations/agent-skills --skill axi-skills
+npx skills add JarvusInnovations/agent-skills --skill axi-skills
 ```
 
 Then just start building an AXI tool inside a skill — the agent will load `axi-skills` when the
