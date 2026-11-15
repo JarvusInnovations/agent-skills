@@ -53,7 +53,7 @@ case study).
 
 ## Local feedback (editor, not git hooks)
 
-Per the `ci-quality-gates` enforcement philosophy, **CI is the only gate — no pre-commit.**
+Per the `jarvus-ci` enforcement philosophy, **CI is the only gate — no pre-commit.**
 sqlfluff runs *directly* in CI (it emits PR annotations natively; see the gate below). For
 local fast feedback use a **sqlfluff editor integration** (the vscode-sqlfluff extension or a
 sqlfluff LSP) and run `sqlfluff lint` / `sqlfluff fix` by hand — don't wire a git hook.
@@ -88,9 +88,9 @@ For larger projects, scope the build to changed models with **`state:modified`**
 (dbt-labs' `using-dbt-state`) so CI doesn't rebuild the world — this is the "no crazy huge data
 reads" requirement.
 
-## Plugs into `ci-quality-gates`
+## Plugs into `jarvus-ci`
 
-This is the **dbt lane** of the `ci-quality-gates` contract: same path-filtered, lockfile-frozen,
+This is the **dbt lane** of the `jarvus-ci` contract: same path-filtered, lockfile-frozen,
 credential-free harness, just with `sqlfluff` as the linter and `dbt parse`/unit-tests as the
 test gate. Keep it before the merge line; data-backed tests needing secrets are a separate,
 later gate.

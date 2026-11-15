@@ -230,7 +230,7 @@ backend/
 
 Wire lint, format, and type-check into CI from the start. The cross-cutting setup (asdf
 provisioning + caching, path-filtered workflows, lockfile-frozen installs, the GitHub Actions
-templates) lives in the **`ci-quality-gates`** skill; this section is the Fastify-stack
+templates) lives in the **`jarvus-ci`** skill; this section is the Fastify-stack
 specifics that plug into it.
 
 **Linter + formatter: oxlint + oxfmt** (the Jarvus standard — not eslint/prettier):
@@ -256,13 +256,13 @@ just calls `bun run <name>`:
 }
 ```
 
-Use the **base** oxc config (`references/templates/oxlintrc.base.json` from `ci-quality-gates`,
+Use the **base** oxc config (`references/templates/oxlintrc.base.json` from `jarvus-ci`,
 correctness=error) as the service's `.oxlintrc.json` — backend code doesn't need the React
 tier. In a Bun-workspaces monorepo, put the base config at the repo root as
 `.oxlintrc.base.json` and have each package extend it; a service that contains a UI subfolder
 adds `"ignorePatterns": ["ui"]` so the UI is linted by its own config.
 
 **CI workflow.** A single service uses one `ts-lint`-style job (`lint` + `format:check` +
-`typecheck`) plus a `test` job; a monorepo uses the per-package matrix in `ci-quality-gates`'s
+`typecheck`) plus a `test` job; a monorepo uses the per-package matrix in `jarvus-ci`'s
 `lint.yml` / `test.yml`. All provisioned by the shared `setup-asdf` composite. Type-check is a
 required gate — `tsc --noEmit` catches bugs no linter does.

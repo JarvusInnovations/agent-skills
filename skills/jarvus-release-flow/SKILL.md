@@ -1,5 +1,5 @@
 ---
-name: release-flow
+name: jarvus-release-flow
 description: >-
   Cut a release in a repo that uses the Jarvus develop→main Release-PR automation
   (the JarvusInnovations/infra-components release-prepare/validate/publish GitHub Actions).

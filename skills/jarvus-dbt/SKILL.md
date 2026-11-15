@@ -78,7 +78,7 @@ warehouse secret needed (unlike a BigQuery project, which needs a service accoun
   - `using-dbt-for-analytics-engineering` — generic AE principles; this skill is the Jarvus
     extension of it.
   - `dbt-migration/*` + `creating-mermaid-dbt-dag` — relevant to the deferred deployment pass.
-- **`ci-quality-gates`** — owns *how a repo gates a PR*. The dbt gate here is the dbt **lane**
+- **`jarvus-ci`** — owns *how a repo gates a PR*. The dbt gate here is the dbt **lane**
   of that contract; the CI template lives in [references/templates/](references/templates/) and
   plugs into the same path-filtered, lockfile-frozen harness.
 

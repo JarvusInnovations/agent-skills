@@ -221,7 +221,7 @@ context.go('/login');               // replace stack
 
 Wire analyze, format, and tests into CI from the start. The cross-cutting CI harness — asdf
 provisioning + caching, path-filtered workflows, the `setup-asdf` composite — lives in the
-**`ci-quality-gates`** skill; reuse it here. The *tools* differ from the TS/Python stacks:
+**`jarvus-ci`** skill; reuse it here. The *tools* differ from the TS/Python stacks:
 Dart ships its own analyzer and formatter, so there's no oxc/ruff here.
 
 **The gate (Dart-native):**
@@ -239,6 +239,6 @@ Dart ships its own analyzer and formatter, so there's no oxc/ruff here.
 just in the dev loop.
 
 **Provisioning.** Flutter is pinned in `.tool-versions` (plus ruby/cocoapods for iOS), so the
-`setup-asdf` composite from `ci-quality-gates` provisions CI exactly as for the other stacks.
+`setup-asdf` composite from `jarvus-ci` provisions CI exactly as for the other stacks.
 Commit `pubspec.lock` and use `flutter pub get` (it respects the lock). The credential-free,
 path-filtered, IDE-over-pre-commit principles all carry over — only the tool commands change.

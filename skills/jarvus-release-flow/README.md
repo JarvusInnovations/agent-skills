@@ -1,4 +1,4 @@
-# release-flow
+# jarvus-release-flow
 
 Drives releases for repos wired with the **Jarvus develop→main Release-PR automation** (the
 `JarvusInnovations/infra-components` `release-prepare` / `validate` / `publish` GitHub Actions). The
@@ -20,7 +20,7 @@ contributor's agent follows the same steps, and an update to the skill arrives a
 can read.
 
 ```bash
-npx skills add JarvusInnovations/agent-skills --skill release-flow
+npx skills add JarvusInnovations/agent-skills --skill jarvus-release-flow
 ```
 
 Then say "cut a release" / "ship it" in a wired repo and the skill takes over. See `SKILL.md` for how

@@ -1,4 +1,4 @@
-# ci-quality-gates
+# jarvus-ci
 
 Stands up the **pre-merge CI quality gates** a repo runs before code lands on `develop`:
 the toolchain provisioning, then **lint + format-check + type-check + test**, using Jarvus's
@@ -19,7 +19,7 @@ Reach for it whenever a repo needs its checks set up or tightened:
 - **choosing/standardizing linters** so every repo uses the same tools and script names,
 - **CI that re-installs tools slowly** — the cached asdf composite fixes that.
 
-It deliberately **stops at the merge line**. Release-PR automation is `release-flow`; container
+It deliberately **stops at the merge line**. Release-PR automation is `jarvus-release-flow`; container
 build/publish and deploy belong to per-stack build docs and the `sysadmin`/deploy skills;
 credentialed checks (`tofu plan`, integration tests) are a separate later gate.
 
@@ -39,7 +39,7 @@ those updates reach the project. Each one arrives as a diff, and the agent can a
 repo's CI.
 
 ```bash
-npx skills add JarvusInnovations/agent-skills --skill ci-quality-gates
+npx skills add JarvusInnovations/agent-skills --skill jarvus-ci
 ```
 
 Then ask your agent to set up the quality gates. See `SKILL.md` for the build order and

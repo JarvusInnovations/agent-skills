@@ -33,7 +33,7 @@ more than a dozen of them.
 | `axi` (upstream) | The principles. Read it first. |
 | `jarvus-axi` | Our conventions on top, and the npm recipe. |
 | [`axi-skills`](../axi-skills/README.md) | Shipping a CLI inside a skill as a committed bundle. |
-| [`release-flow`](../release-flow/README.md), [`repo-setup`](../repo-setup/README.md) | Releases and repo plumbing. |
+| [`jarvus-release-flow`](../jarvus-release-flow/README.md), [`repo-setup`](../repo-setup/README.md) | Releases and repo plumbing. |
 
 ## Install
 
