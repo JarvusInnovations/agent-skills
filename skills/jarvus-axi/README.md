@@ -37,16 +37,19 @@ more than a dozen of them.
 
 ## Install
 
-Install it globally, since it is used while building tools across many repos:
+**Recommended scope: per-project.** Install it in each repo where an AXI tool is built. These
+conventions govern ongoing work in that repo, so they should be version-controlled with the code:
+every contributor's agent follows the same rules, and when the house style changes, the update
+arrives as a diff the team can read.
 
 ```bash
-npx skills add --global JarvusInnovations/agent-skills --skill jarvus-axi
+npx skills add JarvusInnovations/agent-skills --skill jarvus-axi
 ```
 
 Install the upstream skill alongside it:
 
 ```bash
-npx skills add --global kunchenguid/axi
+npx skills add kunchenguid/axi
 ```
 
 ## When it applies

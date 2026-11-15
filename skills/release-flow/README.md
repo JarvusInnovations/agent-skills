@@ -14,12 +14,13 @@ an open `Release: v*` PR.
 
 ## Install
 
-**Recommended scope: global.** Releases are ambient work that spans the many repos Jarvus maintains —
-most of which won't have this skill installed locally. Installing it once globally means the release
-workflow is recognized wherever you happen to be shipping.
+**Recommended scope: per-project.** Cutting releases is an ongoing practice in every repo that uses
+the Release-PR flow. Installed in the repo, the skill is version-controlled with the code, so every
+contributor's agent follows the same steps, and an update to the skill arrives as a diff the team
+can read.
 
 ```bash
-npx skills add --global JarvusInnovations/agent-skills --skill release-flow
+npx skills add JarvusInnovations/agent-skills --skill release-flow
 ```
 
 Then say "cut a release" / "ship it" in a wired repo and the skill takes over. See `SKILL.md` for how

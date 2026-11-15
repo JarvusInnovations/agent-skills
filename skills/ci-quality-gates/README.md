@@ -33,11 +33,13 @@ credentialed checks (`tofu plan`, integration tests) are a separate later gate.
 
 ## Install
 
-**Recommended scope: global.** You reach for this to *bootstrap* a repo's CI — often before it
-has any skills wired up — so it's most useful installed once for all your projects.
+**Recommended scope: per-project.** The gates are set up once, but the standards behind them keep
+moving: linter choices, the script contract, provisioning. Installed in the repo, the skill is how
+those updates reach the project. Each one arrives as a diff, and the agent can apply it to the
+repo's CI.
 
 ```bash
-npx skills add --global JarvusInnovations/agent-skills --skill ci-quality-gates
+npx skills add JarvusInnovations/agent-skills --skill ci-quality-gates
 ```
 
 Then ask your agent to set up the quality gates. See `SKILL.md` for the build order and
