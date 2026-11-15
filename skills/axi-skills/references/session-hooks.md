@@ -210,6 +210,9 @@ Design principles for the extended dashboard (these are where project-level dash
   installer resolved the temp path. If the redirect silently doesn't apply, the test writes to
   your real `~/.claude/settings.json`. The SDK also writes a Codex config under the home
   directory at any scope, so redirect `HOME` even for project-scope tests.
+  One trap when a test spawns the CLI as a child process: version-manager shims (asdf and
+  similar) locate themselves through `HOME`, so a shimmed `node` or `bun` fails under a redirected
+  `HOME`. Spawn the real binary (`process.execPath`), not the shim.
 - **Give tests a kill switch.** An environment variable such as `MYTOOL_DISABLE_HOOKS=1` that
   makes every hook write a no-op (and says so) keeps an unrelated test from ever touching real
   agent settings. Set it globally in the test setup.
