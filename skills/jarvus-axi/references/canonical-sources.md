@@ -18,8 +18,8 @@ under `github.com/JarvusInnovations/`.
 | Round-trippable `--ndjson-out`, lossy `--csv-out` | `gitsheets` `packages/gitsheets-axi/src/util/export-file.ts` | |
 | List and help renderers, field schema builders | `gws-axi` `src/output/schema.ts`, `render.ts` | `renderListResponse`, `renderHelp`, block-form help. |
 | `reference.ts` and the SKILL.md generator | `nexudus-axi` `src/reference.ts`, `scripts/generate-skill.ts` | Whole-file generation with `npx -y` examples. |
-| `setup hooks [status\|uninstall] [--scope]` | `nexudus-axi` `src/commands/setup.ts` | Fail-closed: `onError` is fatal, status is re-read. |
-| Tool-owned hook settings merges (exact ownership, atomic writes) | `agent-recall-axi` `src/commands/hook-settings.ts` | Only when the SDK installer isn't enough. Its command is named `hook`; use `setup hooks`. |
+| `setup hooks [status\|uninstall] [--scope]` | `nexudus-axi` `src/commands/setup.ts` | Fail-closed: `onError` is fatal, status is re-read. Its project scope uses the working directory; add the `--dir` or git-root rule. |
+| Tool-owned hook settings merges (exact ownership, atomic writes) | `agent-recall-axi` `src/commands/hook-settings.ts` | Only when the SDK installer isn't enough. |
 | `doctor` rows and exit logic | `nexudus-axi` `src/commands/doctor.ts` | |
 | Home view that degrades to `unavailable (…)` | `nexudus-axi` `src/commands/home.ts` | |
 | Multi-account config and resolution | `nexudus-axi` `src/config.ts` | Per-account directories, explicit account for mutations. |
@@ -48,16 +48,18 @@ under `github.com/JarvusInnovations/`.
 
 These tools predate some rules. Don't copy these parts forward.
 
-- **Lenient flag parsing:** metabase-axi, otter-axi and slack-axi accept unknown flags.
-- **Usage errors exiting 1:** slack-axi has no `formatError` remap.
-- **Counts in the array header:** slack-axi.
-- **Hand-written help and skill:** metabase-axi, otter-axi, slack-axi, harvest-axi.
-- **Top-level `hook` command:** agent-recall-axi and specops.
-- **Tokens on argv:** calendly-axi and slack-axi take `--token <value>`.
-- **No `--version` fast path:** most tools before nexudus-axi.
-- **Hook installed by `auth setup`:** calendly-axi.
+- **Hand-written help and skill:** metabase-axi, otter-axi, slack-axi and harvest-axi write `--help` text by hand, with no `reference.ts` and no drift gate.
+- **No `--version` fast path:** most tools before nexudus-axi. calendly-axi has it.
+- **Project-scope hooks written under the current directory:** nexudus-axi, calendly-axi and agent-recall-axi use the working directory as the project target. The rule is `--dir`, else the git root, else an error (`home-doctor-hooks.md`). specops does it correctly.
+- **`doctor` with `ok|warn` rows:** slack-axi.
+- **Lenient parsing in part of a tool:** specops validates only its `setup` command; its other commands still accept unknown flags.
+- **Free-text no-op results and unechoed environment credentials:** harvest-axi.
+- **Auto-named export files that can collide:** harvest-axi names them from a millisecond timestamp. Use exclusive-create with a suffix, as gws-axi does.
+- **A corrupt config read as an empty default:** metabase-axi and calendly-axi.
 
 Bringing one of these in line is a welcome change. Do it as its own plan in that repo.
+
+Fixed since this list was first written, and safe to copy from the repo's `develop` branch: strict flag parsing and `formatError` in metabase-axi, otter-axi and slack-axi; counts as a `count:` field in slack-axi; tokens on stdin in calendly-axi and slack-axi; the fail-closed `setup hooks` in calendly-axi; and `setup hooks` replacing the top-level `hook` command in agent-recall-axi and specops.
 
 ## When you improve a shared module
 
