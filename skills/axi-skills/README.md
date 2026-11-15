@@ -31,8 +31,8 @@ hand-rolls:
 
 - the esbuild → committed `.mjs` build, version stamping, and a CI drift gate
 - the bash shim and off-PATH invocation resolution
-- SessionStart hooks with **project and global** scope (including the project-scoped install that
-  isn't yet in the SDK)
+- SessionStart hooks through `setup hooks`, at **user and project** scope (including the portable
+  project-scoped command a vendored bundle needs)
 - generating `SKILL.md` from a single-source command reference (splice a region *or* generate the
   whole file)
 - splitting a lean every-session "home" view from a richer on-demand "dashboard"
