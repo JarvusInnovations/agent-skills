@@ -213,6 +213,9 @@ Design principles for the extended dashboard (these are where project-level dash
   One trap when a test spawns the CLI as a child process: version-manager shims (asdf and
   similar) locate themselves through `HOME`, so a shimmed `node` or `bun` fails under a redirected
   `HOME`. Spawn the real binary (`process.execPath`), not the shim.
+  And redirect by spawning: under bun, changing `process.env.HOME` inside a running process does
+  not change what `os.homedir()` returns, so an in-process test still resolves your real home. Run
+  the CLI as a child process started with `HOME` set.
 - **Give tests a kill switch.** An environment variable such as `MYTOOL_DISABLE_HOOKS=1` that
   makes every hook write a no-op (and says so) keeps an unrelated test from ever touching real
   agent settings. Set it globally in the test setup.
